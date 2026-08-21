@@ -1,0 +1,22 @@
+{
+  "andorra": {
+    "name": "Andorra",
+    "url": "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+  },
+  "france": {
+    "name": "France",
+    "url": "https://download.geofabrik.de/europe/france-latest.osm.pbf"
+  },
+  "italy": {
+    "name": "Italy",
+    "url": "https://download.geofabrik.de/europe/italy-latest.osm.pbf"
+  },
+  "portugal": {
+    "name": "Portugal",
+    "url": "https://download.geofabrik.de/europe/portugal-latest.osm.pbf"
+  },
+  "spain": {
+    "name": "Spain",
+    "url": "https://download.geofabrik.de/europe/spain-latest.osm.pbf"
+  }
+}
