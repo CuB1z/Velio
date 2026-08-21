@@ -1,7 +1,8 @@
 # Elevation
 
 How elevation data works in this project: where it comes from, how it is
-downloaded, what Valhalla does with it, and how the Cycling Core will use it.
+downloaded, what Valhalla does with it, and how the elevation engine
+(`app/engine/`) uses it.
 
 ## Design principle
 
@@ -11,7 +12,7 @@ Elevation is used at **two levels**:
    `build_tiles.sh`). Every edge carries its grade, so the bicycle costing can
    weigh slopes during route search — this is what makes hill avoidance
    (`use_hills`) actually change which roads get chosen.
-2. **External DEM pipeline** (planned, Cycling Core layer): high-resolution
+2. **External DEM pipeline** (`app/engine/`, implemented): high-resolution
    elevation profiles, smoothing and gain/loss/grade computed from the same
    `.hgt.gz` tiles, independent of Valhalla. The `/height` endpoint serves as
    ground truth to validate it against.
@@ -41,9 +42,8 @@ Current size for Spain coverage: ~1 GB, 173 tiles
 (`valhalla/elevation/`).
 
 This directory is the **single elevation store**: Valhalla reads it at runtime,
-and the future Cycling Core pipeline will use the same files for its own DEM
-lookups. It is gitignored — the data is re-downloadable and far too large to
-version.
+and the elevation engine uses the same files for its own DEM lookups. It is
+gitignored — the data is re-downloadable and far too large to version.
 
 ## Downloading the tiles (`scripts/download_elevation.sh`)
 
@@ -146,40 +146,52 @@ climbing. Reference:
 [`bicyclecost.cc`](https://github.com/valhalla/valhalla/blob/3.8.2/src/sif/bicyclecost.cc)
 (`kAvoidHillsStrength`, `grade_penalty`).
 
-## Planned pipeline (Cycling Core)
+## Elevation engine (`app/engine/`)
 
-The production elevation flow will bypass Valhalla entirely:
+A small Python package that computes elevation metrics for any route without
+touching Valhalla at request time:
 
 ```
 Valhalla route geometry (encoded polyline)
-        │
-        ▼
-Decode coordinates
-        │
-        ▼
-DEM lookup (.hgt tiles)
-        │
-        ▼
-Raw elevation profile
-        │
-        ▼
-Smoothing (DEM noise removal)
-        │
-        ▼
-Gain / Loss / Grade
+        |
+        v
+Decode coordinates            app/engine/polyline.py
+        |
+        v
+DEM lookup (.hgt.gz tiles)    app/engine/dem.py
+        |
+        v
+Resample + raw profile        app/engine/elevation.py
+        |
+        v
+Smoothing (median + mean)     app/engine/elevation.py
+        |
+        v
+Gain / Loss / Grade           app/engine/elevation.py
 ```
 
-Output model:
+- `polyline.py` — encode/decode Valhalla encoded polylines (1e6 precision).
+- `dem.py` — `.hgt.gz` reader (int16 big-endian, NW origin, `-32768` voids)
+  with bilinear interpolation and an LRU tile cache.
+- `elevation.py` — haversine cumulative distance, resampling (~10 m),
+  NaN gap filling, median + moving-average smoothing, gain/loss and grades
+  measured over a ~30 m baseline.
+- `models.py` — `ProfileSample` / `ElevationProfile` dataclasses.
+- `__main__.py` — CLI: routes two points through Valhalla, builds the profile
+  and validates every sample against `/height`.
 
-```
-ElevationProfile
-├── gain_m
-├── loss_m
-├── max_uphill_grade
-├── max_downhill_grade
-└── profile
+Usage from the repo root (service must be running):
+
+```bash
+python -m app.engine 40.4168 -3.7038 40.7850 -3.9600
 ```
 
-The raw DEM is noisy, so the pipeline is strictly:
-raw elevations -> sampling -> smoothing -> gradient. The `/height` endpoint
-and the smoke test serve as ground truth to validate this pipeline against.
+Validated on Madrid -> Puerto de Navacerrada (73.8 km, 7386 samples):
+**MAE 0.62 m, RMSE 0.84 m, max diff 6.23 m** against `/height`.
+
+Unit tests live in `tests/engine/` (synthetic HGT tiles, known polyline
+vectors, flat/ramp/spike profiles):
+
+```bash
+.venv/bin/python -m pytest tests/ -q
+```

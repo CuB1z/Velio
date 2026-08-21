@@ -15,29 +15,33 @@ Working today:
   cycle lanes, etc.)
 - Elevation lookups via `/height` backed by Copernicus DEM GLO-30 tiles
   (~1 GB, decoupled from the routing graph)
+- Elevation engine (`app/engine/`): elevation profiles, gain/loss and grades
+  computed from the same DEM tiles — validated against `/height` with
+  MAE 0.62 m on a 74 km mountain route
 
-Planned next: external elevation pipeline (gain/loss/grade), route scoring,
-circular route generator, FastAPI service. See
-[docs/data.md](docs/data.md) and the project spec for details.
+Planned next: circular route generator (origin + target distance/gain/effort),
+route scoring, FastAPI service. See [docs/data.md](docs/data.md) and the
+project spec for details.
 
 ## Architecture
 
 ```
 OpenStreetMap PBF ──> build_tiles.sh ──> Valhalla tiles ──> valhalla_service (Docker :8002)
 Geofabrik catalog  ──> download_osm.sh
-Copernicus DEM     ──> download_elevation.sh ──> .hgt.gz tiles ──> /height + future Cycling Core
+Copernicus DEM     ──> download_elevation.sh ──> .hgt.gz tiles ──> /height + app/engine
 ```
 
 The routing graph carries baked-in elevation (`mjolnir.use_elevation`), so
 slope weighs on route calculation through the bicycle costing options (e.g.
-`use_hills`). A separate external DEM pipeline is still planned for
-high-resolution elevation profiles and route scoring. Details in
+`use_hills`). The Python elevation engine (`app/engine/`) reads the same DEM
+tiles directly for high-resolution profiles and metrics. Details in
 [docs/elevation.md](docs/elevation.md).
 
 ## Requirements
 
 - Docker + Docker Compose
 - `curl` and `jq`
+- Python 3.12+ (elevation engine and tests)
 - ~5 GB free disk for the Spain dataset (PBF + tiles + elevation)
 
 ## Quick start
@@ -63,6 +67,18 @@ curl -X POST localhost:8002/route -H 'Content-Type: application/json' \
   -d '{"shape":[{"lat":40.4168,"lon":-3.7038},{"lat":40.8570,"lon":-3.9863}],"costing":"bicycle"}'
 ```
 
+## Elevation engine
+
+```bash
+python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+
+# Unit tests
+.venv/bin/python -m pytest tests/ -q
+
+# Profile + validation for a route (Madrid -> Navacerrada Port)
+.venv/bin/python -m app.engine 40.4168 -3.7038 40.7850 -3.9600
+```
+
 ## Scripts
 
 | Script | Purpose |
@@ -81,7 +97,7 @@ Shared helpers live in `scripts/lib/common.sh`.
 |---|---|
 | [docs/data.md](docs/data.md) | Data lifecycle: what lives where, build vs runtime needs, production checklist |
 | [docs/valhalla.md](docs/valhalla.md) | Build pipeline, runtime configuration, HTTP API |
-| [docs/elevation.md](docs/elevation.md) | Elevation source, tiles, `/height`, grade caveats, planned pipeline |
+| [docs/elevation.md](docs/elevation.md) | Elevation source, tiles, `/height`, grade caveats, `app/engine` pipeline |
 
 ## License / data attribution
 

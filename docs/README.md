@@ -8,11 +8,22 @@ Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla
 |---|---|
 | [data.md](data.md) | Data lifecycle: what exists, where it lives, build-time vs runtime requirements, production deployment checklist |
 | [valhalla.md](valhalla.md) | Valhalla setup: build pipeline, Docker runtime, HTTP API endpoints used by the project |
-| [elevation.md](elevation.md) | Elevation: DEM data source, elevation tiles, `/height` endpoint, grade attributes, and the planned decoupled elevation pipeline |
+| [elevation.md](elevation.md) | Elevation: DEM data source, elevation tiles, `/height` endpoint, grade attributes, and the `app/engine` elevation pipeline |
 
 ## Repository layout
 
 ```
+app/
+└── engine/              Elevation engine (Python package)
+    ├── polyline.py      Encoded polyline encode/decode (1e6 precision)
+    ├── dem.py           .hgt.gz tile reader with bilinear lookup + LRU cache
+    ├── elevation.py     Resampling, smoothing, gain/loss/grade metrics
+    ├── models.py        ProfileSample / ElevationProfile dataclasses
+    └── __main__.py      CLI: profile for a route, validated against /height
+
+tests/
+└── engine/              Unit tests (synthetic tiles, known vectors)
+
 data/                  Source datasets (gitignored, re-downloadable)
 ├── regions.json       Catalog of downloadable OSM extracts (versioned)
 └── spain.osm.pbf      OSM extract for Spain (~1.4 GB)
@@ -29,6 +40,8 @@ valhalla/              Runtime state, mounted into the container at /data
 ├── tiles/             Routing tiles (~2.1 GB, generated)
 └── elevation/         Elevation tiles (~1 GB, gitignored)
 
+requirements.txt       Runtime dependencies (numpy)
+requirements-dev.txt   Development dependencies (pytest)
 docs/                  This documentation
 docker-compose.yaml    Runtime service definition (port 8002)
 ```
@@ -53,4 +66,9 @@ docker compose up -d valhalla     # start the service
 # Verify
 ./scripts/smoke_test_height.sh
 curl http://localhost:8002/status
+
+# Elevation engine: unit tests + end-to-end validation against /height
+python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+.venv/bin/python -m pytest tests/ -q
+.venv/bin/python -m app.engine 40.4168 -3.7038 40.7850 -3.9600
 ```
