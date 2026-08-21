@@ -11,6 +11,11 @@ valhalla/valhalla/
 .env*
 *.env
 
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+
 # OSM PBF data (can be regenerated)
 data/*.osm.pbf
 
