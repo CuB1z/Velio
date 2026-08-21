@@ -1,0 +1,17 @@
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla:3.8.2
+    container_name: valhalla-router
+
+    command:
+      - valhalla_service
+      - /data/config/valhalla.json
+      - "4"
+
+    ports:
+      - "8002:8002"
+
+    volumes:
+      - ./valhalla:/data
+
+    restart: unless-stopped
