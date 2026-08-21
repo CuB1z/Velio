@@ -23,22 +23,23 @@ clone contains only code, scripts and docs.
 ## Build-time vs runtime
 
 The key distinction: **the OSM PBF is never needed at runtime**, and
-**elevation tiles are never needed at build time** (grades are not baked into
-the graph — see [elevation.md](elevation.md)).
+**elevation tiles are never served to clients at runtime** — they are a build
+input (grades get baked into the graph) and a runtime input for `/height`.
 
 ```
 BUILD (offline, one-off)                 RUNTIME (server)
 ├── data/spain.osm.pbf                   ├── valhalla/config/valhalla.json
-│        │                               ├── valhalla/tiles/ (+ tiles.tar)
-│        ▼                               └── valhalla/elevation/
-│   build_tiles.sh                            │
-│   ├──> config/valhalla.json                 ▼
-│   ├──> config/admins.sqlite            docker-compose (port 8002)
-│   ├──> config/timezones.sqlite         valhalla_service /data/config/valhalla.json 4
-│   └──> tiles/ + tiles.tar
-│
-└── download_elevation.sh
-    └──> elevation/*.hgt.gz
+├── valhalla/elevation/*.hgt.gz          ├── valhalla/tiles/ (+ tiles.tar)
+│        │                               └── valhalla/elevation/   (for /height)
+│        ▼                                     │
+│   download_elevation.sh                     ▼
+│   └──> elevation/*.hgt.gz             docker-compose (port 8002)
+│                                       valhalla_service /data/config/valhalla.json 4
+│   build_tiles.sh (needs PBF + elevation)
+│   ├──> config/valhalla.json
+│   ├──> config/admins.sqlite
+│   ├──> config/timezones.sqlite
+│   └──> tiles/ + tiles.tar  (grades baked in)
 ```
 
 ## Production deployment
@@ -48,7 +49,9 @@ To serve routing requests you need exactly:
 1. The Docker image: `ghcr.io/valhalla/valhalla:3.8.2`
 2. `config/valhalla.json`
 3. `tiles/` (or just `tiles.tar`, which the config references as extract)
-4. `elevation/` — optional, only if you want `/height` to work
+4. `elevation/` — optional at runtime: `/height` needs it, routing does not
+   (grades are already baked into the tiles). Required again whenever you
+   rebuild the graph.
 
 You do **not** need: the `.osm.pbf`, the sqlite files, or any script.
 Mount the directory as `/data` and run:

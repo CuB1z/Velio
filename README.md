@@ -28,9 +28,11 @@ Geofabrik catalog  ──> download_osm.sh
 Copernicus DEM     ──> download_elevation.sh ──> .hgt.gz tiles ──> /height + future Cycling Core
 ```
 
-The routing graph carries no baked-in elevation by design; elevation metrics
-will be computed externally so they stay independent from tile rebuilds.
-Details in [docs/elevation.md](docs/elevation.md).
+The routing graph carries baked-in elevation (`mjolnir.use_elevation`), so
+slope weighs on route calculation through the bicycle costing options (e.g.
+`use_hills`). A separate external DEM pipeline is still planned for
+high-resolution elevation profiles and route scoring. Details in
+[docs/elevation.md](docs/elevation.md).
 
 ## Requirements
 

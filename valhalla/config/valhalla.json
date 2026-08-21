@@ -33,7 +33,6 @@
     "global_synchronized_cache": false,
     "max_concurrent_reader_users": 1,
     "reclassify_links": true,
-    "pedestrian_areas": false,
     "data_processing": {
       "infer_internal_intersections": true,
       "infer_turn_channels": true,
@@ -46,7 +45,8 @@
       "use_rest_area": false,
       "scan_tar": false,
       "build_bounding_circles": true
-    }
+    },
+    "use_elevation": true
   },
   "additional_data": {
     "elevation": "/data/elevation/"

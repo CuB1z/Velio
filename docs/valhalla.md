@@ -41,11 +41,18 @@ Runs four containerized steps in order:
    - `mjolnir.tile_dir: /data/tiles`
    - `mjolnir.tile_extract: /data/tiles.tar`
    - `additional_data.elevation: /data/elevation/`
+   - `mjolnir.use_elevation: true` — set afterwards with `jq` (the builder
+     has no CLI flag for it); bakes grades into the graph so the bicycle
+     costing can weigh slopes
 2. **Timezones** — `valhalla_build_timezones` -> `config/timezones.sqlite`.
 3. **Administrative areas** — `valhalla_build_admins` from the PBF ->
    `config/admins.sqlite`.
 4. **Routing tiles** — `valhalla_build_tiles` from the PBF -> `tiles/`, then
    `valhalla_build_extract` packs them into `tiles.tar`.
+
+Requires `data/spain.osm.pbf` and a populated `valhalla/elevation/`
+(`download_elevation.sh`) — without elevation tiles the build still succeeds
+but edges carry no grades.
 
 The script is currently hardcoded to `data/spain.osm.pbf`; the intent is to
 make it accept multiple PBFs so several countries share one routing space.
@@ -85,14 +92,19 @@ Service health and version info. Used by `setup_valhalla.sh` as readiness probe.
 ### `/route` (POST)
 
 Point-to-point routing. Returns distance, time, geometry and maneuvers.
-Example body:
+Waypoints go in `locations` (not `shape` — that is for the `trace_*`
+endpoints). Example body:
 
 ```json
 {
-  "shape": [{"lat": 40.4168, "lon": -3.7038}, {"lat": 40.8570, "lon": -3.9863}],
-  "costing": "bicycle"
+  "locations": [{"lat": 40.4168, "lon": -3.7038}, {"lat": 40.8570, "lon": -3.9863}],
+  "costing": "bicycle",
+  "costing_options": {"bicycle": {"use_hills": 0}}
 }
 ```
+
+The route geometry comes back encoded (polyline6) in `.trip.legs[].shape`;
+feed it to `/trace_attributes` to get per-edge details.
 
 ### `/trace_attributes` (POST)
 
@@ -106,22 +118,21 @@ bridge, tunnel, roundabout, traffic_signal, toll, traversability,
 max_upward_grade, max_downward_grade, weighted_grade
 ```
 
-Example body:
+Example body — note it takes the **encoded polyline** from a previous
+`/route` call; raw far-apart coordinates fail map matching:
 
 ```json
 {
-  "shape": [{"lat": 40.4168, "lon": -3.7038}, {"lat": 40.4268, "lon": -3.6938}],
+  "encoded_polyline": "civ}lAav|bhF...",
   "costing": "bicycle",
   "attributes": ["edge.max_upward_grade", "edge.weighted_grade"],
   "shape_format": "polyline6"
 }
 ```
 
-A ~3 km test route returned 80 edges with all road attributes populated.
-
-> **Note:** grade attributes (`max_upward_grade`, etc.) currently return `-500`
-> because elevation is not baked into the graph. See
-> [elevation.md](elevation.md#grade-attributes-return--500) for details.
+A ~3 km test route returned 80 edges with all road attributes populated;
+grade attributes carry real values since elevation is baked into the graph
+(see [elevation.md](elevation.md#grade-attributes)).
 
 ### `/height` (POST)
 
@@ -130,5 +141,5 @@ tiles. See [elevation.md](elevation.md).
 
 ## Known limitations
 
-- Grade attributes are not populated yet (see elevation docs).
-- `build_tiles.sh` only supports the Spain dataset for now.
+- `build_tiles.sh` builds one PBF per graph; merging several regions into a
+  single routing space is planned but not implemented yet.

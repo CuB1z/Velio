@@ -32,6 +32,11 @@ docker run --rm \
         --additional-data-elevation /data/elevation/ \
     > "${CONFIG_DIR}/valhalla.json"
 
+# valhalla_build_config does not expose this flag: bake elevation into graph
+# edges so the bicycle costing can weigh slopes during route search.
+jq '.mjolnir.use_elevation = true' "${CONFIG_DIR}/valhalla.json" > "${CONFIG_DIR}/valhalla.json.tmp"
+mv "${CONFIG_DIR}/valhalla.json.tmp" "${CONFIG_DIR}/valhalla.json"
+
 log_step "Building timezones"
 
 docker run --rm \
@@ -67,6 +72,7 @@ docker run --rm \
     "${VALHALLA_IMAGE}" \
     valhalla_build_extract \
         -c /data/config/valhalla.json \
+        --overwrite \
         -v
 
 echo

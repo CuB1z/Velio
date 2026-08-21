@@ -5,14 +5,19 @@ downloaded, what Valhalla does with it, and how the Cycling Core will use it.
 
 ## Design principle
 
-Elevation is kept **decoupled from the routing graph**. The plan is to compute
-elevation metrics (gain, loss, grade) in the Cycling Core layer from an
-external DEM lookup, not from Valhalla's baked-in edge grades. This keeps the
-tile build independent of elevation data and gives full control over smoothing
-and noise handling.
+Elevation is used at **two levels**:
 
-Valhalla's own elevation support is still used for one thing today: the
-`/height` endpoint, which serves as a cross-check for the external pipeline.
+1. **Baked into the routing graph** (`mjolnir.use_elevation: true`, set by
+   `build_tiles.sh`). Every edge carries its grade, so the bicycle costing can
+   weigh slopes during route search — this is what makes hill avoidance
+   (`use_hills`) actually change which roads get chosen.
+2. **External DEM pipeline** (planned, Cycling Core layer): high-resolution
+   elevation profiles, smoothing and gain/loss/grade computed from the same
+   `.hgt.gz` tiles, independent of Valhalla. The `/height` endpoint serves as
+   ground truth to validate it against.
+
+Rebuilding tiles requires the elevation directory to be populated first;
+`download_elevation.sh` runs before `build_tiles.sh` in the setup flow.
 
 ## Data source
 
@@ -102,33 +107,44 @@ HTTP status, non-null numeric heights and a sane range (-500 m to 9000 m):
 VERBOSE=0 ./scripts/smoke_test_height.sh
 ```
 
-## Grade attributes return `-500`
+## Grade attributes
 
-**Current known limitation.** `trace_attributes` grade fields are all `-500`
-and `weighted_grade` is `0.0`:
+Grades are **baked into the graph**: `build_tiles.sh` sets
+`mjolnir.use_elevation: true` (via `jq`, the config builder does not expose a
+CLI flag) before building tiles, so `trace_attributes` returns real values:
 
 ```json
 {
-  "max_upward_grade": -500,
-  "max_downward_grade": -500,
-  "weighted_grade": 0.0
+  "max_upward_grade": 6,
+  "max_downward_grade": -8,
+  "weighted_grade": 5.0
 }
 ```
 
-Why: there are two separate mechanisms in Valhalla.
+Verified on Madrid -> Puerto de Navacerrada: 536/536 edges with real grades,
+steepest uphill 24%, steepest downhill -20%.
 
-| Mechanism | Config | Status here |
+### How slope affects routing
+
+The bicycle costing applies a per-edge penalty from `weighted_grade`, scaled
+by the `use_hills` option — a **float from 0 to 1** (not an integer scale):
+
+- `use_hills: 0` — maximum hill avoidance (`avoid_hills = 1 - use_hills`
+  multiplies the full strength table; a 15% grade costs ~13x)
+- `use_hills: 1` — grades ignored
+- Out-of-range values are silently clamped to the default
+
+Example on Madrid -> Rascafria:
+
+| `use_hills` | Distance | Time |
 |---|---|---|
-| `/height` lookups at request time | `additional_data.elevation` | Working |
-| Grades baked into edges at build time | `mjolnir.use_elevation: true` | Not enabled |
+| 0 (avoid hills) | 82.917 km | 349 min |
+| 1 (ignore hills) | 82.544 km | 351 min |
 
-The routing tiles were built before elevation data existed and without
-`mjolnir.use_elevation`, so the graph has no elevation stored on its edges.
-Enabling it would require setting that flag and rebuilding tiles with the
-elevation directory populated.
-
-Per the design principle above, we do **not** plan to enable it: grades will
-be computed externally.
+The hill-avoiding route is longer but faster — it trades distance for less
+climbing. Reference:
+[`bicyclecost.cc`](https://github.com/valhalla/valhalla/blob/3.8.2/src/sif/bicyclecost.cc)
+(`kAvoidHillsStrength`, `grade_penalty`).
 
 ## Planned pipeline (Cycling Core)
 
