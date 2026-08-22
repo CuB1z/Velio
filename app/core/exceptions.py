@@ -27,6 +27,22 @@ class AppError(Exception):
         super().__init__(message)
 
 
+class ValidationError(AppError):
+    """A well-formed request carries an unusable value (400)."""
+
+    def __init__(
+        self,
+        message: str = "Invalid request",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="VALIDATION_ERROR",
+            details=details,
+        )
+
+
 class ServiceUnavailableError(AppError):
     """An upstream dependency is unreachable (503)."""
 
