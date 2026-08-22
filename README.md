@@ -135,6 +135,31 @@ Effort scoring from surface/grade data is a next step; `use_hills`,
 `avoid_bad_surfaces` and `bicycle_type` already shape route selection through
 the Valhalla bicycle costing.
 
+## HTTP service
+
+The loop generator also runs as a FastAPI service:
+
+```bash
+# Start (reads VALHALLA_URL / VALHALLA_ELEVATION_DIR, defaults to localhost:8002
+# and ./valhalla/elevation)
+uvicorn app.main:app --reload --port 8000
+
+# Generate a 70 km / 900 m D+ loop from Algete
+curl -s -X POST localhost:8000/api/v1/loops -H 'Content-Type: application/json' \
+  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900}' | jq
+
+# Health and docs
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.1.0"}
+open localhost:8000/docs
+```
+
+`POST /api/v1/loops` returns the loop geometry (`coords`, lat/lon pairs), the
+achieved `distance_km` / `gain_m` / `loss_m`, a `feasible` flag (best-effort
+route with `feasible: false` when the targets cannot be met from that origin)
+and an optional `score` block with comfort, paved share, surface breakdown,
+climb load and max grade. When Valhalla is unreachable the service answers
+`503` with the standard error body.
+
 ## Scripts
 
 | Script | Purpose |
