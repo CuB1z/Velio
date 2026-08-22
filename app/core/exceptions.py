@@ -43,6 +43,22 @@ class ServiceUnavailableError(AppError):
         )
 
 
+class RoutingError(AppError):
+    """Valhalla answered but no route exists through the points (422)."""
+
+    def __init__(
+        self,
+        message: str = "No route found between waypoints",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            error_code="ROUTING_ERROR",
+            details=details,
+        )
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     logger.warning(
         f"{exc.error_code}: {exc.message}",
