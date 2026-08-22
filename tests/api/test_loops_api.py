@@ -7,6 +7,7 @@ from app.api.dependencies import get_dem_source, get_valhalla_client
 from app.clients.valhalla import ValhallaError
 from app.core.config import settings
 from app.engine.dem import DemSource
+from app.engine.polyline import decode
 from app.main import app
 
 
@@ -71,7 +72,10 @@ def test_create_loop_returns_scored_route():
     body = resp.json()
     assert body["feasible"] is True
     assert body["distance_km"] == pytest.approx(50.0)
-    assert body["coords"][0] == [40.4168, -3.7038]
+    points = decode(body["polyline"])
+    assert points[0][0] == pytest.approx(40.4168, abs=1e-3)
+    assert points[0][1] == pytest.approx(-3.7038, abs=1e-3)
+    assert len(points) > 10
     assert body["score"]["comfort"] > 0
     assert body["score"]["paved_share"] == pytest.approx(1.0)
     app.dependency_overrides.clear()

@@ -33,5 +33,5 @@ class LoopOut(BaseModel):
     loss_m: float
     feasible: bool
     iterations: int
-    coords: list[tuple[float, float]]
+    polyline: str
     score: Quality | None = None

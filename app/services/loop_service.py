@@ -58,7 +58,7 @@ class LoopService:
             loss_m=loop.loss_m,
             feasible=loop.distance_ok and loop.gain_ok and not loop.infeasible,
             iterations=loop.iterations,
-            coords=loop.coords,
+            polyline=encode(loop.coords),
             score=(
                 Quality(
                     comfort=score.comfort,
