@@ -18,15 +18,14 @@ Working today:
 - Elevation engine (`app/engine/`): elevation profiles, gain/loss and grades
   computed from the same DEM tiles — validated against `/height` with
   MAE 0.62 m on a 74 km mountain route
-
 - Route quality scoring (`app/engine/scoring.py`): comfort (surface-weighted,
-  0-100), climb load and surface breakdown per generated loop, from
+  0-100), climb load and surface breakdown per generated route, from
   `/trace_attributes` edge data
-- GPX export with DEM elevation data (`--gpx PREFIX`): the generated tracks
-  carry per-point elevation computed by the engine
-
-Planned next: FastAPI service. See [docs/data.md](docs/data.md)
-and the project spec for details.
+- GPX export with DEM elevation data (`--gpx PREFIX` in the loop CLI): the
+  generated tracks carry per-point elevation computed by the engine
+- FastAPI HTTP service (`app/main.py`): circular loops and point-to-point
+  routes over REST, geometry as encoded polylines, DEM gain/loss and quality
+  score included — see [docs/api.md](docs/api.md)
 
 ## Architecture
 
