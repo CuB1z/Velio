@@ -20,7 +20,9 @@ Working today:
   MAE 0.62 m on a 74 km mountain route
 - Route quality scoring (`app/engine/scoring.py`): comfort (surface-weighted,
   0-100), climb load and surface breakdown per generated route, from
-  `/trace_attributes` edge data
+  `/trace_attributes` edge data; plus a multi-factor `cycling_score` (0-10)
+  blending distance accuracy, road safety attributes and a repeated-road
+  overlap penalty (`app/engine/cycling_score.py`, `app/engine/overlap.py`)
 - GPX export with DEM elevation data (`--gpx PREFIX` in the loop CLI): the
   generated tracks carry per-point elevation computed by the engine
 - FastAPI HTTP service (`app/main.py`): circular loops and point-to-point
@@ -144,16 +146,16 @@ point-to-point routes. Full endpoint reference in [docs/api.md](docs/api.md).
 # and ./valhalla/elevation)
 uvicorn app.main:app --reload --port 8000
 
-# Generate a 70 km / 900 m D+ loop from Algete
+# Generate a 70 km / 900 m D+ loop from Algete, tuned for safe roads
 curl -s -X POST localhost:8000/api/v1/loops -H 'Content-Type: application/json' \
-  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900}' | jq
+  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900,"profile":"safe"}' | jq
 
 # Point-to-point route: Madrid -> Navacerrada, scored and with DEM gain/loss
 curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json' \
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}]}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.2.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.3.0"}
 open localhost:8000/docs
 ```
 
@@ -163,7 +165,10 @@ precision — decodable by any map library), distance and DEM-based
 `gain_m` / `loss_m`, plus an optional `score` block with comfort,
 paved share, surface breakdown, climb load and max grade. Loops add a
 `feasible` flag (best-effort route with `feasible: false` when the targets
-cannot be met from that origin). Errors share one JSON body:
+cannot be met from that origin), riding `duration_min`, `overlap_ratio`
+(repeated-road share outside the ±1.5 km urban window) and a multi-factor
+`cycling_score` in 0-10 (distance accuracy + road safety - overlap penalty).
+Errors share one JSON body:
 `{"error", "message", "details"}` — validation/routing failures answer `422`,
 an unreachable Valhalla answers `503`.
 

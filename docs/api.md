@@ -34,7 +34,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.2.0"}
+{"status": "ok", "version": "0.3.0"}
 ```
 
 ---
@@ -57,11 +57,20 @@ Request:
   "tolerance": 0.05,
   "gain_tolerance": 0.20,
   "waypoint_count": 10,
-  "max_iterations": 8
+  "max_iterations": 8,
+  "profile": "safe"
 }
 ```
 
 Only `origin` and `distance_km` are required.
+
+Named cycling profiles map onto Valhalla bicycle costing options:
+
+| `profile` | Intent |
+|---|---|
+| `road` | Fast road riding: favours paved roads (`bicycle_type=Road`, `use_roads=1`) |
+| `safe` | Balanced riding: avoids bad surfaces, tames big roads |
+| `relaxed` | Easy spinning: keeps hills down |
 
 ```bash
 curl -s -X POST localhost:8000/api/v1/loops \
@@ -79,22 +88,40 @@ Response:
   "feasible": true,
   "iterations": 3,
   "polyline": "u{~fFswjsC`Ay@aE...",
+  "duration_min": 178.4,
+  "overlap_ratio": 0.0412,
   "score": {
     "comfort": 64.37,
     "paved_share": 0.45,
     "surface_km": {"dirt": 36.44, "paved_smooth": 29.86},
     "climb_load_m": 964.76,
     "max_grade_pct": 24.0
+  },
+  "cycling_score": {
+    "distance": 10.0,
+    "safety": 6.8,
+    "overlap_penalty": 0.0,
+    "total": 8.1
   }
 }
 ```
 
 - `feasible`: targets met within tolerance (`false` = best-effort result).
-- `score`: quality metrics from Valhalla edge data; `null` when scoring is
-  unavailable. `comfort` is 0-100 distance-weighted surface quality,
-  `paved_share` the fraction on paved surfaces, `climb_load_m` the
+- `duration_min`: riding time estimated by Valhalla.
+- `overlap_ratio`: fraction of the loop (excluding the first and last 1.5 km)
+  ridden on ways already travelled earlier; `null` when way ids are not
+  available.
+- `score`: surface quality metrics from Valhalla edge data; `null` when
+  scoring is unavailable. `comfort` is 0-100 distance-weighted surface
+  quality, `paved_share` the fraction on paved surfaces, `climb_load_m` the
   vertical-equivalent meters of positive grade and `max_grade_pct` the
   steepest upward grade found.
+- `cycling_score`: multi-factor rating in 0-10 — `distance` rewards matching
+  the requested length (0 at ±20%), `safety` is a length-weighted road
+  friendliness measure (cycle lanes and quiet roads add, primary roads with
+  many lanes or truck traffic subtract), `overlap_penalty` subtracts up to 5
+  points for repeated roads above a 5% ratio, and `total` combines them with
+  weights 0.4/0.6.
 
 ---
 
