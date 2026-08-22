@@ -35,3 +35,21 @@ def test_service_routes_madrid_to_navacerrada(base_url, elevation_dir):
     assert points[0][0] == pytest.approx(MADRID[0], abs=1e-3)
     assert points[0][1] == pytest.approx(MADRID[1], abs=1e-3)
     assert len(points) > 100
+
+
+def test_route_gpx_export_carries_dem_elevation(base_url, elevation_dir):
+    with TestClient(app) as client:
+        resp = client.post(
+            "/api/v1/routes?format=gpx",
+            json={
+                "waypoints": [
+                    {"lat": MADRID[0], "lon": MADRID[1]},
+                    {"lat": NAVACERRADA[0], "lon": NAVACERRADA[1]},
+                ]
+            },
+        )
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/gpx+xml")
+    assert "<trk>" in resp.text
+    assert "<ele>" in resp.text
