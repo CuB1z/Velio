@@ -68,6 +68,7 @@ class RouteService:
                 CyclingScoreOut(
                     distance=analysis.rating.distance,
                     safety=analysis.rating.safety,
+                    elevation=analysis.rating.elevation,
                     overlap_penalty=analysis.rating.overlap_penalty,
                     total=analysis.rating.total,
                 )
