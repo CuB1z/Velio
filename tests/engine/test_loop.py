@@ -164,6 +164,11 @@ def test_build_route_payload_includes_options_and_avoids():
     assert payload["costing"] == "bicycle"
     assert payload["costing_options"]["bicycle"] == {"use_hills": 0.5}
     assert payload["avoid_locations"] == [{"lat": 40.5, "lon": -3.5}]
+    assert payload["locations"][0]["type"] == "break"
+    assert "alternatives" not in payload
+
+    with_alternatives = build_route_payload([(40.0, -3.0)], alternatives=2)
+    assert with_alternatives["alternatives"] == 2
 
     bare = build_route_payload([(40.0, -3.0)])
     assert "costing_options" not in bare

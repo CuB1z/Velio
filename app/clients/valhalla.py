@@ -63,6 +63,7 @@ def build_route_payload(
     locations: list[tuple[float, float]],
     costing_options: dict | None = None,
     avoid_locations: list[tuple[float, float]] | None = None,
+    alternatives: int | None = None,
 ) -> dict:
     """Assemble a Valhalla /route request payload."""
     payload: dict = {
@@ -77,6 +78,8 @@ def build_route_payload(
         payload["avoid_locations"] = [
             {"lat": la, "lon": lo} for la, lo in avoid_locations
         ]
+    if alternatives:
+        payload["alternatives"] = alternatives
     return payload
 
 
@@ -106,15 +109,29 @@ class ValhallaClient:
         return resp.json()
 
     @staticmethod
-    def _stitch_legs(data: dict) -> list[tuple[float, float]]:
-        """Decode all leg shapes into one coordinate list."""
+    def _stitch_trip(trip: dict) -> list[tuple[float, float]]:
+        """Decode all leg shapes of one trip into a coordinate list."""
         coords: list[tuple[float, float]] = []
-        for leg in data["trip"]["legs"]:
+        for leg in trip["legs"]:
             leg_coords = decode(leg["shape"])
             if coords and leg_coords and leg_coords[0] == coords[-1]:
                 leg_coords = leg_coords[1:]
             coords.extend(leg_coords)
         return coords
+
+    @classmethod
+    def _stitch_legs(cls, data: dict) -> list[tuple[float, float]]:
+        """Decode the main trip of a route response."""
+        return cls._stitch_trip(data["trip"])
+
+    @staticmethod
+    def _to_result(trip: dict) -> RouteResult:
+        summary = trip["summary"]
+        return RouteResult(
+            coords=ValhallaClient._stitch_trip(trip),
+            distance_km=float(summary["length"]),
+            duration_s=float(summary.get("time", 0.0)),
+        )
 
     async def route(
         self,
@@ -126,11 +143,28 @@ class ValhallaClient:
         data = await self.post_json(
             "/route", build_route_payload(locations, costing_options, avoid_locations)
         )
-        return RouteResult(
-            coords=self._stitch_legs(data),
-            distance_km=float(data["trip"]["summary"]["length"]),
-            duration_s=float(data["trip"]["summary"].get("time", 0.0)),
+        return self._to_result(data["trip"])
+
+    async def route_alternatives(
+        self,
+        locations: list[tuple[float, float]],
+        count: int = 1,
+        costing_options: dict | None = None,
+        avoid_locations: list[tuple[float, float]] | None = None,
+    ) -> list[RouteResult]:
+        """Bicycle route plus up to `count` Valhalla alternatives.
+
+        Servers without alternative support simply answer with the primary
+        trip, which degrades to a single-element list.
+        """
+        data = await self.post_json(
+            "/route",
+            build_route_payload(
+                locations, costing_options, avoid_locations, alternatives=count
+            ),
         )
+        trips = [data["trip"], *data.get("alternatives", [])]
+        return [self._to_result(trip) for trip in trips]
 
     async def route_shape(
         self,
