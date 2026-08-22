@@ -4,7 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_dem_source, get_valhalla_client
-from app.clients.valhalla import RouteError, ValhallaError
+from app.clients.valhalla import RouteError, RouteResult, ValhallaError
 from app.engine.dem import DemSource
 from app.engine.polyline import decode
 from app.main import app
@@ -14,7 +14,7 @@ class FakeValhalla:
     """Fake client returning plausible routing and scoring payloads."""
 
     async def route(self, locations, costing_options=None, avoid_locations=None):
-        return list(locations), 74.0
+        return RouteResult(list(locations), 74.0, 0.0)
 
     async def trace_attributes(self, encoded_polyline, costing_options=None):
         return [

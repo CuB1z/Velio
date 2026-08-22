@@ -71,6 +71,7 @@ class GeneratedLoop:
     distance_ok: bool
     gain_ok: bool
     infeasible: bool = False
+    duration_s: float = 0.0
 
 
 def climb_anchors(
@@ -267,11 +268,12 @@ async def generate_loop(
             extras.append(peak[0])
         for extra in extras:
             waypoints = insert_by_bearing(waypoints, request.origin, extra)
-        coords, distance_km = await client.route(
+        result = await client.route(
             [request.origin, *waypoints, request.origin],
             costing_options=costing_options,
             avoid_locations=avoid_locations,
         )
+        coords, distance_km = result.coords, result.distance_km
         profile = build_profile(dem, coords)
 
         distance_ok = abs(distance_km - request.target_km) <= request.target_km * request.tolerance
@@ -296,6 +298,7 @@ async def generate_loop(
             iterations=iteration,
             distance_ok=distance_ok,
             gain_ok=gain_ok,
+            duration_s=result.duration_s,
         )
         if error < best_error:
             best, best_error = attempt, error

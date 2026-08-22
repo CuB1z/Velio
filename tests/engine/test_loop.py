@@ -3,7 +3,7 @@ import math
 
 import pytest
 
-from app.clients.valhalla import build_route_payload
+from app.clients.valhalla import RouteResult, build_route_payload
 from app.engine.elevation import cumulative_distances
 from app.engine.geo import destination_point, haversine_m
 from app.engine.loop import (
@@ -42,7 +42,7 @@ class StraightRouter:
     async def route(self, locations, costing_options=None, avoid_locations=None):
         coords = list(locations)
         dist_km = cumulative_distances(coords)[-1] / 1000.0 * self.scale
-        return coords, dist_km
+        return RouteResult(coords, dist_km, 0.0)
 
 
 def test_destination_point_known_bearing():
@@ -117,7 +117,7 @@ def test_generate_loop_routes_through_via_points():
     class RecordingRouter:
         async def route(self, locations, costing_options=None, avoid_locations=None):
             captured.append(list(locations))
-            return list(locations), 60.0
+            return RouteResult(list(locations), 60.0, 0.0)
 
     request = LoopRequest(origin=origin, target_km=60.0, via_points=vias)
     loop = asyncio.run(generate_loop(RecordingRouter(), ConstantDem(), request))
@@ -137,7 +137,7 @@ def test_generate_loop_without_vias_keeps_plain_ring():
     class RecordingRouter:
         async def route(self, locations, costing_options=None, avoid_locations=None):
             captured.append(list(locations))
-            return list(locations), 60.0
+            return RouteResult(list(locations), 60.0, 0.0)
 
     request = LoopRequest(origin=origin, target_km=60.0)
     asyncio.run(generate_loop(RecordingRouter(), ConstantDem(), request))
@@ -266,7 +266,7 @@ def test_generate_loop_returns_best_effort_when_impossible():
         """Fake client that always reports the same length."""
 
         async def route(self, locations, costing_options=None, avoid_locations=None):
-            return list(locations), 75.0
+            return RouteResult(list(locations), 75.0, 0.0)
 
     loop = asyncio.run(
         generate_loop(

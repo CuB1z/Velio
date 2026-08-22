@@ -20,7 +20,8 @@ class RouteService:
     async def generate(self, data: RouteRequestIn) -> RouteOut:
         locations = [(w.lat, w.lon) for w in data.waypoints]
         try:
-            coords, distance_km = await self.valhalla.route(locations)
+            result = await self.valhalla.route(locations)
+            coords, distance_km = result.coords, result.distance_km
         except RouteError as exc:
             raise RoutingError(f"No route found: {exc}") from exc
         except ValhallaError as exc:
