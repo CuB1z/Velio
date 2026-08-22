@@ -1,13 +1,14 @@
 """Centralised application errors and their HTTP handlers."""
 
-import logging
 from typing import Any
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-logger = logging.getLogger(__name__)
+from app.core.logging import get_logger
+
+logger = get_logger("errors")
 
 
 class AppError(Exception):

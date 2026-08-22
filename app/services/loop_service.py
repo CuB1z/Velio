@@ -2,6 +2,7 @@
 
 from app.clients.valhalla import RouteError, ValhallaClient, ValhallaError
 from app.core.exceptions import ServiceUnavailableError
+from app.core.logging import get_logger
 from app.engine.analysis import Analysis, analyze_edges
 from app.engine.cycling_score import BALANCED_WEIGHTS, Weights
 from app.engine.dem import DemSource
@@ -27,6 +28,8 @@ from app.schemas.loop import (
 class LoopService:
     """Generates and scores loops; the only entry point used by routes."""
 
+    logger = get_logger("services.loop")
+
     def __init__(self, valhalla: ValhallaClient, dem: DemSource):
         self.valhalla = valhalla
         self.dem = dem
@@ -35,6 +38,18 @@ class LoopService:
         costing_options = self._costing_options(data)
         weights = (
             RIDING_PROFILES[data.profile].weights if data.profile else BALANCED_WEIGHTS
+        )
+        self.logger.info(
+            "generating loops",
+            extra={
+                "extra_data": {
+                    "origin": [data.origin.lat, data.origin.lon],
+                    "distance_km": data.distance_km,
+                    "gain_m": data.gain_m,
+                    "profile": data.profile,
+                    "requested_routes": data.routes,
+                }
+            },
         )
 
         # Each additional route bans the climbs used by the previous ones.
@@ -81,6 +96,10 @@ class LoopService:
             if fallback is None:
                 raise ServiceUnavailableError("Valhalla produced no usable loop")
             loop, analysis = fallback
+            self.logger.info(
+                "loop generation fell back to best effort",
+                extra={"extra_data": {"distance_km": loop.distance_km}},
+            )
             return self._finalize(loop, analysis, data.include_profile)
 
         # Rank by cycling score: the best loop is the primary response.
@@ -94,6 +113,20 @@ class LoopService:
         ]
         primary = responses[0]
         primary.alternatives = responses[1:] or None
+        self.logger.info(
+            "loops generated",
+            extra={
+                "extra_data": {
+                    "returned": len(responses),
+                    "distance_km": primary.distance_km,
+                    "cycling_score": (
+                        round(primary.cycling_score.total, 2)
+                        if primary.cycling_score
+                        else None
+                    ),
+                }
+            },
+        )
         return primary
 
     async def _analyze(

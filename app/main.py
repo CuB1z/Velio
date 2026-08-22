@@ -9,12 +9,14 @@ from app.api.router import api_router
 from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
+from app.core.logging import setup_logging
 from app.engine.dem import DemSource
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Shared Valhalla client and DEM source for the whole app lifetime."""
+    setup_logging()
     app.state.valhalla = ValhallaClient(
         base_url=settings.valhalla_url, timeout_s=settings.valhalla_timeout_s
     )
