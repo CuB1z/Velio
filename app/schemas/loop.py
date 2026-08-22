@@ -1,5 +1,7 @@
 """HTTP request/response schemas."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -17,6 +19,7 @@ class LoopRequestIn(BaseModel):
     gain_tolerance: float = Field(default=0.20, gt=0, le=1.0)
     waypoint_count: int = Field(default=10, ge=3, le=50)
     max_iterations: int = Field(default=8, ge=1, le=50)
+    profile: Literal["road", "safe", "relaxed"] | None = None
 
 
 class Quality(BaseModel):
@@ -27,6 +30,13 @@ class Quality(BaseModel):
     max_grade_pct: float
 
 
+class CyclingScoreOut(BaseModel):
+    distance: float
+    safety: float
+    overlap_penalty: float
+    total: float
+
+
 class LoopOut(BaseModel):
     distance_km: float
     gain_m: float
@@ -34,4 +44,7 @@ class LoopOut(BaseModel):
     feasible: bool
     iterations: int
     polyline: str
+    duration_min: float
+    overlap_ratio: float | None = None
     score: Quality | None = None
+    cycling_score: CyclingScoreOut | None = None
