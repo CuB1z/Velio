@@ -5,10 +5,9 @@ import math
 import numpy as np
 
 from .dem import DemSource
+from .geo import EARTH_RADIUS_M
 from .models import ElevationProfile, ProfileSample
 from .polyline import decode
-
-EARTH_RADIUS_M = 6_371_008.8
 
 
 def build_profile(
@@ -126,7 +125,9 @@ def _rolling(values: np.ndarray, window: int, fn) -> np.ndarray:
 
 def _gain_loss(elevations: np.ndarray) -> tuple[float, float]:
     diffs = np.diff(elevations)
-    return float(diffs[diffs > 0].sum()), float(-diffs[diffs < 0].sum())
+    gain = float(diffs[diffs > 0].sum())
+    loss = abs(float(diffs[diffs < 0].sum()))
+    return gain, loss
 
 
 def _grades_over_baseline(
