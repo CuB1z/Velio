@@ -18,6 +18,8 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | GET | `/api/health` | Service status and version |
 | POST | `/api/v1/loops` | Circular route from an origin, with distance/gain targets |
 | POST | `/api/v1/routes` | Point-to-point route through ordered waypoints |
+| POST | `/api/v1/routes/analyze` | Score an existing encoded polyline |
+| POST | `/api/v1/routes/elevation` | DEM elevation profile of an encoded polyline |
 
 All endpoints return JSON. Route geometry comes as an **encoded polyline**
 (`polyline` field, [polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)
@@ -34,7 +36,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.5.0"}
+{"status": "ok", "version": "0.6.0"}
 ```
 
 ---
@@ -77,13 +79,15 @@ Only `origin` and `distance_km` are required.
 - `include_profile`: attach the resampled DEM elevation profile as
   `profile` (one point roughly every 10 m).
 
-Named cycling profiles map onto Valhalla bicycle costing options:
+Named riding profiles shape both the Valhalla costing and the scoring
+weights (distance / safety / elevation):
 
 | `profile` | Intent |
 |---|---|
-| `road` | Fast road riding: favours paved roads (`bicycle_type=Road`, `use_roads=1`) |
-| `safe` | Balanced riding: avoids bad surfaces, tames big roads |
-| `relaxed` | Easy spinning: keeps hills down |
+| `fast` | Time and distance first; bigger roads are acceptable |
+| `safe` | Quiet roads, cycle infrastructure and good surfaces |
+| `fitness` | Training rides: distance and climbing matter most |
+| `relaxed` | Easy spinning: little traffic and gentle terrain |
 
 ### Export formats
 
@@ -132,6 +136,7 @@ Response:
   "cycling_score": {
     "distance": 10.0,
     "safety": 6.8,
+    "elevation": 9.1,
     "overlap_penalty": 0.0,
     "total": 8.1
   },
@@ -151,11 +156,12 @@ Response:
   vertical-equivalent meters of positive grade and `max_grade_pct` the
   steepest upward grade found.
 - `cycling_score`: multi-factor rating in 0-10 — `distance` rewards matching
-  the requested length (0 at ±20%), `safety` is a length-weighted road
-  friendliness measure (cycle lanes and quiet roads add, primary roads with
-  many lanes or truck traffic subtract), `overlap_penalty` subtracts up to 5
-  points for repeated roads above a 5% ratio, and `total` combines them with
-  weights 0.4/0.6.
+  the requested length (0 at ±20%), `elevation` the requested climb (0 at
+  ±30%), `safety` is a length-weighted road friendliness measure (cycle
+  lanes and quiet roads add, primary roads with many lanes or truck traffic
+  subtract), `overlap_penalty` subtracts up to 5 points for repeated roads
+  above a 5% ratio, and `total` combines them with the weights of the
+  selected riding profile.
 - `profile`: resampled DEM elevation points (only with `include_profile`).
 - `alternatives`: the extra loops from `routes > 1`, each avoiding the
   climbs of the previous ones; `null` when only one loop was requested.
@@ -208,6 +214,59 @@ Every error answers with the same JSON shape:
 
 | Status | `error` | Cause |
 |---|---|---|
+| 400 | `VALIDATION_ERROR` | A well-formed request carries an unusable value (e.g. a polyline that decodes to one point) |
 | 422 | `VALIDATION_ERROR` | Request body fails schema validation |
 | 422 | `ROUTING_ERROR` | Valhalla cannot route through the given points |
 | 503 | `SERVICE_UNAVAILABLE` | Valhalla unreachable |
+
+---
+
+## POST /api/v1/routes/analyze
+
+Scores an existing encoded polyline (polyline6) without re-routing it.
+Useful to rate tracks recorded elsewhere or loops produced by earlier
+calls.
+
+```json
+{
+  "polyline": "u{~fFswjsC...",
+  "target_km": 70,
+  "target_gain_m": 900
+}
+```
+
+Only `polyline` is required; targets tune the matching factors.
+
+```bash
+curl -s -X POST localhost:8000/api/v1/routes/analyze \
+  -H 'Content-Type: application/json' \
+  -d '{"polyline":"u{~fFswjsC..."}'
+```
+
+Response: `distance_km`, DEM-based `gain_m`/`loss_m`, plus the usual
+`score`, `overlap_ratio` and `cycling_score` blocks.
+
+---
+
+## POST /api/v1/routes/elevation
+
+DEM elevation profile for an encoded polyline — no Valhalla involved.
+
+```json
+{"polyline": "u{~fFswjsC..."}
+```
+
+Response:
+
+```json
+{
+  "distance_km": 74.12,
+  "gain_m": 1053.5,
+  "loss_m": 988.2,
+  "max_uphill_grade_pct": 11.9,
+  "max_downhill_grade_pct": -12.4,
+  "profile": [
+    {"lat": 40.4168, "lon": -3.7038, "distance_m": 0.0, "elevation_m": 652.1, "grade_pct": null}
+  ]
+}
+```
