@@ -21,9 +21,8 @@ Development CLI (from the repo root):
 
 import math
 from dataclasses import dataclass, replace
-from typing import Callable, Protocol
+from typing import Callable
 
-from .client import RouteError
 from .elevation import build_profile
 from .geo import destination_point, haversine_m
 
@@ -37,13 +36,6 @@ PEAK_DISTANCE_PENALTY_M_PER_KM = 30.0
 GOLDEN_ANGLE_DEG = 137.508
 
 
-class ElevationSource(Protocol):
-    """Anything that can look up heights, e.g. DemSource."""
-
-    def elevation(self, lat: float, lon: float) -> float | None: ...
-
-
-RouteFn = Callable[[list[tuple[float, float]]], tuple[list[tuple[float, float]], float]]
 ProgressFn = Callable[["GeneratedLoop"], None]
 
 
@@ -82,7 +74,7 @@ class GeneratedLoop:
 
 
 def climb_anchors(
-    dem: ElevationSource,
+    dem,
     coords: list[tuple[float, float]],
     max_anchors: int = 2,
 ) -> list[tuple[float, float]]:
@@ -126,7 +118,7 @@ def select_waypoints(
     radius_m: float,
     hilliness: float,
     stretch: float,
-    elevation_fn: ElevationSource,
+    elevation_fn,
 ) -> list[tuple[float, float]]:
     """Pick one waypoint per angular sector from DEM-aware candidates.
 
@@ -181,7 +173,7 @@ def select_waypoints(
 
 def find_peak(
     origin: tuple[float, float],
-    elevation_source: ElevationSource,
+    elevation_source,
     max_radius_m: float,
 ) -> tuple[tuple[float, float], float] | None:
     """Best climb within `max_radius_m` of the origin (grid search).
@@ -236,16 +228,17 @@ def insert_by_bearing(
     return waypoints + [extra]
 
 
-def generate_loop(
-    route_fn: RouteFn,
-    dem: ElevationSource,
+async def generate_loop(
+    client,
+    dem,
     request: LoopRequest,
+    costing_options: dict | None = None,
+    avoid_locations: list[tuple[float, float]] | None = None,
     progress: ProgressFn | None = None,
 ) -> GeneratedLoop:
     """Build the best closed loop satisfying `request`.
 
-    `route_fn(locations)` receives [(lat, lon), ...] with the origin first and
-    last and returns (coords, distance_km). `dem` provides waypoint selection
+    `client` performs the routing calls; `dem` provides waypoint selection
     heights and gain measurement. `progress`, when given, is called after
     every attempt with that attempt's GeneratedLoop.
     """
@@ -274,7 +267,11 @@ def generate_loop(
             extras.append(peak[0])
         for extra in extras:
             waypoints = insert_by_bearing(waypoints, request.origin, extra)
-        coords, distance_km = route_fn([request.origin, *waypoints, request.origin])
+        coords, distance_km = await client.route(
+            [request.origin, *waypoints, request.origin],
+            costing_options=costing_options,
+            avoid_locations=avoid_locations,
+        )
         profile = build_profile(dem, coords)
 
         distance_ok = abs(distance_km - request.target_km) <= request.target_km * request.tolerance
@@ -337,22 +334,3 @@ def generate_loop(
                 hilliness = max(0.0, hilliness - max(abs(step), HILLINESS_STEP))
 
     return best
-
-
-def build_route_payload(
-    locations: list[tuple[float, float]],
-    costing_options: dict | None = None,
-    avoid_locations: list[tuple[float, float]] | None = None,
-) -> dict:
-    """Assemble a Valhalla /route request payload."""
-    payload: dict = {
-        "locations": [{"lat": la, "lon": lo} for la, lo in locations],
-        "costing": "bicycle",
-    }
-    if costing_options:
-        payload["costing_options"] = {"bicycle": dict(costing_options)}
-    if avoid_locations:
-        payload["avoid_locations"] = [
-            {"lat": la, "lon": lo} for la, lo in avoid_locations
-        ]
-    return payload

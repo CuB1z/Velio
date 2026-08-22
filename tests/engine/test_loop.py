@@ -1,12 +1,13 @@
+import asyncio
 import math
 
 import pytest
 
+from app.clients.valhalla import build_route_payload
 from app.engine.elevation import cumulative_distances
 from app.engine.geo import destination_point, haversine_m
 from app.engine.loop import (
     LoopRequest,
-    build_route_payload,
     climb_anchors,
     find_peak,
     generate_loop,
@@ -32,13 +33,16 @@ class HillDem:
         return 900.0 * math.exp(-(dlat**2 + dlon**2) / (2 * 0.03**2))
 
 
-def _straight_route_fn(scale: float):
-    def route_fn(locations):
-        coords = list(locations)
-        dist_km = cumulative_distances(coords)[-1] / 1000.0 * scale
-        return coords, dist_km
+class StraightRouter:
+    """Fake client routing straight through the locations at a fixed scale."""
 
-    return route_fn
+    def __init__(self, scale: float):
+        self.scale = scale
+
+    async def route(self, locations, costing_options=None, avoid_locations=None):
+        coords = list(locations)
+        dist_km = cumulative_distances(coords)[-1] / 1000.0 * self.scale
+        return coords, dist_km
 
 
 def test_destination_point_known_bearing():
@@ -110,12 +114,13 @@ def test_generate_loop_routes_through_via_points():
     vias = ((40.30, -3.60), (40.55, -3.85))
     captured = []
 
-    def recording_route_fn(locations):
-        captured.append(list(locations))
-        return list(locations), 60.0
+    class RecordingRouter:
+        async def route(self, locations, costing_options=None, avoid_locations=None):
+            captured.append(list(locations))
+            return list(locations), 60.0
 
     request = LoopRequest(origin=origin, target_km=60.0, via_points=vias)
-    loop = generate_loop(recording_route_fn, ConstantDem(), request)
+    loop = asyncio.run(generate_loop(RecordingRouter(), ConstantDem(), request))
 
     assert not loop.infeasible
     first_call = captured[0]
@@ -129,12 +134,13 @@ def test_generate_loop_without_vias_keeps_plain_ring():
     origin = (40.4168, -3.7038)
     captured = []
 
-    def recording_route_fn(locations):
-        captured.append(list(locations))
-        return list(locations), 60.0
+    class RecordingRouter:
+        async def route(self, locations, costing_options=None, avoid_locations=None):
+            captured.append(list(locations))
+            return list(locations), 60.0
 
     request = LoopRequest(origin=origin, target_km=60.0)
-    generate_loop(recording_route_fn, ConstantDem(), request)
+    asyncio.run(generate_loop(RecordingRouter(), ConstantDem(), request))
 
     first_call = captured[0]
     assert len(first_call) == request.waypoint_count + 2  # ring plus origin twice
@@ -189,7 +195,7 @@ def test_generate_loop_converges_distance_only():
     request = LoopRequest(
         origin=(40.4168, -3.7038), target_km=60.0, max_iterations=10
     )
-    loop = generate_loop(_straight_route_fn(1.1), ConstantDem(), request)
+    loop = asyncio.run(generate_loop(StraightRouter(1.1), ConstantDem(), request))
     assert loop.distance_ok
     assert not loop.infeasible
     assert abs(loop.distance_km - 60.0) <= 60.0 * 0.05
@@ -199,30 +205,38 @@ def test_generate_loop_converges_distance_only():
 
 def test_generate_loop_scales_radius_up_and_down():
     origin = (40.4168, -3.7038)
-    too_long = generate_loop(
-        _straight_route_fn(1.5),
-        ConstantDem(),
-        LoopRequest(origin=origin, target_km=50.0),
+    too_long = asyncio.run(
+        generate_loop(
+            StraightRouter(1.5),
+            ConstantDem(),
+            LoopRequest(origin=origin, target_km=50.0),
+        )
     )
-    too_short = generate_loop(
-        _straight_route_fn(0.7),
-        ConstantDem(),
-        LoopRequest(origin=origin, target_km=50.0),
+    too_short = asyncio.run(
+        generate_loop(
+            StraightRouter(0.7),
+            ConstantDem(),
+            LoopRequest(origin=origin, target_km=50.0),
+        )
     )
     assert too_long.radius_m < too_short.radius_m
 
 
 def test_generate_loop_gain_target_pushes_hilliness():
     origin = (40.0, -3.0)
-    low = generate_loop(
-        _straight_route_fn(1.0),
-        HillDem(),
-        LoopRequest(origin=origin, target_km=50.0, target_gain_m=10.0),
+    low = asyncio.run(
+        generate_loop(
+            StraightRouter(1.0),
+            HillDem(),
+            LoopRequest(origin=origin, target_km=50.0, target_gain_m=10.0),
+        )
     )
-    high = generate_loop(
-        _straight_route_fn(1.0),
-        HillDem(),
-        LoopRequest(origin=origin, target_km=50.0, target_gain_m=10_000.0),
+    high = asyncio.run(
+        generate_loop(
+            StraightRouter(1.0),
+            HillDem(),
+            LoopRequest(origin=origin, target_km=50.0, target_gain_m=10_000.0),
+        )
     )
     assert high.hilliness > low.hilliness
     assert high.gain_m > low.gain_m
@@ -231,28 +245,35 @@ def test_generate_loop_gain_target_pushes_hilliness():
 
 def test_generate_loop_flags_infeasible_when_gain_unreachable():
     # ConstantDem is flat: no knob combination can ever reach 10 km of D+.
-    loop = generate_loop(
-        _straight_route_fn(1.0),
-        ConstantDem(),
-        LoopRequest(
-            origin=(40.0, -3.0),
-            target_km=50.0,
-            target_gain_m=10_000.0,
-            max_iterations=12,
-        ),
+    loop = asyncio.run(
+        generate_loop(
+            StraightRouter(1.0),
+            ConstantDem(),
+            LoopRequest(
+                origin=(40.0, -3.0),
+                target_km=50.0,
+                target_gain_m=10_000.0,
+                max_iterations=12,
+            ),
+        )
     )
     assert loop.infeasible
     assert not loop.gain_ok
 
 
 def test_generate_loop_returns_best_effort_when_impossible():
-    def never_converges(locations):
-        return list(locations), 75.0
+    class FixedRouter:
+        """Fake client that always reports the same length."""
 
-    loop = generate_loop(
-        never_converges,
-        ConstantDem(),
-        LoopRequest(origin=(40.0, -3.0), target_km=50.0, max_iterations=3),
+        async def route(self, locations, costing_options=None, avoid_locations=None):
+            return list(locations), 75.0
+
+    loop = asyncio.run(
+        generate_loop(
+            FixedRouter(),
+            ConstantDem(),
+            LoopRequest(origin=(40.0, -3.0), target_km=50.0, max_iterations=3),
+        )
     )
     assert not loop.distance_ok
     assert loop.coords[0] == (40.0, -3.0)
@@ -260,8 +281,10 @@ def test_generate_loop_returns_best_effort_when_impossible():
 
 def test_generate_loop_rejects_bad_target():
     with pytest.raises(ValueError):
-        generate_loop(
-            _straight_route_fn(1.0),
-            ConstantDem(),
-            LoopRequest(origin=(40.0, -3.0), target_km=0),
+        asyncio.run(
+            generate_loop(
+                StraightRouter(1.0),
+                ConstantDem(),
+                LoopRequest(origin=(40.0, -3.0), target_km=0),
+            )
         )

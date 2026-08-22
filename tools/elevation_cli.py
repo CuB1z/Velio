@@ -5,15 +5,15 @@ Usage (from the repo root):
 """
 
 import argparse
+import asyncio
 import math
 import sys
 from pathlib import Path
-from urllib.error import URLError
 
+from app.clients.valhalla import ValhallaClient, ValhallaError
 from app.engine.dem import DemSource
 from app.engine.elevation import build_profile
 from app.engine.models import ProfileSample
-from tools.valhalla import fetch_heights, fetch_route_shape
 
 
 def compare_heights(
@@ -34,6 +34,49 @@ def compare_heights(
     }
 
 
+async def _run(args) -> int:
+    waypoints = [
+        (args.coords[0], args.coords[1]),
+        (args.coords[2], args.coords[3]),
+    ]
+    client = ValhallaClient(args.base_url)
+    try:
+        print(f"Route: {waypoints[0]} -> {waypoints[1]}")
+        encoded = await client.route_shape(waypoints)
+
+        dem = DemSource(args.elevation_dir)
+        profile = build_profile(dem, encoded)
+        print(f"Encoded polyline length: {len(encoded)} chars")
+        print(
+            f"Distance: {profile.distance_km:.2f} km | "
+            f"Gain: {profile.gain_m:.0f} m | Loss: {profile.loss_m:.0f} m | "
+            f"Max up: {profile.max_uphill_grade_pct:.1f}% | "
+            f"Max down: {profile.max_downhill_grade_pct:.1f}%"
+        )
+
+        if not args.no_validate:
+            lats = [s.lat for s in profile.samples]
+            lons = [s.lon for s in profile.samples]
+            print(f"Validating {len(lats)} samples against {args.base_url}/height ...")
+            heights = await client.heights(lats, lons)
+            stats = compare_heights(profile.samples, heights)
+            if stats["count"] == 0:
+                print("No /height coverage to validate against.")
+            else:
+                print(
+                    f"Compared {stats['count']} points | "
+                    f"MAE: {stats['mae_m']:.2f} m | "
+                    f"RMSE: {stats['rmse_m']:.2f} m | "
+                    f"Max diff: {stats['max_diff_m']:.2f} m"
+                )
+    except ValhallaError as exc:
+        print(f"Cannot reach Valhalla at {args.base_url}: {exc}")
+        return 1
+    finally:
+        await client.aclose()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="tools.elevation_cli", description=__doc__)
     parser.add_argument(
@@ -43,46 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     default_dir = Path(__file__).resolve().parents[1] / "valhalla" / "elevation"
     parser.add_argument("--elevation-dir", type=Path, default=default_dir)
     parser.add_argument("--no-validate", action="store_true")
-    args = parser.parse_args(argv)
-
-    waypoints = [
-        (args.coords[0], args.coords[1]),
-        (args.coords[2], args.coords[3]),
-    ]
-
-    print(f"Route: {waypoints[0]} -> {waypoints[1]}")
-    try:
-        encoded = fetch_route_shape(args.base_url, waypoints)
-    except URLError as exc:
-        print(f"Cannot reach Valhalla at {args.base_url}: {exc.reason}")
-        return 1
-
-    dem = DemSource(args.elevation_dir)
-    profile = build_profile(dem, encoded)
-    print(f"Encoded polyline length: {len(encoded)} chars")
-    print(
-        f"Distance: {profile.distance_km:.2f} km | "
-        f"Gain: {profile.gain_m:.0f} m | Loss: {profile.loss_m:.0f} m | "
-        f"Max up: {profile.max_uphill_grade_pct:.1f}% | "
-        f"Max down: {profile.max_downhill_grade_pct:.1f}%"
-    )
-
-    if not args.no_validate:
-        lats = [s.lat for s in profile.samples]
-        lons = [s.lon for s in profile.samples]
-        print(f"Validating {len(lats)} samples against {args.base_url}/height ...")
-        heights = fetch_heights(args.base_url, lats, lons)
-        stats = compare_heights(profile.samples, heights)
-        if stats["count"] == 0:
-            print("No /height coverage to validate against.")
-        else:
-            print(
-                f"Compared {stats['count']} points | "
-                f"MAE: {stats['mae_m']:.2f} m | "
-                f"RMSE: {stats['rmse_m']:.2f} m | "
-                f"Max diff: {stats['max_diff_m']:.2f} m"
-            )
-    return 0
+    return asyncio.run(_run(parser.parse_args(argv)))
 
 
 if __name__ == "__main__":
