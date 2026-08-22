@@ -1,13 +1,9 @@
 """Loop generation use case bridging the HTTP layer and the engine."""
 
-from app.clients.valhalla import (
-    COSTING_PROFILES,
-    RouteError,
-    ValhallaClient,
-    ValhallaError,
-)
+from app.clients.valhalla import RouteError, ValhallaClient, ValhallaError
 from app.core.exceptions import ServiceUnavailableError
 from app.engine.analysis import Analysis, analyze_edges
+from app.engine.cycling_score import BALANCED_WEIGHTS, Weights
 from app.engine.dem import DemSource
 from app.engine.elevation import build_profile
 from app.engine.loop import (
@@ -18,6 +14,7 @@ from app.engine.loop import (
     generate_loop,
 )
 from app.engine.polyline import encode
+from app.engine.profiles import RIDING_PROFILES
 from app.schemas.loop import (
     CyclingScoreOut,
     LoopOut,
@@ -36,10 +33,13 @@ class LoopService:
 
     async def generate(self, data: LoopRequestIn) -> LoopOut:
         costing_options = self._costing_options(data)
+        weights = (
+            RIDING_PROFILES[data.profile].weights if data.profile else BALANCED_WEIGHTS
+        )
 
         # Each additional route bans the climbs used by the previous ones.
         avoided: list[tuple[float, float]] = []
-        collected: list[LoopOut] = []
+        collected: list[tuple[GeneratedLoop, Analysis]] = []
         fallback: tuple[GeneratedLoop, Analysis] | None = None
         max_attempts = max(data.routes * 3, 3)
         for attempt in range(max_attempts):
@@ -64,14 +64,18 @@ class LoopService:
                 ) from exc
 
             analysis = await self._analyze(
-                loop, data.distance_km, costing_options
+                loop,
+                data.distance_km,
+                data.gain_m,
+                costing_options,
+                weights,
             )
             if fallback is None:
                 fallback = (loop, analysis)  # best effort if nothing succeeds
             if loop.infeasible or not (loop.distance_ok and loop.gain_ok):
                 continue
             avoided.extend(climb_anchors(self.dem, loop.coords))
-            collected.append(self._finalize(loop, analysis, data.include_profile))
+            collected.append((loop, analysis))
 
         if not collected:
             if fallback is None:
@@ -79,15 +83,26 @@ class LoopService:
             loop, analysis = fallback
             return self._finalize(loop, analysis, data.include_profile)
 
-        primary = collected[0]
-        primary.alternatives = collected[1:] or None
+        # Rank by cycling score: the best loop is the primary response.
+        collected.sort(
+            key=lambda pair: pair[1].rating.total if pair[1].rating else -1.0,
+            reverse=True,
+        )
+        responses = [
+            self._finalize(loop, analysis, data.include_profile)
+            for loop, analysis in collected[: data.routes]
+        ]
+        primary = responses[0]
+        primary.alternatives = responses[1:] or None
         return primary
 
     async def _analyze(
         self,
         loop: GeneratedLoop,
-        target_km: float,
+        target_km: float | None,
+        target_gain_m: float | None,
         costing_options: dict | None,
+        weights: Weights,
     ) -> Analysis:
         """One pass over trace edges -> comfort, overlap and rating."""
         if loop.infeasible or not loop.coords:
@@ -99,7 +114,14 @@ class LoopService:
         except ValhallaError:
             # Quality metadata is optional; the loop stays valid without it.
             return Analysis.unavailable()
-        return analyze_edges(edges, distance_km=loop.distance_km, target_km=target_km)
+        return analyze_edges(
+            edges,
+            distance_km=loop.distance_km,
+            target_km=target_km,
+            gain_m=loop.gain_m,
+            target_gain_m=target_gain_m,
+            weights=weights,
+        )
 
     def _finalize(
         self,
@@ -117,10 +139,10 @@ class LoopService:
 
     @staticmethod
     def _costing_options(data: LoopRequestIn) -> dict | None:
-        """Named profile as base, explicit costing options on top."""
+        """Named riding profile as base, explicit costing options on top."""
         options: dict = {}
         if data.profile:
-            options.update(COSTING_PROFILES[data.profile])
+            options.update(RIDING_PROFILES[data.profile].costing)
         if data.costing:
             options.update(
                 {
@@ -175,6 +197,7 @@ class LoopService:
                 CyclingScoreOut(
                     distance=analysis.rating.distance,
                     safety=analysis.rating.safety,
+                    elevation=analysis.rating.elevation,
                     overlap_penalty=analysis.rating.overlap_penalty,
                     total=analysis.rating.total,
                 )
