@@ -155,8 +155,13 @@ curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json'
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}]}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.3.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.4.0"}
 open localhost:8000/docs
+
+# Export any route as GPX (DEM elevation included) or GeoJSON
+curl -s -X POST 'localhost:8000/api/v1/loops?format=gpx' \
+  -H 'Content-Type: application/json' \
+  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70}' -o loop.gpx
 ```
 
 Both endpoints return the geometry as an encoded polyline (`polyline`,

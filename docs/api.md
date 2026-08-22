@@ -34,7 +34,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.3.0"}
+{"status": "ok", "version": "0.4.0"}
 ```
 
 ---
@@ -58,11 +58,24 @@ Request:
   "gain_tolerance": 0.20,
   "waypoint_count": 10,
   "max_iterations": 8,
-  "profile": "safe"
+  "profile": "safe",
+  "routes": 2,
+  "costing": {"use_hills": 0.6},
+  "include_profile": true
 }
 ```
 
 Only `origin` and `distance_km` are required.
+
+- `profile`: named cycling profile mapped onto Valhalla costing options
+  (see table below).
+- `routes`: generate several distinct loops in one call; every extra loop
+  bans the climbs used by the previous ones and is returned in the
+  `alternatives` array of the primary loop.
+- `costing`: raw Valhalla bicycle overrides (`bicycle_type`, `use_roads`,
+  `use_hills`, `avoid_bad_surfaces`) applied on top of `profile`.
+- `include_profile`: attach the resampled DEM elevation profile as
+  `profile` (one point roughly every 10 m).
 
 Named cycling profiles map onto Valhalla bicycle costing options:
 
@@ -71,6 +84,25 @@ Named cycling profiles map onto Valhalla bicycle costing options:
 | `road` | Fast road riding: favours paved roads (`bicycle_type=Road`, `use_roads=1`) |
 | `safe` | Balanced riding: avoids bad surfaces, tames big roads |
 | `relaxed` | Easy spinning: keeps hills down |
+
+### Export formats
+
+Both `POST /api/v1/loops` and `POST /api/v1/routes` accept a query parameter
+`format=json|gpx|geojson` (default `json`):
+
+```bash
+curl -s -X POST 'localhost:8000/api/v1/routes?format=gpx' \
+  -H 'Content-Type: application/json' \
+  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}]}' \
+  -o route.gpx   # GPX 1.1 with DEM elevation per point
+
+curl -s -X POST 'localhost:8000/api/v1/loops?format=geojson' ... # FeatureCollection
+```
+
+- `gpx`: `application/gpx+xml`, one `<trk>` whose points carry DEM `<ele>`.
+- `geojson`: `application/geo+json`, a FeatureCollection whose properties
+  carry the route metrics (`distance_km`, `duration_min`,
+  `elevation_gain_m/loss_m`, `overlap_ratio`, `cycling_score`).
 
 ```bash
 curl -s -X POST localhost:8000/api/v1/loops \
@@ -102,7 +134,9 @@ Response:
     "safety": 6.8,
     "overlap_penalty": 0.0,
     "total": 8.1
-  }
+  },
+  "profile": [{"lat": 40.596, "lon": -3.6316, "distance_m": 0.0, "elevation_m": 733.2, "grade_pct": null}],
+  "alternatives": null
 }
 ```
 
@@ -122,6 +156,9 @@ Response:
   many lanes or truck traffic subtract), `overlap_penalty` subtracts up to 5
   points for repeated roads above a 5% ratio, and `total` combines them with
   weights 0.4/0.6.
+- `profile`: resampled DEM elevation points (only with `include_profile`).
+- `alternatives`: the extra loops from `routes > 1`, each avoiding the
+  climbs of the previous ones; `null` when only one loop was requested.
 
 ---
 
@@ -132,7 +169,7 @@ Point-to-point bicycle route through ordered waypoints (2 to 20).
 ```bash
 curl -s -X POST localhost:8000/api/v1/routes \
   -H 'Content-Type: application/json' \
-  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}]}'
+  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"include_profile":true}'
 ```
 
 Response:
@@ -143,12 +180,18 @@ Response:
   "gain_m": 1053.50,
   "loss_m": 988.20,
   "polyline": "u{~fFswjsC`Ay@aE...",
-  "score": {"comfort": 71.2, "paved_share": 0.83, "...": "..."}
+  "duration_min": 214.6,
+  "overlap_ratio": 0.0311,
+  "score": {"comfort": 71.2, "paved_share": 0.83, "...": "..."},
+  "cycling_score": {"distance": 10.0, "safety": 7.4, "overlap_penalty": 0.0, "total": 8.4},
+  "profile": [{"lat": 40.4168, "lon": -3.7038, "distance_m": 0.0, "elevation_m": 652.1, "grade_pct": null}]
 }
 ```
 
-Gain/loss are computed locally from Copernicus DEM tiles; `score` carries the
-same quality metrics as loops.
+Gain/loss come from local Copernicus DEM tiles. `score`, `overlap_ratio`,
+`cycling_score` and `profile` carry the same meaning as in loops;
+`include_profile` controls whether the resampled elevation points are
+attached.
 
 ---
 
