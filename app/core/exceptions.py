@@ -53,7 +53,7 @@ class RoutingError(AppError):
     ):
         super().__init__(
             message=message,
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             error_code="ROUTING_ERROR",
             details=details,
         )
@@ -75,7 +75,7 @@ async def validation_exception_handler(
 ) -> JSONResponse:
     logger.warning("Validation error", extra={"errors": exc.errors(), "path": str(request.url)})
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "error": "VALIDATION_ERROR",
             "message": "Invalid request data",
