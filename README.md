@@ -19,7 +19,11 @@ Working today:
   computed from the same DEM tiles — validated against `/height` with
   MAE 0.62 m on a 74 km mountain route
 
-Planned next: effort scoring for generated loops, route scoring, FastAPI
+- Route quality scoring (`app/engine/scoring.py`): comfort (surface-weighted,
+  0-100), climb load and surface breakdown per generated loop, from
+  `/trace_attributes` edge data
+
+Planned next: route scoring in the API responses, GPX export, FastAPI
 service. See [docs/data.md](docs/data.md) and the project spec for details.
 
 ## Architecture
@@ -71,7 +75,7 @@ curl -X POST localhost:8002/route -H 'Content-Type: application/json' \
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 
-# Unit tests
+# Tests (unit + end-to-end, E2E skip automatically when service is down)
 .venv/bin/python -m pytest tests/ -q
 
 # Profile + validation for a route (Madrid -> Navacerrada Port)
@@ -91,18 +95,23 @@ toward high ground (`hilliness`), the ring stretches toward hills
 requested distance/gain combination cannot be met from that origin, the
 generator says so instead of returning a bad route (exit code 2).
 
+Each generated loop is also scored via Valhalla's `/trace_attributes`:
+`comfort` (0-100, distance-weighted surface quality), paved share with the
+top surfaces, climb load (vertical-equivalent meters of positive grade) and
+max upward grade.
+
 ```bash
 # 60 km loop from Madrid city centre
 .venv/bin/python -m tools.loop_cli 40.4168 -3.7038 --distance-km 60
 
-# 70 km / 900 m D+ loop from Manzanares el Real
-.venv/bin/python -m tools.loop_cli 40.1736 -3.9667 --distance-km 70 --gain-m 900
+# 70 km / 900 m D+ loop from Algete
+.venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 70 --gain-m 900
 
 # Three distinct loops: each one bans the climbs used by the previous ones
-.venv/bin/python -m tools.loop_cli 40.1736 -3.9667 --distance-km 70 --routes 3
+.venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 70 --routes 3
 
 # Costing options pass through to Valhalla
-.venv/bin/python -m tools.loop_cli 40.1736 -3.9667 --distance-km 50 \
+.venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 50 \
     --bicycle-type Mountain --avoid-bad-surfaces 0 --use-hills 1
 
 # Options: --routes N --waypoints N --iterations N --tolerance F

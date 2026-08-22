@@ -23,6 +23,7 @@ import math
 from dataclasses import dataclass, replace
 from typing import Callable, Protocol
 
+from .client import RouteError
 from .elevation import build_profile
 from .geo import destination_point, haversine_m
 
@@ -77,10 +78,6 @@ class GeneratedLoop:
     distance_ok: bool
     gain_ok: bool
     infeasible: bool = False
-
-
-class RouteError(RuntimeError):
-    """Valhalla could not route through the requested waypoints."""
 
 
 def climb_anchors(

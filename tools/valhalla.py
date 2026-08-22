@@ -1,24 +1,7 @@
-"""Minimal Valhalla HTTP client shared by the development CLIs."""
+"""Valhalla helpers shared by the development CLIs, over the production client."""
 
-import json
-from urllib import request as url_request
-from urllib.error import HTTPError
-
-from app.engine.loop import RouteError, build_route_payload
-
-
-def post_json(url: str, payload: dict) -> dict:
-    req = url_request.Request(
-        url,
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with url_request.urlopen(req, timeout=120) as resp:
-            return json.load(resp)
-    except HTTPError as exc:
-        detail = exc.read().decode(errors="replace")[:200]
-        raise RouteError(f"HTTP {exc.code}: {detail}") from exc
+from app.engine.client import post_json
+from app.engine.loop import build_route_payload
 
 
 def fetch_route_shape(

@@ -14,12 +14,14 @@ Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla
 
 ```
 app/
-└── engine/              Elevation engine (Python package, production code)
+└── engine/              Routing & elevation engine (production code)
     ├── polyline.py      Encoded polyline encode/decode (1e6 precision)
     ├── dem.py           .hgt.gz tile reader with bilinear lookup + LRU cache
     ├── geo.py           Shared geodesic math (haversine, destination point)
     ├── elevation.py     Resampling, smoothing, gain/loss/grade metrics
     ├── loop.py          Circular route generator (library, no I/O)
+    ├── client.py        Minimal Valhalla HTTP client (+ error types)
+    ├── scoring.py       Route quality scoring from /trace_attributes
     └── models.py        ProfileSample / ElevationProfile dataclasses
 
 tools/                  Development CLIs (not part of the app)
@@ -73,7 +75,7 @@ docker compose up -d valhalla     # start the service
 ./scripts/smoke_test_height.sh
 curl http://localhost:8002/status
 
-# Elevation engine: unit tests + end-to-end validation against /height
+# Engine: unit tests + end-to-end tests (skip automatically when service is down)
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest tests/ -q
 .venv/bin/python -m tools.elevation_cli 40.4168 -3.7038 40.7850 -3.9600

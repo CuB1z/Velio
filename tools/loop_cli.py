@@ -9,17 +9,18 @@ import sys
 from pathlib import Path
 from urllib.error import URLError
 
+from app.engine.client import RouteError, ValhallaError, fetch_trace_attributes
 from app.engine.dem import DemSource
 from app.engine.loop import (
     GOLDEN_ANGLE_DEG,
     GeneratedLoop,
     LoopRequest,
-    RouteError,
     build_route_payload,
     climb_anchors,
     generate_loop,
 )
-from app.engine.polyline import decode
+from app.engine.polyline import decode, encode
+from app.engine.scoring import RouteScore, score_edges
 from tools.valhalla import post_json
 
 
@@ -45,6 +46,31 @@ def make_route_fn(
         return coords, distance_km
 
     return route_fn
+
+
+def _surface_breakdown(score: RouteScore) -> str:
+    items = sorted(score.surface_km.items(), key=lambda kv: -kv[1])
+    return ", ".join(
+        f"{km / score.total_km:.0%} {name or 'unknown'}" for name, km in items[:3]
+    )
+
+
+def _score_route(args, loop: GeneratedLoop, costing_options: dict) -> None:
+    """Fetch trace attributes for the loop and print its quality line."""
+    try:
+        edges = fetch_trace_attributes(
+            args.base_url, encode(loop.coords), costing_options
+        )
+        score = score_edges(edges)
+    except (RouteError, ValhallaError) as exc:
+        print(f"    quality: unavailable ({exc})")
+        return
+    print(
+        f"    quality: comfort {score.comfort:.0f}/100 | "
+        f"paved {score.paved_share:.0%} ({_surface_breakdown(score)}) | "
+        f"climb load {score.climb_load_m:.0f} m | "
+        f"max grade +{score.max_grade_pct:.1f}%"
+    )
 
 
 def _progress_printer():
@@ -145,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
             f"(h {loop.hilliness:.2f}, s {loop.stretch:.2f}, "
             f"{loop.iterations} iters, {len(anchors)} climb(s) banned)"
         )
+        _score_route(args, loop, costing_options)
 
     if not routes:
         print(
