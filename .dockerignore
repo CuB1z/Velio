@@ -1,0 +1,17 @@
+.git
+.gitignore
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+tests
+docs
+scripts
+downloads
+valhalla
+data
+*.md
+Dockerfile
+docker-compose.yaml
+.dockerignore

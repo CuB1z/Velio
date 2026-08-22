@@ -15,3 +15,22 @@ services:
       - ./valhalla:/data
 
     restart: unless-stopped
+
+  api:
+    build: .
+    container_name: cycling-router-api
+
+    environment:
+      VALHALLA_URL: http://valhalla-router:8002
+      VALHALLA_ELEVATION_DIR: /data/elevation
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./valhalla/elevation:/data/elevation:ro
+
+    depends_on:
+      - valhalla
+
+    restart: unless-stopped
