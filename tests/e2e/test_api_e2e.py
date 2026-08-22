@@ -28,3 +28,11 @@ def test_service_generates_scored_loop(base_url, elevation_dir):
     assert body["gain_m"] == pytest.approx(900.0, rel=0.20)
     assert body["score"] is not None
     assert 0.0 <= body["score"]["comfort"] <= 100.0
+
+    # Quality metadata from /trace_attributes.
+    assert body["duration_min"] > 60.0  # ~70 km cannot ride in under an hour
+    assert 0.0 <= body["overlap_ratio"] <= 1.0
+    rating = body["cycling_score"]
+    assert rating is not None
+    assert rating["distance"] >= 0.0
+    assert 0.0 < rating["total"] <= 10.0
