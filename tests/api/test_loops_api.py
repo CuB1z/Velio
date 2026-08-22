@@ -16,9 +16,11 @@ class FakeValhalla:
 
     def __init__(self, distance_km: float = 60.0):
         self.distance_km = distance_km
+        self.costing_calls: list[dict | None] = []
 
     async def route(self, locations, costing_options=None, avoid_locations=None):
-        return RouteResult(list(locations), self.distance_km, 0.0)
+        self.costing_calls.append(costing_options)
+        return RouteResult(list(locations), self.distance_km, 3600.0)
 
     async def trace_attributes(self, encoded_polyline, costing_options=None):
         return [
@@ -82,7 +84,7 @@ def test_create_loop_returns_scored_route():
     # Fake edges carry no way ids: overlap is 0 and safety falls back to
     # the neutral baseline (0.8 * 10).
     assert body["overlap_ratio"] == 0.0
-    assert body["duration_min"] == 0.0
+    assert body["duration_min"] == pytest.approx(60.0)
     rating = body["cycling_score"]
     assert rating["distance"] == pytest.approx(10.0)
     assert rating["safety"] == pytest.approx(8.0)
@@ -117,6 +119,110 @@ def test_unknown_profile_is_rejected():
 
     assert resp.status_code == 422
     assert resp.json()["error"] == "VALIDATION_ERROR"
+
+
+def test_out_of_range_costing_option_is_rejected():
+    client = make_client(FakeValhalla())
+    resp = client.post(
+        "/api/v1/loops", json={**LOOP_BODY, "costing": {"use_hills": 5.0}}
+    )
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 422
+
+
+def test_profile_and_raw_costing_are_merged():
+    fake = FakeValhalla(distance_km=50.0)
+    client = make_client(fake)
+    resp = client.post(
+        "/api/v1/loops",
+        json={
+            **LOOP_BODY,
+            "max_iterations": 4,
+            "profile": "road",
+            "costing": {"use_hills": 0.5},
+        },
+    )
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert fake.costing_calls[0] == {
+        "bicycle_type": "Road",
+        "use_roads": 1.0,
+        "avoid_bad_surfaces": 1.0,
+        "use_hills": 0.5,
+    }
+
+
+def test_extra_routes_return_alternatives():
+    fake = FakeValhalla(distance_km=50.0)
+    client = make_client(fake)
+    resp = client.post("/api/v1/loops", json={**LOOP_BODY, "routes": 2})
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["alternatives"] is not None
+    assert len(body["alternatives"]) == 1
+    # The alternatives carry the same shape as the primary loop.
+    assert body["alternatives"][0]["distance_km"] == pytest.approx(50.0)
+
+
+def test_include_profile_returns_resampled_points():
+    client = make_client(FakeValhalla(distance_km=50.0))
+    resp = client.post(
+        "/api/v1/loops",
+        json={**LOOP_BODY, "max_iterations": 4, "include_profile": True},
+    )
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    profile = resp.json()["profile"]
+    assert len(profile) > 2
+    point = profile[0]
+    assert set(point) == {
+        "lat",
+        "lon",
+        "distance_m",
+        "elevation_m",
+        "grade_pct",
+    }
+    assert point["elevation_m"] == pytest.approx(100.0)
+
+
+def test_profile_is_absent_by_default():
+    client = make_client(FakeValhalla(distance_km=50.0))
+    resp = client.post("/api/v1/loops", json={**LOOP_BODY, "max_iterations": 4})
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.json()["profile"] is None
+
+
+def test_gpx_format_returns_xml_document():
+    client = make_client(FakeValhalla(distance_km=50.0))
+    resp = client.post("/api/v1/loops?format=gpx", json={**LOOP_BODY})
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/gpx+xml")
+    assert resp.text.startswith("<?xml")
+    assert "<trk>" in resp.text
+    assert "<ele>" in resp.text
+
+
+def test_geojson_format_returns_feature_collection():
+    client = make_client(FakeValhalla(distance_km=50.0))
+    resp = client.post("/api/v1/loops?format=geojson", json={**LOOP_BODY})
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/geo+json")
+    doc = resp.json()
+    assert doc["type"] == "FeatureCollection"
+    props = doc["features"][0]["properties"]
+    assert props["distance_km"] == pytest.approx(50.0)
+    assert props["duration_min"] > 0.0
 
 
 def test_valhalla_outage_maps_to_503():

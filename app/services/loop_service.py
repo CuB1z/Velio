@@ -1,25 +1,30 @@
 """Loop generation use case bridging the HTTP layer and the engine."""
 
-
-from typing import NamedTuple
-
-from app.clients.valhalla import COSTING_PROFILES, ValhallaClient, ValhallaError
+from app.clients.valhalla import (
+    COSTING_PROFILES,
+    RouteError,
+    ValhallaClient,
+    ValhallaError,
+)
 from app.core.exceptions import ServiceUnavailableError
-from app.engine.cycling_score import CyclingScore, cycling_score
+from app.engine.analysis import Analysis, analyze_edges
 from app.engine.dem import DemSource
-from app.engine.loop import GeneratedLoop, LoopRequest, generate_loop
-from app.engine.overlap import overlap_ratio
+from app.engine.elevation import build_profile
+from app.engine.loop import (
+    GOLDEN_ANGLE_DEG,
+    GeneratedLoop,
+    LoopRequest,
+    climb_anchors,
+    generate_loop,
+)
 from app.engine.polyline import encode
-from app.engine.scoring import RouteScore, score_edges
-from app.schemas.loop import CyclingScoreOut, LoopOut, LoopRequestIn, Quality
-
-
-class Analysis(NamedTuple):
-    """Quality metrics derived from one /trace_attributes pass."""
-
-    comfort: RouteScore | None
-    overlap: float | None
-    rating: CyclingScore | None
+from app.schemas.loop import (
+    CyclingScoreOut,
+    LoopOut,
+    LoopRequestIn,
+    ProfilePointOut,
+    Quality,
+)
 
 
 class LoopService:
@@ -30,21 +35,53 @@ class LoopService:
         self.dem = dem
 
     async def generate(self, data: LoopRequestIn) -> LoopOut:
-        costing_options = (
-            dict(COSTING_PROFILES[data.profile]) if data.profile else None
-        )
-        try:
-            loop = await generate_loop(
-                self.valhalla,
-                self.dem,
-                self._to_engine_request(data),
-                costing_options=costing_options,
-            )
-        except ValhallaError as exc:
-            raise ServiceUnavailableError(f"Valhalla unavailable: {exc}") from exc
+        costing_options = self._costing_options(data)
 
-        analysis = await self._analyze(loop, data.distance_km, costing_options)
-        return self._to_response(loop, analysis)
+        # Each additional route bans the climbs used by the previous ones.
+        avoided: list[tuple[float, float]] = []
+        collected: list[LoopOut] = []
+        fallback: tuple[GeneratedLoop, Analysis] | None = None
+        max_attempts = max(data.routes * 3, 3)
+        for attempt in range(max_attempts):
+            if len(collected) >= data.routes:
+                break
+            request = self._to_engine_request(
+                data, seed_offset=GOLDEN_ANGLE_DEG * attempt
+            )
+            try:
+                loop = await generate_loop(
+                    self.valhalla,
+                    self.dem,
+                    request,
+                    costing_options=costing_options,
+                    avoid_locations=avoided or None,
+                )
+            except RouteError:
+                continue  # this seed cannot be routed; try the next one
+            except ValhallaError as exc:
+                raise ServiceUnavailableError(
+                    f"Valhalla unavailable: {exc}"
+                ) from exc
+
+            analysis = await self._analyze(
+                loop, data.distance_km, costing_options
+            )
+            if fallback is None:
+                fallback = (loop, analysis)  # best effort if nothing succeeds
+            if loop.infeasible or not (loop.distance_ok and loop.gain_ok):
+                continue
+            avoided.extend(climb_anchors(self.dem, loop.coords))
+            collected.append(self._finalize(loop, analysis, data.include_profile))
+
+        if not collected:
+            if fallback is None:
+                raise ServiceUnavailableError("Valhalla produced no usable loop")
+            loop, analysis = fallback
+            return self._finalize(loop, analysis, data.include_profile)
+
+        primary = collected[0]
+        primary.alternatives = collected[1:] or None
+        return primary
 
     async def _analyze(
         self,
@@ -54,29 +91,50 @@ class LoopService:
     ) -> Analysis:
         """One pass over trace edges -> comfort, overlap and rating."""
         if loop.infeasible or not loop.coords:
-            return Analysis(None, None, None)
+            return Analysis.unavailable()
         try:
             edges = await self.valhalla.trace_attributes(
                 encode(loop.coords), costing_options
             )
         except ValhallaError:
             # Quality metadata is optional; the loop stays valid without it.
-            return Analysis(None, None, None)
+            return Analysis.unavailable()
+        return analyze_edges(edges, distance_km=loop.distance_km, target_km=target_km)
 
-        ratio = overlap_ratio(edges)
-        return Analysis(
-            comfort=score_edges(edges),
-            overlap=ratio,
-            rating=cycling_score(
-                edges,
-                distance_km=loop.distance_km,
-                target_km=target_km,
-                overlap_ratio=ratio,
-            ),
-        )
+    def _finalize(
+        self,
+        loop: GeneratedLoop,
+        analysis: Analysis,
+        include_profile: bool,
+    ) -> LoopOut:
+        response = self._to_response(loop, analysis)
+        if include_profile and loop.coords:
+            profile = build_profile(self.dem, loop.coords)
+            response.profile = [
+                ProfilePointOut(**sample.to_dict()) for sample in profile.samples
+            ]
+        return response
 
     @staticmethod
-    def _to_engine_request(data: LoopRequestIn) -> LoopRequest:
+    def _costing_options(data: LoopRequestIn) -> dict | None:
+        """Named profile as base, explicit costing options on top."""
+        options: dict = {}
+        if data.profile:
+            options.update(COSTING_PROFILES[data.profile])
+        if data.costing:
+            options.update(
+                {
+                    key: value
+                    for key, value in data.costing.model_dump().items()
+                    if value is not None
+                }
+            )
+        return options or None
+
+    @staticmethod
+    def _to_engine_request(
+        data: LoopRequestIn, seed_offset: float = 0.0
+    ) -> LoopRequest:
         return LoopRequest(
             origin=(data.origin.lat, data.origin.lon),
             target_km=data.distance_km,
@@ -86,6 +144,7 @@ class LoopService:
             waypoint_count=data.waypoint_count,
             max_iterations=data.max_iterations,
             via_points=tuple((v.lat, v.lon) for v in data.via),
+            seed_offset_deg=seed_offset,
         )
 
     @staticmethod
