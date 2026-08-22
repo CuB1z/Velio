@@ -137,7 +137,8 @@ the Valhalla bicycle costing.
 
 ## HTTP service
 
-The loop generator also runs as a FastAPI service:
+The engine also runs as a FastAPI service exposing circular loops and
+point-to-point routes. Full endpoint reference in [docs/api.md](docs/api.md).
 
 ```bash
 # Start (reads VALHALLA_URL / VALHALLA_ELEVATION_DIR, defaults to localhost:8002
@@ -148,17 +149,24 @@ uvicorn app.main:app --reload --port 8000
 curl -s -X POST localhost:8000/api/v1/loops -H 'Content-Type: application/json' \
   -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900}' | jq
 
+# Point-to-point route: Madrid -> Navacerrada, scored and with DEM gain/loss
+curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json' \
+  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}]}' | jq
+
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.1.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.2.0"}
 open localhost:8000/docs
 ```
 
-`POST /api/v1/loops` returns the loop geometry (`coords`, lat/lon pairs), the
-achieved `distance_km` / `gain_m` / `loss_m`, a `feasible` flag (best-effort
-route with `feasible: false` when the targets cannot be met from that origin)
-and an optional `score` block with comfort, paved share, surface breakdown,
-climb load and max grade. When Valhalla is unreachable the service answers
-`503` with the standard error body.
+Both endpoints return the geometry as an encoded polyline (`polyline`,
+[polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)
+precision — decodable by any map library), distance and DEM-based
+`gain_m` / `loss_m`, plus an optional `score` block with comfort,
+paved share, surface breakdown, climb load and max grade. Loops add a
+`feasible` flag (best-effort route with `feasible: false` when the targets
+cannot be met from that origin). Errors share one JSON body:
+`{"error", "message", "details"}` — validation/routing failures answer `422`,
+an unreachable Valhalla answers `503`.
 
 ## Scripts
 
