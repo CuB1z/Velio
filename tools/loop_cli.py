@@ -111,6 +111,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--routes", type=int, default=1,
                         help="generate several distinct loops, each avoiding "
                              "the climbs used by the previous ones")
+    parser.add_argument("--via", nargs=2, type=float, metavar=("LAT", "LON"),
+                        action="append", default=None,
+                        help="point every generated loop must pass through; "
+                             "repeat for several waypoints")
     parser.add_argument("--waypoints", type=int, default=10)
     parser.add_argument("--iterations", type=int, default=8)
     parser.add_argument("--tolerance", type=float, default=0.05)
@@ -161,6 +165,9 @@ def main(argv: list[str] | None = None) -> int:
             waypoint_count=args.waypoints,
             max_iterations=args.iterations,
             seed_offset_deg=GOLDEN_ANGLE_DEG * attempt,
+            via_points=(
+                tuple((v[0], v[1]) for v in args.via) if args.via else ()
+            ),
         )
         try:
             loop = generate_loop(

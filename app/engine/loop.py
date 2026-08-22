@@ -60,6 +60,7 @@ class LoopRequest:
     max_iterations: int = 8
     seed_offset_deg: float = 0.0
     candidates_per_sector: int = 4
+    via_points: tuple[tuple[float, float], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -268,8 +269,11 @@ def generate_loop(
         waypoints = select_waypoints(
             request, radius_m, hilliness, stretch, dem
         )
+        extras = list(request.via_points)
         if use_summit and peak is not None:
-            waypoints = insert_by_bearing(waypoints, request.origin, peak[0])
+            extras.append(peak[0])
+        for extra in extras:
+            waypoints = insert_by_bearing(waypoints, request.origin, extra)
         coords, distance_km = route_fn([request.origin, *waypoints, request.origin])
         profile = build_profile(dem, coords)
 

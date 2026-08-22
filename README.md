@@ -25,7 +25,7 @@ Working today:
 - GPX export with DEM elevation data (`--gpx PREFIX`): the generated tracks
   carry per-point elevation computed by the engine
 
-Planned next: via waypoints in loops, FastAPI service. See [docs/data.md](docs/data.md)
+Planned next: FastAPI service. See [docs/data.md](docs/data.md)
 and the project spec for details.
 
 ## Architecture
@@ -97,6 +97,10 @@ toward high ground (`hilliness`), the ring stretches toward hills
 requested distance/gain combination cannot be met from that origin, the
 generator says so instead of returning a bad route (exit code 2).
 
+Loops can also be forced through intermediate points (`--via LAT LON`,
+repeatable); the generator folds them into the ring and rescales around
+them.
+
 Each generated loop is also scored via Valhalla's `/trace_attributes`:
 `comfort` (0-100, distance-weighted surface quality), paved share with the
 top surfaces, climb load (vertical-equivalent meters of positive grade) and
@@ -119,8 +123,12 @@ max upward grade.
 # Export to GPX with elevation data (loop.gpx / loop_0.gpx, loop_1.gpx, ...)
 .venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 70 --gpx loop
 
+# Force the loop through intermediate points (repeatable)
+.venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 130 \
+    --via 40.7917 -3.9635
+
 # Options: --routes N --waypoints N --iterations N --tolerance F
-#          --gain-tolerance F --verbose --base-url URL
+#          --gain-tolerance F --verbose --gpx PREFIX --base-url URL
 ```
 
 Effort scoring from surface/grade data is a next step; `use_hills`,

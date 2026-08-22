@@ -105,6 +105,41 @@ def test_find_peak_locates_the_hill():
     assert elevation > 700.0
 
 
+def test_generate_loop_routes_through_via_points():
+    origin = (40.4168, -3.7038)
+    vias = ((40.30, -3.60), (40.55, -3.85))
+    captured = []
+
+    def recording_route_fn(locations):
+        captured.append(list(locations))
+        return list(locations), 60.0
+
+    request = LoopRequest(origin=origin, target_km=60.0, via_points=vias)
+    loop = generate_loop(recording_route_fn, ConstantDem(), request)
+
+    assert not loop.infeasible
+    first_call = captured[0]
+    assert first_call[0] == origin
+    assert first_call[-1] == origin
+    for via in vias:
+        assert via in first_call
+
+
+def test_generate_loop_without_vias_keeps_plain_ring():
+    origin = (40.4168, -3.7038)
+    captured = []
+
+    def recording_route_fn(locations):
+        captured.append(list(locations))
+        return list(locations), 60.0
+
+    request = LoopRequest(origin=origin, target_km=60.0)
+    generate_loop(recording_route_fn, ConstantDem(), request)
+
+    first_call = captured[0]
+    assert len(first_call) == request.waypoint_count + 2  # ring plus origin twice
+
+
 def test_insert_by_bearing_keeps_cyclic_order():
     origin = (40.0, -3.0)
     waypoints = ring_waypoints(*origin, 8000.0, count=4)  # N, E, S, W
