@@ -150,12 +150,12 @@ uvicorn app.main:app --reload --port 8000
 curl -s -X POST localhost:8000/api/v1/loops -H 'Content-Type: application/json' \
   -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900,"profile":"safe"}' | jq
 
-# Point-to-point route: Madrid -> Navacerrada, scored and with DEM gain/loss
+# Point-to-point route with up to two scored alternatives
 curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json' \
-  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}]}' | jq
+  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.4.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.5.0"}
 open localhost:8000/docs
 
 # Export any route as GPX (DEM elevation included) or GeoJSON

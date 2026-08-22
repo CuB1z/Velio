@@ -34,7 +34,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.4.0"}
+{"status": "ok", "version": "0.5.0"}
 ```
 
 ---
@@ -169,7 +169,7 @@ Point-to-point bicycle route through ordered waypoints (2 to 20).
 ```bash
 curl -s -X POST localhost:8000/api/v1/routes \
   -H 'Content-Type: application/json' \
-  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"include_profile":true}'
+  -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"include_profile":true,"alternatives":2}'
 ```
 
 Response:
@@ -184,14 +184,17 @@ Response:
   "overlap_ratio": 0.0311,
   "score": {"comfort": 71.2, "paved_share": 0.83, "...": "..."},
   "cycling_score": {"distance": 10.0, "safety": 7.4, "overlap_penalty": 0.0, "total": 8.4},
-  "profile": [{"lat": 40.4168, "lon": -3.7038, "distance_m": 0.0, "elevation_m": 652.1, "grade_pct": null}]
+  "profile": [{"lat": 40.4168, "lon": -3.7038, "distance_m": 0.0, "elevation_m": 652.1, "grade_pct": null}],
+  "alternatives": [{"distance_km": 78.90, "...": "..."}]
 }
 ```
 
 Gain/loss come from local Copernicus DEM tiles. `score`, `overlap_ratio`,
 `cycling_score` and `profile` carry the same meaning as in loops;
 `include_profile` controls whether the resampled elevation points are
-attached.
+attached. `alternatives` asks Valhalla for up to two extra paths between the
+waypoints; each one is scored like the primary route. Servers that do not
+generate alternatives answer with `alternatives: null`.
 
 ---
 
