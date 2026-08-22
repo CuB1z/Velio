@@ -11,6 +11,8 @@ from urllib.error import URLError
 
 from app.engine.client import RouteError, ValhallaError, fetch_trace_attributes
 from app.engine.dem import DemSource
+from app.engine.elevation import build_profile
+from app.engine.gpx import build_gpx
 from app.engine.loop import (
     GOLDEN_ANGLE_DEG,
     GeneratedLoop,
@@ -55,7 +57,7 @@ def _surface_breakdown(score: RouteScore) -> str:
     )
 
 
-def _score_route(args, loop: GeneratedLoop, costing_options: dict) -> None:
+def _score_route(args, loop: GeneratedLoop, costing_options: dict) -> RouteScore | None:
     """Fetch trace attributes for the loop and print its quality line."""
     try:
         edges = fetch_trace_attributes(
@@ -64,13 +66,29 @@ def _score_route(args, loop: GeneratedLoop, costing_options: dict) -> None:
         score = score_edges(edges)
     except (RouteError, ValhallaError) as exc:
         print(f"    quality: unavailable ({exc})")
-        return
+        return None
     print(
         f"    quality: comfort {score.comfort:.0f}/100 | "
         f"paved {score.paved_share:.0%} ({_surface_breakdown(score)}) | "
         f"climb load {score.climb_load_m:.0f} m | "
         f"max grade +{score.max_grade_pct:.1f}%"
     )
+    return score
+
+
+def _write_gpx(args, dem, loop: GeneratedLoop, index: int, score: RouteScore | None):
+    profile = build_profile(dem, loop.coords)
+    suffix = "" if args.routes == 1 else f"_{index}"
+    path = Path(f"{args.gpx}{suffix}.gpx")
+    description = (
+        f"{loop.distance_km:.1f} km, {loop.gain_m:.0f} m D+"
+        + (f", comfort {score.comfort:.0f}/100" if score else "")
+    )
+    path.write_text(
+        build_gpx(profile.samples, name=path.stem, description=description),
+        encoding="utf-8",
+    )
+    print(f"    gpx: written to {path}")
 
 
 def _progress_printer():
@@ -98,6 +116,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--tolerance", type=float, default=0.05)
     parser.add_argument("--gain-tolerance", type=float, default=0.20)
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument("--gpx", metavar="PREFIX", default=None,
+                        help="write each route to PREFIX.gpx (PREFIX_N.gpx "
+                             "with --routes N > 1) with DEM elevation data")
     parser.add_argument("--use-hills", type=float, default=None)
     parser.add_argument("--avoid-bad-surfaces", type=float, default=None)
     parser.add_argument("--bicycle-type", default=None)
@@ -171,7 +192,9 @@ def main(argv: list[str] | None = None) -> int:
             f"(h {loop.hilliness:.2f}, s {loop.stretch:.2f}, "
             f"{loop.iterations} iters, {len(anchors)} climb(s) banned)"
         )
-        _score_route(args, loop, costing_options)
+        score = _score_route(args, loop, costing_options)
+        if args.gpx:
+            _write_gpx(args, dem, loop, len(routes) - 1, score)
 
     if not routes:
         print(

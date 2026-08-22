@@ -22,9 +22,11 @@ Working today:
 - Route quality scoring (`app/engine/scoring.py`): comfort (surface-weighted,
   0-100), climb load and surface breakdown per generated loop, from
   `/trace_attributes` edge data
+- GPX export with DEM elevation data (`--gpx PREFIX`): the generated tracks
+  carry per-point elevation computed by the engine
 
-Planned next: route scoring in the API responses, GPX export, FastAPI
-service. See [docs/data.md](docs/data.md) and the project spec for details.
+Planned next: via waypoints in loops, FastAPI service. See [docs/data.md](docs/data.md)
+and the project spec for details.
 
 ## Architecture
 
@@ -113,6 +115,9 @@ max upward grade.
 # Costing options pass through to Valhalla
 .venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 50 \
     --bicycle-type Mountain --avoid-bad-surfaces 0 --use-hills 1
+
+# Export to GPX with elevation data (loop.gpx / loop_0.gpx, loop_1.gpx, ...)
+.venv/bin/python -m tools.loop_cli 40.5964 -3.6318 --distance-km 70 --gpx loop
 
 # Options: --routes N --waypoints N --iterations N --tolerance F
 #          --gain-tolerance F --verbose --base-url URL

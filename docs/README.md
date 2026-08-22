@@ -22,6 +22,7 @@ app/
     ├── loop.py          Circular route generator (library, no I/O)
     ├── client.py        Minimal Valhalla HTTP client (+ error types)
     ├── scoring.py       Route quality scoring from /trace_attributes
+    ├── gpx.py           GPX 1.1 export with DEM elevation data
     └── models.py        ProfileSample / ElevationProfile dataclasses
 
 tools/                  Development CLIs (not part of the app)
