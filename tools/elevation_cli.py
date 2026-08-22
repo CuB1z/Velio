@@ -1,58 +1,19 @@
 """CLI: elevation profile for a route, validated against Valhalla's /height.
 
 Usage (from the repo root):
-    python -m app.engine LAT1 LON1 LAT2 LON2 [options]
+    python -m tools.elevation_cli LAT1 LON1 LAT2 LON2 [options]
 """
 
 import argparse
-import json
 import math
 import sys
 from pathlib import Path
-from urllib import request as url_request
 from urllib.error import URLError
 
-from .dem import DemSource
-from .elevation import build_profile
-from .models import ProfileSample
-
-
-def _post_json(url: str, payload: dict) -> dict:
-    req = url_request.Request(
-        url,
-        data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"},
-    )
-    with url_request.urlopen(req, timeout=60) as resp:
-        return json.load(resp)
-
-
-def fetch_route_shape(base_url: str, coords: list[tuple[float, float]]) -> str:
-    """Request a bicycle route and return its encoded polyline."""
-    data = _post_json(
-        f"{base_url}/route",
-        {
-            "locations": [{"lat": la, "lon": lo} for la, lo in coords],
-            "costing": "bicycle",
-        },
-    )
-    return data["trip"]["legs"][0]["shape"]
-
-
-def fetch_heights(
-    base_url: str, lats: list[float], lons: list[float], chunk_size: int = 500
-) -> list[float | None]:
-    """Query /height for every sample point, in chunks."""
-    heights: list[float | None] = []
-    for start in range(0, len(lats), chunk_size):
-        chunk_lats = lats[start : start + chunk_size]
-        chunk_lons = lons[start : start + chunk_size]
-        data = _post_json(
-            f"{base_url}/height",
-            {"shape": [{"lat": la, "lon": lo} for la, lo in zip(chunk_lats, chunk_lons)]},
-        )
-        heights.extend(data["height"])
-    return heights
+from app.engine.dem import DemSource
+from app.engine.elevation import build_profile
+from app.engine.models import ProfileSample
+from tools.valhalla import fetch_heights, fetch_route_shape
 
 
 def compare_heights(
@@ -74,12 +35,12 @@ def compare_heights(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="app.engine", description=__doc__)
+    parser = argparse.ArgumentParser(prog="tools.elevation_cli", description=__doc__)
     parser.add_argument(
         "coords", nargs=4, type=float, metavar=("LAT1", "LON1", "LAT2", "LON2")
     )
     parser.add_argument("--base-url", default="http://localhost:8002")
-    default_dir = Path(__file__).resolve().parents[2] / "valhalla" / "elevation"
+    default_dir = Path(__file__).resolve().parents[1] / "valhalla" / "elevation"
     parser.add_argument("--elevation-dir", type=Path, default=default_dir)
     parser.add_argument("--no-validate", action="store_true")
     args = parser.parse_args(argv)

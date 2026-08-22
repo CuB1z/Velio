@@ -173,17 +173,16 @@ Gain / Loss / Grade           app/engine/elevation.py
 - `polyline.py` — encode/decode Valhalla encoded polylines (1e6 precision).
 - `dem.py` — `.hgt.gz` reader (int16 big-endian, NW origin, `-32768` voids)
   with bilinear interpolation and an LRU tile cache.
+- `geo.py` — shared geodesic math (haversine distance, destination point).
 - `elevation.py` — haversine cumulative distance, resampling (~10 m),
   NaN gap filling, median + moving-average smoothing, gain/loss and grades
   measured over a ~30 m baseline.
 - `models.py` — `ProfileSample` / `ElevationProfile` dataclasses.
-- `__main__.py` — CLI: routes two points through Valhalla, builds the profile
-  and validates every sample against `/height`.
 
-Usage from the repo root (service must be running):
+Development CLI (from the repo root, service must be running):
 
 ```bash
-python -m app.engine 40.4168 -3.7038 40.7850 -3.9600
+python -m tools.elevation_cli 40.4168 -3.7038 40.7850 -3.9600
 ```
 
 Validated on Madrid -> Puerto de Navacerrada (73.8 km, 7386 samples):

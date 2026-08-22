@@ -19,9 +19,8 @@ Working today:
   computed from the same DEM tiles — validated against `/height` with
   MAE 0.62 m on a 74 km mountain route
 
-Planned next: circular route generator (origin + target distance/gain/effort),
-route scoring, FastAPI service. See [docs/data.md](docs/data.md) and the
-project spec for details.
+Planned next: effort scoring for generated loops, route scoring, FastAPI
+service. See [docs/data.md](docs/data.md) and the project spec for details.
 
 ## Architecture
 
@@ -76,8 +75,43 @@ python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest tests/ -q
 
 # Profile + validation for a route (Madrid -> Navacerrada Port)
-.venv/bin/python -m app.engine 40.4168 -3.7038 40.7850 -3.9600
+.venv/bin/python -m tools.elevation_cli 40.4168 -3.7038 40.7850 -3.9600
 ```
+
+## Loop generator (prototype)
+
+Generates circular routes from an origin: waypoints are placed on a ring
+around the origin, routed through, measured and re-scaled until the requested
+distance (default tolerance 5%) and elevation gain (20%) are met. Typically
+converges in 2-3 iterations per route, about a second each.
+
+Terrain awareness: when a gain target is set, waypoint selection is biased
+toward high ground (`hilliness`), the ring stretches toward hills
+(`stretch`) and, if needed, an explicit summit waypoint is inserted. If the
+requested distance/gain combination cannot be met from that origin, the
+generator says so instead of returning a bad route (exit code 2).
+
+```bash
+# 60 km loop from Madrid city centre
+.venv/bin/python -m tools.loop_cli 40.4168 -3.7038 --distance-km 60
+
+# 70 km / 900 m D+ loop from Manzanares el Real
+.venv/bin/python -m tools.loop_cli 40.1736 -3.9667 --distance-km 70 --gain-m 900
+
+# Three distinct loops: each one bans the climbs used by the previous ones
+.venv/bin/python -m tools.loop_cli 40.1736 -3.9667 --distance-km 70 --routes 3
+
+# Costing options pass through to Valhalla
+.venv/bin/python -m tools.loop_cli 40.1736 -3.9667 --distance-km 50 \
+    --bicycle-type Mountain --avoid-bad-surfaces 0 --use-hills 1
+
+# Options: --routes N --waypoints N --iterations N --tolerance F
+#          --gain-tolerance F --verbose --base-url URL
+```
+
+Effort scoring from surface/grade data is a next step; `use_hills`,
+`avoid_bad_surfaces` and `bicycle_type` already shape route selection through
+the Valhalla bicycle costing.
 
 ## Scripts
 

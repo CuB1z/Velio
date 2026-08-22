@@ -14,12 +14,18 @@ Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla
 
 ```
 app/
-└── engine/              Elevation engine (Python package)
+└── engine/              Elevation engine (Python package, production code)
     ├── polyline.py      Encoded polyline encode/decode (1e6 precision)
     ├── dem.py           .hgt.gz tile reader with bilinear lookup + LRU cache
+    ├── geo.py           Shared geodesic math (haversine, destination point)
     ├── elevation.py     Resampling, smoothing, gain/loss/grade metrics
-    ├── models.py        ProfileSample / ElevationProfile dataclasses
-    └── __main__.py      CLI: profile for a route, validated against /height
+    ├── loop.py          Circular route generator (library, no I/O)
+    └── models.py        ProfileSample / ElevationProfile dataclasses
+
+tools/                  Development CLIs (not part of the app)
+├── valhalla.py         Minimal Valhalla HTTP client shared by the CLIs
+├── elevation_cli.py    Profile for a route, validated against /height
+└── loop_cli.py         Circular route generator CLI
 
 tests/
 └── engine/              Unit tests (synthetic tiles, known vectors)
@@ -70,5 +76,5 @@ curl http://localhost:8002/status
 # Elevation engine: unit tests + end-to-end validation against /height
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest tests/ -q
-.venv/bin/python -m app.engine 40.4168 -3.7038 40.7850 -3.9600
+.venv/bin/python -m tools.elevation_cli 40.4168 -3.7038 40.7850 -3.9600
 ```
