@@ -20,21 +20,35 @@ class RouteService:
     async def generate(self, data: RouteRequestIn) -> RouteOut:
         locations = [(w.lat, w.lon) for w in data.waypoints]
         try:
-            result = await self.valhalla.route(locations)
+            if data.alternatives:
+                results = await self.valhalla.route_alternatives(
+                    locations, count=data.alternatives
+                )
+            else:
+                results = [await self.valhalla.route(locations)]
         except RouteError as exc:
             raise RoutingError(f"No route found: {exc}") from exc
         except ValhallaError as exc:
             raise ServiceUnavailableError(f"Valhalla unavailable: {exc}") from exc
 
-        coords = result.coords
-        profile = build_profile(self.dem, coords)
-        analysis = await self._analyze(coords, result.distance_km)
+        routes = [
+            await self._finalize(result, data.include_profile) for result in results
+        ]
+        primary = routes[0]
+        primary.alternatives = routes[1:] or None
+        return primary
+
+    async def _finalize(
+        self, result, include_profile: bool
+    ) -> RouteOut:
+        profile = build_profile(self.dem, result.coords)
+        analysis = await self._analyze(result.coords, result.distance_km)
 
         response = RouteOut(
             distance_km=result.distance_km,
             gain_m=profile.gain_m,
             loss_m=profile.loss_m,
-            polyline=encode(coords),
+            polyline=encode(result.coords),
             duration_min=result.duration_s / 60.0,
             score=(
                 Quality(
@@ -61,7 +75,7 @@ class RouteService:
                 else None
             ),
         )
-        if data.include_profile:
+        if include_profile:
             response.profile = [
                 ProfilePointOut(**sample.to_dict()) for sample in profile.samples
             ]

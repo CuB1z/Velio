@@ -14,7 +14,19 @@ class FakeValhalla:
     """Fake client returning plausible routing and scoring payloads."""
 
     async def route(self, locations, costing_options=None, avoid_locations=None):
-        return RouteResult(list(locations), 74.0, 0.0)
+        return RouteResult(list(locations), 74.0, 3600.0)
+
+    async def route_alternatives(
+        self, locations, count=1, costing_options=None, avoid_locations=None
+    ):
+        results = [await self.route(locations)]
+        for i in range(count):
+            results.append(
+                RouteResult(
+                    list(reversed(locations)), 74.0 + (i + 1) * 3.0, 3900.0
+                )
+            )
+        return results
 
     async def trace_attributes(self, encoded_polyline, costing_options=None):
         return [
@@ -75,6 +87,31 @@ def test_create_route_returns_scored_path():
     assert points[0][0] == pytest.approx(40.4168, abs=1e-3)
     assert points[0][1] == pytest.approx(-3.7038, abs=1e-3)
     assert body["score"]["comfort"] > 0
+    assert body["alternatives"] is None
+    assert body["duration_min"] == pytest.approx(60.0)
+
+
+def test_alternatives_return_scored_variants():
+    client = make_client(FakeValhalla())
+    resp = client.post("/api/v1/routes", json={**ROUTE_BODY, "alternatives": 2})
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    alts = body["alternatives"]
+    assert len(alts) == 2
+    assert alts[0]["distance_km"] > body["distance_km"]
+    for alt in alts:
+        assert alt["polyline"]
+        assert alt["cycling_score"]["total"] >= 0.0
+
+
+def test_too_many_alternatives_is_rejected():
+    resp = make_client(FakeValhalla()).post(
+        "/api/v1/routes", json={**ROUTE_BODY, "alternatives": 5}
+    )
+    app.dependency_overrides.clear()
+    assert resp.status_code == 422
 
 
 def test_single_waypoint_is_rejected():

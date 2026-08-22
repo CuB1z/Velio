@@ -53,3 +53,25 @@ def test_route_gpx_export_carries_dem_elevation(base_url, elevation_dir):
     assert resp.headers["content-type"].startswith("application/gpx+xml")
     assert "<trk>" in resp.text
     assert "<ele>" in resp.text
+
+
+def test_route_alternatives_request_is_valid(base_url, elevation_dir):
+    """Servers may ignore `alternatives`; the contract must hold either way."""
+    with TestClient(app) as client:
+        resp = client.post(
+            "/api/v1/routes",
+            json={
+                "waypoints": [
+                    {"lat": MADRID[0], "lon": MADRID[1]},
+                    {"lat": NAVACERRADA[0], "lon": NAVACERRADA[1]},
+                ],
+                "alternatives": 2,
+            },
+        )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["distance_km"] > 0
+    for alt in body["alternatives"] or []:
+        assert alt["polyline"]
+        assert alt["distance_km"] > 0
