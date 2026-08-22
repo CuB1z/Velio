@@ -1,8 +1,9 @@
 """Single-pass quality analysis over traced route edges."""
 
-from typing import Any, NamedTuple
+from typing import NamedTuple
 
-from .cycling_score import CyclingScore, cycling_score
+from .cycling_score import BALANCED_WEIGHTS, CyclingScore, Weights, cycling_score
+from .edges import RouteEdge
 from .overlap import overlap_ratio
 from .scoring import RouteScore, score_edges
 
@@ -21,15 +22,18 @@ class Analysis(NamedTuple):
 
 
 def analyze_edges(
-    edges: list[dict[str, Any]],
+    edges: list[RouteEdge],
     *,
     distance_km: float,
     target_km: float | None = None,
+    gain_m: float | None = None,
+    target_gain_m: float | None = None,
+    weights: Weights = BALANCED_WEIGHTS,
 ) -> Analysis:
     """Comfort, overlap ratio and cycling rating for one edge list.
 
-    `target_km` drives the distance factor of the rating; point-to-point
-    routes pass their own length so it defaults to a perfect match.
+    `target_km`/`target_gain_m` drive the matching factors of the rating;
+    point-to-point routes without targets default to a perfect match.
     """
     ratio = overlap_ratio(edges)
     return Analysis(
@@ -38,7 +42,10 @@ def analyze_edges(
         rating=cycling_score(
             edges,
             distance_km=distance_km,
-            target_km=target_km if target_km is not None else distance_km,
+            gain_m=gain_m,
+            target_km=target_km,
+            target_gain_m=target_gain_m,
             overlap_ratio=ratio,
+            weights=weights,
         ),
     )

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_dem_source, get_valhalla_client
 from app.clients.valhalla import RouteResult, ValhallaError
+from app.engine.edges import RouteEdge
 from app.core.config import settings
 from app.engine.dem import DemSource
 from app.engine.polyline import decode
@@ -23,7 +24,7 @@ class FakeValhalla:
         return RouteResult(list(locations), self.distance_km, 3600.0)
 
     async def trace_attributes(self, encoded_polyline, costing_options=None):
-        return [
+        raw = [
             {
                 "length": 1.0,
                 "surface": "paved_smooth",
@@ -31,6 +32,7 @@ class FakeValhalla:
                 "max_upward_grade": 5.0,
             }
         ]
+        return [RouteEdge.from_trace(edge) for edge in raw]
 
 
 class UnreachableValhalla(FakeValhalla):
@@ -139,7 +141,7 @@ def test_profile_and_raw_costing_are_merged():
         json={
             **LOOP_BODY,
             "max_iterations": 4,
-            "profile": "road",
+            "profile": "fast",
             "costing": {"use_hills": 0.5},
         },
     )
@@ -149,7 +151,6 @@ def test_profile_and_raw_costing_are_merged():
     assert fake.costing_calls[0] == {
         "bicycle_type": "Road",
         "use_roads": 1.0,
-        "avoid_bad_surfaces": 1.0,
         "use_hills": 0.5,
     }
 

@@ -4,6 +4,7 @@ from typing import NamedTuple
 
 import httpx
 
+from app.engine.edges import RouteEdge
 from app.engine.polyline import decode
 
 # Attributes every deployment is expected to provide.
@@ -22,25 +23,25 @@ BASE_TRACE_ATTRIBUTES = [
 # case calls degrade to the base set for the rest of the client's lifetime.
 EXTRA_TRACE_ATTRIBUTES = [
     "way_id",
+    "id",
+    "speed",
+    "density",
     "cycle_lane",
     "bicycle_network",
     "lane_count",
+    "sidewalk",
+    "shoulder",
     "truck_route",
+    "bridge",
+    "tunnel",
+    "roundabout",
+    "traffic_signal",
+    "toll",
+    "traversability",
 ]
 
 DEFAULT_BASE_URL = "http://localhost:8002"
 DEFAULT_TIMEOUT_S = 120.0
-
-# Named bicycle profiles applied on top of the raw costing options.
-COSTING_PROFILES = {
-    "road": {"bicycle_type": "Road", "use_roads": 1.0, "avoid_bad_surfaces": 1.0},
-    "safe": {"bicycle_type": "Hybrid", "use_roads": 0.4, "avoid_bad_surfaces": 1.0},
-    "relaxed": {
-        "bicycle_type": "Hybrid",
-        "use_hills": 0.2,
-        "avoid_bad_surfaces": 1.0,
-    },
-}
 
 
 class ValhallaError(RuntimeError):
@@ -210,7 +211,11 @@ class ValhallaClient:
                 raise
             self._extra_attrs_ok = False
             return await self.trace_attributes(encoded_polyline, costing_options)
-        return [e for e in data["edges"] if e.get("length") is not None]
+        return [
+            RouteEdge.from_trace(edge)
+            for edge in data["edges"]
+            if edge.get("length") is not None
+        ]
 
     async def heights(
         self, lats: list[float], lons: list[float], chunk_size: int = 500

@@ -16,6 +16,8 @@ gracefully instead of crashing.
 
 from dataclasses import dataclass
 
+from .edges import RouteEdge
+
 SURFACE_QUALITY = {
     "paved_smooth": 1.00,
     "paved": 0.90,
@@ -56,8 +58,8 @@ class RouteScore:
         return self.paved_km / self.total_km
 
 
-def score_edges(edges: list[dict]) -> RouteScore:
-    """Score trace_attributes edges (lengths in km, grades in %)."""
+def score_edges(edges: list[RouteEdge]) -> RouteScore:
+    """Score traced edges (lengths in km, grades in %)."""
     if not edges:
         raise ValueError("cannot score an empty edge list")
 
@@ -67,18 +69,15 @@ def score_edges(edges: list[dict]) -> RouteScore:
     max_grade_pct = -180.0
 
     for edge in edges:
-        km = float(edge["length"])
-        surface = str(edge.get("surface", ""))
-        quality = SURFACE_QUALITY.get(surface, DEFAULT_SURFACE_QUALITY)
-        surface_km[surface] = surface_km.get(surface, 0.0) + km
+        km = float(edge.length_km)
+        quality = SURFACE_QUALITY.get(edge.surface, DEFAULT_SURFACE_QUALITY)
+        surface_km[edge.surface] = surface_km.get(edge.surface, 0.0) + km
         weighted_quality += km * quality
 
-        grade = edge.get("weighted_grade")
-        if grade is not None:
-            climb_load_m += km * max(0.0, float(grade)) * 10.0
-            upward = edge.get("max_upward_grade")
-            if upward is not None:
-                max_grade_pct = max(max_grade_pct, float(upward))
+        if edge.weighted_grade_pct is not None:
+            climb_load_m += km * max(0.0, float(edge.weighted_grade_pct)) * 10.0
+            if edge.max_upward_grade_pct is not None:
+                max_grade_pct = max(max_grade_pct, float(edge.max_upward_grade_pct))
 
     total_km = sum(surface_km.values())
     if total_km == 0.0:

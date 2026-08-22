@@ -30,7 +30,11 @@ def test_elevations_extend_points_when_given():
 
 def test_properties_carry_metrics():
     score = CyclingScore(
-        distance=10.0, safety=7.5, overlap_penalty=0.0, total=8.5
+        distance=10.0,
+        safety=7.5,
+        elevation=10.0,
+        overlap_penalty=0.0,
+        total=8.5,
     )
     doc = build_geojson(
         [MADRID, SEGOVIA],

@@ -8,10 +8,11 @@ from app.engine.cycling_score import (
     overlap_penalty,
     safety_score,
 )
+from app.engine.edges import RouteEdge
 
 
-def edge(km: float, **attrs) -> dict:
-    return {"length": km, **attrs}
+def edge(km: float, **attrs) -> RouteEdge:
+    return RouteEdge.from_trace({"length": km, **attrs})
 
 
 class TestDistanceScore:

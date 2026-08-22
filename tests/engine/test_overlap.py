@@ -1,13 +1,11 @@
 """Unit tests for repeated-way detection on trace edges."""
 
+from app.engine.edges import RouteEdge
 from app.engine.overlap import overlap_ratio
 
 
-def edge(km: float, way: str | None = None) -> dict:
-    e = {"length": km}
-    if way is not None:
-        e["way_id"] = way
-    return e
+def edge(km: float, way: str | None = None) -> RouteEdge:
+    return RouteEdge.from_trace({"length": km, "way_id": way})
 
 
 def test_consecutive_segments_of_one_way_are_not_repetition():

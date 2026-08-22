@@ -1,13 +1,14 @@
 import pytest
 
+from app.engine.edges import RouteEdge
 from app.engine.scoring import RouteScore, score_edges
 
 
 def edge(km, surface, grade, max_up=None):
-    e = {"length": km, "surface": surface, "weighted_grade": grade}
+    raw = {"length": km, "surface": surface, "weighted_grade": grade}
     if max_up is not None:
-        e["max_upward_grade"] = max_up
-    return e
+        raw["max_upward_grade"] = max_up
+    return RouteEdge.from_trace(raw)
 
 
 def test_comfort_is_distance_weighted_surface_quality():
@@ -43,8 +44,8 @@ def test_unknown_surface_falls_back_to_default_factor():
 
 def test_missing_optional_attributes_are_tolerated():
     score = score_edges([
-        {"length": 5.0, "surface": "gravel"},
-        {"length": 5.0},
+        RouteEdge.from_trace({"length": 5.0, "surface": "gravel"}),
+        RouteEdge.from_trace({"length": 5.0}),
     ])
     # gravel 0.45 + default 0.50
     assert score.comfort == pytest.approx(47.5)
@@ -69,4 +70,4 @@ def test_empty_edges_raise():
 
 def test_zero_length_edges_raise():
     with pytest.raises(ValueError):
-        score_edges([{"length": 0.0}])
+        score_edges([RouteEdge.from_trace({"length": 0.0})])

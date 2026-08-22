@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_dem_source, get_valhalla_client
 from app.clients.valhalla import RouteError, RouteResult, ValhallaError
+from app.engine.edges import RouteEdge
 from app.engine.dem import DemSource
 from app.engine.polyline import decode
 from app.main import app
@@ -29,7 +30,7 @@ class FakeValhalla:
         return results
 
     async def trace_attributes(self, encoded_polyline, costing_options=None):
-        return [
+        raw = [
             {
                 "length": 1.0,
                 "surface": "paved",
@@ -37,6 +38,7 @@ class FakeValhalla:
                 "max_upward_grade": 8.0,
             }
         ]
+        return [RouteEdge.from_trace(edge) for edge in raw]
 
 
 class UnroutableValhalla(FakeValhalla):
