@@ -125,6 +125,62 @@ class EmailVerificationError(AppError):
         )
 
 
+# ---------------------------------------------------------------------------
+# Domain errors — plain exceptions; routes and services map them to HTTP.
+
+
+class InvalidCredentialsError(Exception):
+    """Wrong email or password."""
+
+
+class UnknownProviderError(Exception):
+    """The provider name is not one of the configured ones."""
+
+
+class NoLocalPasswordError(Exception):
+    """The account has no local credential (OAuth-only) to change."""
+
+
+class EmailAlreadyRegisteredError(Exception):
+    """The email is taken by another account."""
+
+
+class InvalidRefreshTokenError(Exception):
+    """Unknown, revoked or expired refresh token."""
+
+
+class WeakPasswordError(ValueError):
+    """The password does not satisfy the policy."""
+
+
+# ---------------------------------------------------------------------------
+# Provider errors — raised by outbound clients, translated upstream.
+
+
+class OAuthRejectedError(Exception):
+    """The provider refused the round trip (bad code, expired, denied)."""
+
+
+class OAuthUnavailableError(Exception):
+    """The provider could not be reached or answered a server error."""
+
+
+class ProviderNotConfiguredError(Exception):
+    """Client id/secret for this provider are absent from settings."""
+
+
+class MailDeliveryError(Exception):
+    """Brevo refused the message or contact, or could not be reached."""
+
+
+class ValhallaError(RuntimeError):
+    """Valhalla could not be reached or answered unexpectedly."""
+
+
+class RouteError(ValhallaError):
+    """Valhalla answered but no route exists through the points."""
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     logger.warning(
         f"{exc.error_code}: {exc.message}",
@@ -136,6 +192,17 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     )
 
 
+def _jsonable_validation_errors(exc: RequestValidationError) -> list[dict[str, Any]]:
+    """Flatten pydantic errors, stringifying exception objects in ctx."""
+    flat = []
+    for err in exc.errors():
+        ctx = err.get("ctx")
+        if isinstance(ctx, dict):
+            err = {**err, "ctx": {k: str(v) for k, v in ctx.items()}}
+        flat.append(err)
+    return flat
+
+
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
@@ -145,7 +212,7 @@ async def validation_exception_handler(
         content={
             "error": "VALIDATION_ERROR",
             "message": "Invalid request data",
-            "details": exc.errors(),
+            "details": _jsonable_validation_errors(exc),
         },
     )
 

@@ -4,6 +4,7 @@ from typing import NamedTuple
 
 import httpx
 
+from app.core.exceptions import RouteError, ValhallaError
 from app.engine.edges import RouteEdge
 from app.engine.polyline import decode
 
@@ -42,14 +43,6 @@ EXTRA_TRACE_ATTRIBUTES = [
 
 DEFAULT_BASE_URL = "http://localhost:8002"
 DEFAULT_TIMEOUT_S = 120.0
-
-
-class ValhallaError(RuntimeError):
-    """A Valhalla HTTP call failed."""
-
-
-class RouteError(ValhallaError):
-    """Valhalla could not route through the requested waypoints."""
 
 
 class RouteResult(NamedTuple):

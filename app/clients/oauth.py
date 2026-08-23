@@ -10,19 +10,12 @@ from dataclasses import dataclass
 import httpx
 
 from app.core.config import settings
+from app.core.exceptions import (
+    OAuthRejectedError,
+    OAuthUnavailableError,
+    ProviderNotConfiguredError,
+)
 from app.core.security import create_state_token
-
-
-class OAuthRejectedError(Exception):
-    """The provider refused the round trip (bad code, expired, denied)."""
-
-
-class OAuthUnavailableError(Exception):
-    """The provider could not be reached or answered a server error."""
-
-
-class ProviderNotConfiguredError(Exception):
-    """Client id/secret for this provider are absent from settings."""
 
 
 @dataclass(frozen=True)
