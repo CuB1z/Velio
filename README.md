@@ -155,7 +155,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json'
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.10.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.11.0"}
 open localhost:8000/docs
 
 # Export any route as GPX (DEM elevation included) or GeoJSON
@@ -170,6 +170,10 @@ docker compose up -d --build api
 
 Configuration comes from the environment (or a `.env`): `VALHALLA_URL`,
 `VALHALLA_ELEVATION_DIR`, `VALHALLA_TIMEOUT_S`, `CORS_ORIGINS`, `DEBUG`.
+Accounts are verified by email before they can log in: registration sends a
+six digit code (Brevo transactional API when `BREVO_API_KEY` is set, the
+application log otherwise) and `POST /api/v1/auth/verify` activates the
+account — see [docs/api.md](docs/api.md) for the full flow.
 Logging is structured one-dict-per-line on stdout (`app/core/logging.py`):
 service events carry their fields, uvicorn's own records flow through the
 same pipeline, and every HTTP request emits one access event with

@@ -16,11 +16,15 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/api/health` | — | Service status and version |
-| POST | `/api/v1/auth/register` | — | Create a local account, returns session |
-| POST | `/api/v1/auth/login` | — | Email/password login |
+| POST | `/api/v1/auth/register` | — | Create a pending local account; a verification code is emailed |
+| POST | `/api/v1/auth/verify` | — | Confirm the emailed six digit code and activate the account |
+| POST | `/api/v1/auth/resend-verification` | — | Re-issue and resend the verification code (always 202) |
+| POST | `/api/v1/auth/login` | — | Email/password login (verified accounts only) |
 | POST | `/api/v1/auth/refresh` | — | Rotate refresh token into a new pair |
 | POST | `/api/v1/auth/logout` | — | Revoke a refresh token |
 | GET | `/api/v1/auth/me` | Bearer | Current user profile |
+| GET | `/api/v1/auth/{provider}/authorize` | — | Start the OAuth round trip (307) |
+| GET | `/api/v1/auth/{provider}/callback` | — | Finish the OAuth round trip, returns session |
 | POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets |
 | POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints |
 | POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline |
@@ -38,6 +42,9 @@ Everything is environment-driven (or `.env`):
 | `DB_DRIVER` | `postgresql+asyncpg` | SQLAlchemy driver (`sqlite+aiosqlite` for quick local runs) |
 | `DB_HOST/PORT/USER/PASSWORD/NAME` | localhost / cycling / cycling_router | Database connection |
 | `JWT_SECRET_KEY` | dev value | **Change in production**; signs access and refresh tokens |
+| `BREVO_API_KEY` | — | Brevo transactional API key; without it mail is only logged to console |
+| `MAIL_FROM` | `no-reply@localhost` | Sender address; the display name comes from the sender verified in Brevo |
+| `OTP_EXPIRE_MINUTES` / `OTP_MAX_ATTEMPTS` | `15` / `5` | Verification code lifetime and wrong-guess budget |
 | `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
 
 Migrations run through Alembic (`start.sh` executes
@@ -50,30 +57,68 @@ Migrations run through Alembic (`start.sh` executes
 Business endpoints require `Authorization: Bearer <access_token>`.
 Tokens are JWTs signed by the service: short-lived access tokens plus
 rotating refresh tokens persisted server-side (revocable). OAuth providers
-(e.g. Google) reuse the same session issuance later.
+(e.g. Google) reuse the same session issuance.
+
+Every account carries a lifecycle `status`: `pending` (local accounts not
+yet verified), `active` (fully usable) or `suspended` (administratively
+blocked). Only active accounts open or refresh sessions; pending logins
+answer `403 EMAIL_NOT_VERIFIED` and suspended ones `403 ACCOUNT_SUSPENDED`.
 
 ```bash
-# Register (or login with an existing account)
+# Register: creates a pending account and emails a six digit code.
 curl -s -X POST localhost:8000/api/v1/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"email":"rider@example.com","password":"secret123"}' | jq
 
-# Use the session
-curl -s -X POST localhost:8000/api/v1/loops \
-  -H "Authorization: Bearer $ACCESS_TOKEN" ...
+# Confirm the code from the email to activate the account.
+curl -s -X POST localhost:8000/api/v1/auth/verify \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"rider@example.com","code":"123456"}' | jq
+
+# Login only works once the account is active.
+curl -s -X POST localhost:8000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"rider@example.com","password":"secret123"}' | jq
 ```
 
-Session shape (`register`, `login` and `refresh` all answer it):
+Registration and verification answer the user object alone (no tokens):
+
+```json
+{"id": 1, "email": "rider@example.com", "full_name": "", "status": "pending"}
+```
+
+Session shape (`login` and `refresh` answer it):
 
 ```json
 {
-  "user": {"id": 1, "email": "rider@example.com", "full_name": "", "is_active": true},
+  "user": {"id": 1, "email": "rider@example.com", "full_name": "", "status": "active"},
   "tokens": {"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
 }
 ```
 
 Refresh rotates: the used refresh token is revoked and a fresh pair is
 returned. Logging out revokes the given refresh token.
+
+### Email verification (OTP)
+
+Local accounts stay `pending` until their emailed six digit code is
+confirmed. Codes are single use, expire after `OTP_EXPIRE_MINUTES`
+(default 15) and tolerate up to `OTP_MAX_ATTEMPTS` wrong guesses before
+being spent. Requesting a new code invalidates the previous one.
+
+| Endpoint | Behaviour |
+|---|---|
+| `POST /auth/verify {email, code}` | Marks the account active (idempotent once active). Wrong, expired or exhausted codes answer `400 VERIFY_ERROR`. |
+| `POST /auth/resend-verification {email}` | Always `202`; a new code is only generated for existing pending accounts, so the endpoint cannot probe registered emails. |
+
+Email goes through Brevo's transactional API when `BREVO_API_KEY` is set;
+otherwise messages are written to the application log (`mail` logger),
+which is what local development and tests rely on.
+
+> **Planned — password reset:** the same code infrastructure (table with a
+> `purpose` column) will back `POST /auth/forgot-password` (202, emails a
+> reset code) and `POST /auth/reset-password` (verifies the code, sets the
+> new password hash and revokes every refresh token of the account).
 
 ### OAuth (Google)
 
@@ -118,7 +163,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.10.0"}
+{"status": "ok", "version": "0.11.0"}
 ```
 
 ---
