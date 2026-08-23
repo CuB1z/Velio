@@ -10,15 +10,10 @@ from dataclasses import dataclass
 import httpx
 
 from app.core.config import settings
+from app.core.exceptions import MailDeliveryError
 from app.core.logging import get_logger
 
 logger = get_logger("mail")
-
-BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
-
-
-class MailDeliveryError(Exception):
-    """The provider refused the message or could not be reached."""
 
 
 @dataclass(frozen=True)
@@ -37,6 +32,13 @@ class MailSender:
     async def send(self, message: Message) -> None:
         raise NotImplementedError
 
+    async def add_contact(self, email: str, full_name: str = "") -> None:
+        """Best-effort CRM hook: file the rider into the mailing list.
+
+        Adapters without a list configured may ignore it.
+        """
+        raise NotImplementedError
+
 
 class ConsoleMailSender(MailSender):
     """Logs the full message; the dev/test stand-in for a real provider."""
@@ -46,12 +48,24 @@ class ConsoleMailSender(MailSender):
             f"mail to={message.to} subject={message.subject!r}:\n{message.text}"
         )
 
+    async def add_contact(self, email: str, full_name: str = "") -> None:
+        logger.info(f"contact add {email} name={full_name!r}")
+
 
 class BrevoMailSender(MailSender):
-    """Sends transactional email through Brevo's v3 SMTP API."""
+    """Sends transactional email and files contacts through Brevo's v3 API."""
 
-    def __init__(self, api_key: str, client: httpx.AsyncClient | None = None):
+    BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
+    BREVO_CONTACTS_URL = "https://api.brevo.com/v3/contacts"
+
+    def __init__(
+        self,
+        api_key: str,
+        list_id: int | None = None,
+        client: httpx.AsyncClient | None = None,
+    ):
         self._api_key = api_key
+        self._list_id = list_id
         self._client = client
 
     async def send(self, message: Message) -> None:
@@ -67,12 +81,12 @@ class BrevoMailSender(MailSender):
         try:
             if self._client is not None:
                 response = await self._client.post(
-                    BREVO_SEND_URL, json=payload, headers=headers
+                    self.BREVO_SEND_URL, json=payload, headers=headers
                 )
             else:
                 async with httpx.AsyncClient(timeout=10.0) as client:
                     response = await client.post(
-                        BREVO_SEND_URL, json=payload, headers=headers
+                        self.BREVO_SEND_URL, json=payload, headers=headers
                     )
         except httpx.HTTPError as exc:
             raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
@@ -82,11 +96,45 @@ class BrevoMailSender(MailSender):
                 f"brevo rejected the message ({response.status_code})"
             )
 
+    async def add_contact(self, email: str, full_name: str = "") -> None:
+        """Upsert the rider into the configured Brevo contacts list."""
+        if not self._list_id:
+            logger.warning(
+                f"no BREVO_LIST_ID configured; skipping contact sync for {email}"
+            )
+            return
+        payload = {
+            "email": email,
+            "listIds": [self._list_id],
+            "updateEnabled": True,
+        }
+        try:
+            if self._client is not None:
+                response = await self._client.post(
+                    self.BREVO_CONTACTS_URL,
+                    json=payload,
+                    headers={"api-key": self._api_key},
+                )
+            else:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    response = await client.post(
+                        self.BREVO_CONTACTS_URL,
+                        json=payload,
+                        headers={"api-key": self._api_key},
+                    )
+        except httpx.HTTPError as exc:
+            raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
+
+        if response.status_code >= 400:
+            raise MailDeliveryError(
+                f"brevo rejected the contact ({response.status_code})"
+            )
+
 
 def build_mail_sender() -> MailSender:
     """Pick the adapter from settings: Brevo when a key is present."""
     if settings.brevo_api_key:
-        return BrevoMailSender(settings.brevo_api_key)
+        return BrevoMailSender(settings.brevo_api_key, settings.brevo_list_id)
     return ConsoleMailSender()
 
 

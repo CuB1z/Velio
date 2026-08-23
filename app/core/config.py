@@ -73,6 +73,7 @@ class Settings(BaseSettings):
     )
 
     brevo_api_key: str | None = Field(default=None, alias="BREVO_API_KEY")
+    brevo_list_id: int | None = Field(default=None, alias="BREVO_LIST_ID")
     mail_from: str = Field(default="no-reply@localhost", alias="MAIL_FROM")
 
     otp_expire_minutes: int = Field(default=15, alias="OTP_EXPIRE_MINUTES")
