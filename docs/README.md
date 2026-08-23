@@ -1,11 +1,12 @@
 # Cycling Router — Documentation
 
-Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla/valhalla) and OpenStreetMap data, with an external elevation pipeline.
+Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla/valhalla) and OpenStreetMap data, with an external elevation pipeline and a FastAPI service on top.
 
 ## Contents
 
 | Document | Description |
 |---|---|
+| [api.md](api.md) | HTTP API reference: auth (OTP verification, OAuth), loops, routes, analysis, configuration |
 | [data.md](data.md) | Data lifecycle: what exists, where it lives, build-time vs runtime requirements, production deployment checklist |
 | [valhalla.md](valhalla.md) | Valhalla setup: build pipeline, Docker runtime, HTTP API endpoints used by the project |
 | [elevation.md](elevation.md) | Elevation: DEM data source, elevation tiles, `/height` endpoint, grade attributes, and the `app/engine` elevation pipeline |
@@ -14,28 +15,53 @@ Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla
 
 ```
 app/
-└── engine/              Routing & elevation engine (production code)
-    ├── polyline.py      Encoded polyline encode/decode (1e6 precision)
-    ├── dem.py           .hgt.gz tile reader with bilinear lookup + LRU cache
-    ├── geo.py           Shared geodesic math (haversine, destination point)
-    ├── elevation.py     Resampling, smoothing, gain/loss/grade metrics
-    ├── loop.py          Circular route generator (library, no I/O)
-    ├── client.py        Minimal Valhalla HTTP client (+ error types)
-    ├── scoring.py       Route quality scoring from /trace_attributes
-    ├── gpx.py           GPX 1.1 export with DEM elevation data
-    └── models.py        ProfileSample / ElevationProfile dataclasses
+├── main.py               FastAPI application factory point
+├── api/                  HTTP layer: routers per resource, dependencies
+│   ├── auth/             Register/login/verify/resend/change-password + OAuth round trips
+│   ├── health/           Service status endpoint
+│   └── v1/               Business endpoints: loops, routes (+ exports helper)
+├── clients/              Outbound adapters behind small ports
+│   ├── mail.py           MailSender port: console (dev/test) + Brevo transactional API
+│   ├── oauth.py          OAuth provider registry and gateway (Google)
+│   └── valhalla.py       Valhalla HTTP client shared by the app and the CLIs
+├── core/                 App infrastructure
+│   ├── config.py         Pydantic settings (env-driven)
+│   ├── database.py       Async engine, sessions, Alembic runner
+│   ├── exceptions.py     Every exception: generic AppError family, domain, providers
+│   ├── lifespan.py       Startup/shutdown of shared resources
+│   ├── logging.py        Structured one-line-per-event logging
+│   ├── middleware.py     Request id + access log middleware
+│   └── security.py       JWT issue/verify, OTP generation, password policy + hashing
+├── engine/               Routing & elevation engine (library, no I/O beyond tiles)
+│   ├── polyline.py       Encoded polyline encode/decode (1e6 precision)
+│   ├── dem.py            .hgt.gz tile reader with bilinear lookup + LRU cache
+│   ├── geo.py            Shared geodesic math (haversine, destination point)
+│   ├── elevation.py      Resampling, smoothing, gain/loss/grade metrics
+│   ├── loop.py           Circular route generator
+│   ├── edges.py          Per-edge attribute extraction from /trace_attributes
+│   ├── scoring.py        Route quality scoring from edge data
+│   ├── gpx.py            GPX 1.1 export with DEM elevation data
+│   └── models.py         ProfileSample / ElevationProfile dataclasses
+├── models/               SQLAlchemy ORM models (users, identities, tokens, codes)
+├── repositories/         Persistence per aggregate (users, refresh tokens, codes)
+├── schemas/              Pydantic request/response schemas per resource
+└── services/             Use cases binding repositories and clients
 
-tools/                  Development CLIs (not part of the app)
-├── valhalla.py         Minimal Valhalla HTTP client shared by the CLIs
-├── elevation_cli.py    Profile for a route, validated against /height
-└── loop_cli.py         Circular route generator CLI
+migrations/               Alembic environment + versioned migrations
+tools/                    Development CLIs (not part of the app)
+├── valhalla.py           Minimal Valhalla HTTP client shared by the CLIs
+├── elevation_cli.py      Profile for a route, validated against /height
+└── loop_cli.py           Circular route generator CLI
 
 tests/
-└── engine/              Unit tests (synthetic tiles, known vectors)
+├── unit/                 Direct module tests (gateways, logging, middleware)
+├── api/                  Endpoint tests through the FastAPI app
+├── engine/               Engine tests (synthetic tiles, known vectors)
+└── e2e/                  Full journeys; skip automatically when Valhalla is down
 
-data/                  Source datasets (gitignored, re-downloadable)
-├── regions.json       Catalog of downloadable OSM extracts (versioned)
-└── spain.osm.pbf      OSM extract for Spain (~1.4 GB)
+data/                     Source datasets (gitignored, re-downloadable)
+├── regions.json          Catalog of downloadable OSM extracts (versioned)
+└── spain.osm.pbf         OSM extract for Spain (~1.4 GB)
 
 scripts/
 ├── download_osm.sh         Download OSM extracts listed in data/regions.json
@@ -44,15 +70,15 @@ scripts/
 ├── setup_valhalla.sh       Orchestration: OSM + build + elevation + start + validate
 └── smoke_test_height.sh    Smoke test for the /height endpoint
 
-valhalla/              Runtime state, mounted into the container at /data
-├── config/            valhalla.json (versioned), *.sqlite (generated)
-├── tiles/             Routing tiles (~2.1 GB, generated)
-└── elevation/         Elevation tiles (~1 GB, gitignored)
+valhalla/                 Runtime state, mounted into the container at /data
+├── config/               valhalla.json (versioned), *.sqlite (generated)
+├── tiles/                Routing tiles (~2.1 GB, generated)
+└── elevation/            Elevation tiles (~1 GB, gitignored)
 
-requirements.txt       Runtime dependencies (numpy)
-requirements-dev.txt   Development dependencies (pytest)
-docs/                  This documentation
-docker-compose.yaml    Runtime service definition (port 8002)
+requirements.txt          Runtime dependencies
+requirements-dev.txt      Development dependencies (pytest, ruff)
+docs/                     This documentation
+docker-compose.yaml       Full stack: API (:8000), Valhalla (:8002), Postgres (:5432)
 ```
 
 See [data.md](data.md) for the full data lifecycle and the production

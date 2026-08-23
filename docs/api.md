@@ -19,6 +19,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/auth/register` | — | Create a pending local account; a verification code is emailed |
 | POST | `/api/v1/auth/verify` | — | Confirm the emailed six digit code and activate the account |
 | POST | `/api/v1/auth/resend-verification` | — | Re-issue and resend the verification code (always 202) |
+| POST | `/api/v1/auth/change-password` | Bearer | Rotate the local credential; live sessions are revoked |
 | POST | `/api/v1/auth/login` | — | Email/password login (verified accounts only) |
 | POST | `/api/v1/auth/refresh` | — | Rotate refresh token into a new pair |
 | POST | `/api/v1/auth/logout` | — | Revoke a refresh token |
@@ -43,6 +44,7 @@ Everything is environment-driven (or `.env`):
 | `DB_HOST/PORT/USER/PASSWORD/NAME` | localhost / cycling / cycling_router | Database connection |
 | `JWT_SECRET_KEY` | dev value | **Change in production**; signs access and refresh tokens |
 | `BREVO_API_KEY` | — | Brevo transactional API key; without it mail is only logged to console |
+| `BREVO_LIST_ID` | — | Brevo contacts list id; verified riders are filed into it |
 | `MAIL_FROM` | `no-reply@localhost` | Sender address; the display name comes from the sender verified in Brevo |
 | `OTP_EXPIRE_MINUTES` / `OTP_MAX_ATTEMPTS` | `15` / `5` | Verification code lifetime and wrong-guess budget |
 | `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
@@ -68,7 +70,7 @@ answer `403 EMAIL_NOT_VERIFIED` and suspended ones `403 ACCOUNT_SUSPENDED`.
 # Register: creates a pending account and emails a six digit code.
 curl -s -X POST localhost:8000/api/v1/auth/register \
   -H 'Content-Type: application/json' \
-  -d '{"email":"rider@example.com","password":"secret123"}' | jq
+  -d '{"email":"rider@example.com","password":"Secret-123"}' | jq
 
 # Confirm the code from the email to activate the account.
 curl -s -X POST localhost:8000/api/v1/auth/verify \
@@ -78,7 +80,7 @@ curl -s -X POST localhost:8000/api/v1/auth/verify \
 # Login only works once the account is active.
 curl -s -X POST localhost:8000/api/v1/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"rider@example.com","password":"secret123"}' | jq
+  -d '{"email":"rider@example.com","password":"Secret-123"}' | jq
 ```
 
 Registration and verification answer the user object alone (no tokens):
@@ -113,7 +115,32 @@ being spent. Requesting a new code invalidates the previous one.
 
 Email goes through Brevo's transactional API when `BREVO_API_KEY` is set;
 otherwise messages are written to the application log (`mail` logger),
-which is what local development and tests rely on.
+which is what local development and tests rely on. When `BREVO_LIST_ID`
+is also set, activating an account upserts the rider into that Brevo
+contacts list — once per account (verification or first OAuth login),
+never on routine logins.
+
+### Passwords
+
+Every local credential (registration, password change and the future
+reset) enforces the same policy: 8–128 characters with at least one
+lowercase, one uppercase and one digit; it must not equal the account
+email nor contain its local part. Symbols are allowed but not required.
+Violations answer `422 VALIDATION_ERROR`.
+
+```bash
+# Change the password of the logged-in account
+curl -s -X POST localhost:8000/api/v1/auth/change-password \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -d '{"current_password":"Secret-123","new_password":"Fresh-Secret9"}'
+```
+
+A successful change answers `204` and revokes every refresh token of
+the account: other devices must log in again, while outstanding access
+tokens simply expire within their short lifetime. Wrong current
+password answers `401`; accounts created through OAuth only answer
+`400` until they set a password.
 
 > **Planned — password reset:** the same code infrastructure (table with a
 > `purpose` column) will back `POST /auth/forgot-password` (202, emails a

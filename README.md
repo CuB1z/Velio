@@ -173,7 +173,10 @@ Configuration comes from the environment (or a `.env`): `VALHALLA_URL`,
 Accounts are verified by email before they can log in: registration sends a
 six digit code (Brevo transactional API when `BREVO_API_KEY` is set, the
 application log otherwise) and `POST /api/v1/auth/verify` activates the
-account — see [docs/api.md](docs/api.md) for the full flow.
+account. Passwords follow a shared strength policy, can be rotated through
+`POST /api/v1/auth/change-password` (which revokes live sessions), and
+activated riders are filed into a Brevo contacts list when `BREVO_LIST_ID`
+is set — full flow in [docs/api.md](docs/api.md).
 Logging is structured one-dict-per-line on stdout (`app/core/logging.py`):
 service events carry their fields, uvicorn's own records flow through the
 same pipeline, and every HTTP request emits one access event with
