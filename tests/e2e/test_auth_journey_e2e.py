@@ -13,7 +13,7 @@ from app.main import app
 
 pytestmark = [pytest.mark.e2e]
 
-PASSWORD = "secret123"
+PASSWORD = "Secret-123"
 
 
 class _ListHandler(logging.Handler):

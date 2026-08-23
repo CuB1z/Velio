@@ -119,7 +119,7 @@ def test_callback_links_and_activates_a_pending_local_account(monkeypatch):
     with collect_mail():
         registered = client.post(
             "/api/v1/auth/register",
-            json={"email": email, "password": "secret123"},
+            json={"email": email, "password": "Secret-123"},
         )
     assert registered.status_code == 201
 
@@ -141,7 +141,7 @@ def test_callback_links_and_activates_a_pending_local_account(monkeypatch):
     # The local password now works too: the account was activated, and the
     # verification code that was mailed out became irrelevant.
     logged = client.post(
-        "/api/v1/auth/login", json={"email": email, "password": "secret123"}
+        "/api/v1/auth/login", json={"email": email, "password": "Secret-123"}
     )
     assert logged.status_code == 200
 

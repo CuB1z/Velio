@@ -4,9 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_dem_source, get_valhalla_client
-from app.clients.valhalla import RouteError, RouteResult, ValhallaError
-from app.engine.edges import RouteEdge
+from app.clients.valhalla import RouteResult
+from app.core.exceptions import RouteError, ValhallaError
 from app.engine.dem import DemSource
+from app.engine.edges import RouteEdge
 from app.engine.polyline import decode
 from app.main import app
 

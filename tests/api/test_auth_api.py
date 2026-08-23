@@ -11,7 +11,7 @@ from app.core.config import settings
 from app.core.logging import get_logger
 from app.main import app
 
-PASSWORD = "secret123"
+PASSWORD = "Secret-123"
 
 
 class _ListHandler(logging.Handler):
@@ -112,6 +112,29 @@ def test_login_pending_account_is_forbidden():
     )
     assert resp.status_code == 403
     assert resp.json()["error"] == "EMAIL_NOT_VERIFIED"
+
+
+def test_register_rejects_weak_passwords():
+    client = TestClient(app)
+    email = _unique_email()
+    weak = {
+        "all-lowercase1": "no uppercase",
+        "ALL-UPPERCASE1": "no lowercase",
+        "No-Digits-Here": "no digit",
+        "Ab1": "too short",
+        email: "same as the email",
+        f"prefix-{email}": "contains the email",
+    }
+    for password in weak:
+        resp = client.post(
+            "/api/v1/auth/register", json={"email": email, "password": password}
+        )
+        assert resp.status_code == 422, f"{password!r} should be rejected"
+        assert resp.json()["error"] == "VALIDATION_ERROR"
+        # The account was never created along the way.
+    assert client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "Whatever1"}
+    ).status_code == 401
 
 
 def test_verify_activates_the_account_and_login_opens_a_session():
@@ -232,3 +255,133 @@ def test_logout_revokes_the_refresh_token():
 def test_me_without_token_is_unauthorized():
     resp = TestClient(app).get("/api/v1/auth/me")
     assert resp.status_code == 401
+
+
+def test_change_password_rotates_the_credential_and_kills_sessions():
+    email = _unique_email()
+    client, tokens = _verified_session(email)
+    auth = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    changed = client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": PASSWORD, "new_password": "Fresh-Secret9"},
+        headers=auth,
+    )
+    assert changed.status_code == 204
+
+    # The refresh token from before the change is dead.
+    replay = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+    )
+    assert replay.status_code == 401
+
+    # Only the new credential opens sessions.
+    old_login = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": PASSWORD}
+    )
+    assert old_login.status_code == 401
+    new_login = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "Fresh-Secret9"}
+    )
+    assert new_login.status_code == 200
+
+
+def test_change_password_rejects_wrong_current_or_weak_new():
+    email = _unique_email()
+    client, tokens = _verified_session(email)
+    auth = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    wrong_current = client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "not-it-123", "new_password": "Fresh-Secret9"},
+        headers=auth,
+    )
+    assert wrong_current.status_code == 401
+
+    weak_new = client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": PASSWORD, "new_password": "alllowercase1"},
+        headers=auth,
+    )
+    assert weak_new.status_code == 422
+
+    email_shaped = client.post(
+        "/api/v1/auth/change-password",
+        json={"current_password": PASSWORD, "new_password": f"x-{email}"},
+        headers=auth,
+    )
+    assert email_shaped.status_code == 422
+
+    # The original password still works: nothing was changed.
+    assert (
+        client.post(
+            "/api/v1/auth/login", json={"email": email, "password": PASSWORD}
+        ).status_code
+        == 200
+    )
+
+
+def test_change_password_needs_a_local_credential(monkeypatch):
+    """OAuth-only accounts have no password to change."""
+    from test_oauth_api import _configure_google, _google_round_trip
+
+    from app.api.dependencies import get_oauth_gateway
+    from app.core.security import create_state_token
+
+    _configure_google(monkeypatch)
+    gateway, _ = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
+    try:
+        session = TestClient(app).get(
+            "/api/v1/auth/google/callback",
+            params={"code": "good-code", "state": create_state_token("google")},
+        )
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+    assert session.status_code == 200
+    tokens = session.json()["tokens"]
+
+    resp = TestClient(app).post(
+        "/api/v1/auth/change-password",
+        json={"current_password": "whatever-1A", "new_password": "Fresh-Secret9"},
+        headers={"Authorization": f"Bearer {tokens['access_token']}"},
+    )
+    assert resp.status_code == 400
+    assert resp.json()["detail"] == "This account has no local password"
+
+
+def test_verified_accounts_are_filed_into_the_mailing_list():
+    """Activation pushes the rider into the Brevo list via the port."""
+    from app.api.dependencies import get_mail_sender
+    from app.clients.mail import MailSender
+
+    class SpySender(MailSender):
+        def __init__(self):
+            self.contacts = []
+            self.codes = []
+
+        async def send(self, message):
+            found = re.search(r"verification code is (\d{6})", message.text)
+            if found:
+                self.codes.append(found.group(1))
+
+        async def add_contact(self, email, full_name=""):
+            self.contacts.append(email)
+
+    spy = SpySender()
+    app.dependency_overrides[get_mail_sender] = lambda: spy
+    try:
+        email = _unique_email()
+        resp = TestClient(app).post(
+            "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
+        )
+        assert resp.status_code == 201
+        verified = TestClient(app).post(
+            "/api/v1/auth/verify", json={"email": email, "code": spy.codes[-1]}
+        )
+    finally:
+        app.dependency_overrides.pop(get_mail_sender, None)
+
+    assert verified.status_code == 200
+    assert spy.contacts == [email]
+

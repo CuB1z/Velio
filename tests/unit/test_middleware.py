@@ -77,7 +77,7 @@ def test_forwarded_for_wins_over_remote_address(access_events):
 def test_regular_endpoints_log_at_info(access_events, auth_headers):
     class DownValhalla:
         async def trace_attributes(self, polyline, costing_options=None):
-            from app.clients.valhalla import ValhallaError
+            from app.core.exceptions import ValhallaError
 
             raise ValhallaError("valhalla down")
 

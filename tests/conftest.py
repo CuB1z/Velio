@@ -12,13 +12,24 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-os.environ["DB_DRIVER"] = "sqlite+aiosqlite"
-os.environ["DB_NAME"] = os.path.join(ROOT, "test.db")
-os.environ["JWT_SECRET_KEY"] = "test-secret-key-for-testing-only"
+# --- Hermetic environment ----------------------------------------------------
+# The ONE place where external touchpoints are forced to test doubles.
+# Pinned (never popped) BEFORE importing the app: pydantic-settings reads
+# os.environ first and would otherwise fall back to the developer's local
+# .env file, leaking real credentials or databases into the suite.
+HERMETIC_ENV = {
+    "DB_DRIVER": "sqlite+aiosqlite",
+    "DB_NAME": os.path.join(ROOT, "test.db"),
+    "JWT_SECRET_KEY": "test-secret-key-for-testing-only",
+    "BREVO_API_KEY": "",
+    "BREVO_LIST_ID": "0",
+    "MAIL_FROM": "no-reply@test.dev",
+}
+os.environ.update(HERMETIC_ENV)
 
-import logging  # noqa: E402
+import logging
 
-import pytest  # noqa: E402
+import pytest
 
 
 def pytest_configure(config):
@@ -26,22 +37,15 @@ def pytest_configure(config):
     # pytest-asyncio is installed in the interpreter but this suite drives
     # asyncio explicitly through asyncio.run(); silence its Python 3.16
     # loop-policy deprecation on every test.
-    warnings_filter = (
+    config._test_warning_filter = (
         "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning"
     )
-    config._test_warning_filter = warnings_filter
 
 
 def pytest_collection_modifyitems(config, items):
-    marker = getattr(pytest.mark, "filterwarnings")(_warning_filter_text())
+    marker = pytest.mark.filterwarnings(config._test_warning_filter)
     for item in items:
         item.add_marker(marker)
-
-
-def _warning_filter_text() -> str:
-    return (
-        "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning"
-    )
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -70,6 +74,19 @@ from fastapi.testclient import TestClient
 
 from app.core.logging import get_logger
 from app.main import app
+
+
+def _require_hermetic_settings() -> None:
+    """Fail loudly when a real external endpoint leaked into settings."""
+    from app.core.config import settings
+
+    assert not settings.brevo_api_key, "a real Brevo API key leaked into tests"
+    assert not settings.brevo_list_id, "a real Brevo list id leaked into tests"
+    assert settings.database_url.startswith("sqlite"), "the test database leaked"
+    assert settings.jwt_secret_key == HERMETIC_ENV["JWT_SECRET_KEY"]
+
+
+_require_hermetic_settings()
 
 
 class _ListHandler(logging.Handler):
@@ -108,7 +125,7 @@ def register_and_verify(client: TestClient, email: str) -> None:
     with collect_mail() as messages:
         resp = client.post(
             "/api/v1/auth/register",
-            json={"email": email, "password": "secret123", "full_name": "Test"},
+            json={"email": email, "password": "Secret-123", "full_name": "Test"},
         )
     assert resp.status_code == 201, resp.text
 
@@ -133,7 +150,7 @@ def auth_headers(api_client) -> dict:
     register_and_verify(api_client, email)
 
     resp = api_client.post(
-        "/api/v1/auth/login", json={"email": email, "password": "secret123"}
+        "/api/v1/auth/login", json={"email": email, "password": "Secret-123"}
     )
     assert resp.status_code == 200, resp.text
     tokens = resp.json()["tokens"]

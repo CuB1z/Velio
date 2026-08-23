@@ -44,7 +44,7 @@ class FakeValhalla:
 
 class UnreachableValhalla(FakeValhalla):
     async def route(self, locations, costing_options=None, avoid_locations=None):
-        from app.clients.valhalla import ValhallaError
+        from app.core.exceptions import ValhallaError
 
         raise ValhallaError("connection refused")
 
