@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "cycling-router"
-    app_version: str = "0.9.0"
+    app_version: str = "0.10.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -61,6 +61,16 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
+
+    oauth_google_client_id: str | None = Field(
+        default=None, alias="OAUTH_GOOGLE_CLIENT_ID"
+    )
+    oauth_google_client_secret: str | None = Field(
+        default=None, alias="OAUTH_GOOGLE_CLIENT_SECRET"
+    )
+    auth_redirect_base: str = Field(
+        default="http://localhost:8000", alias="AUTH_REDIRECT_BASE"
+    )
 
     @property
     def database_url(self) -> str:
