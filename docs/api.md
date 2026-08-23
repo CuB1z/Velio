@@ -13,13 +13,67 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 
 ## Endpoints
 
-| Method | Path | Purpose |
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| GET | `/api/health` | — | Service status and version |
+| POST | `/api/v1/auth/register` | — | Create a local account, returns session |
+| POST | `/api/v1/auth/login` | — | Email/password login |
+| POST | `/api/v1/auth/refresh` | — | Rotate refresh token into a new pair |
+| POST | `/api/v1/auth/logout` | — | Revoke a refresh token |
+| GET | `/api/v1/auth/me` | Bearer | Current user profile |
+| POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets |
+| POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints |
+| POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline |
+| POST | `/api/v1/routes/elevation` | Bearer | DEM elevation profile of an encoded polyline |
+
+## Configuration
+
+Everything is environment-driven (or `.env`):
+
+| Variable | Default | Purpose |
 |---|---|---|
-| GET | `/api/health` | Service status and version |
-| POST | `/api/v1/loops` | Circular route from an origin, with distance/gain targets |
-| POST | `/api/v1/routes` | Point-to-point route through ordered waypoints |
-| POST | `/api/v1/routes/analyze` | Score an existing encoded polyline |
-| POST | `/api/v1/routes/elevation` | DEM elevation profile of an encoded polyline |
+| `ENV` | `dev` | `dev` enables `/docs`, `/redoc` and `/openapi.json`; anything else hides them |
+| `VALHALLA_URL` | `http://localhost:8002` | Routing engine base URL |
+| `VALHALLA_ELEVATION_DIR` | `./valhalla/elevation` | DEM tiles directory |
+| `DB_DRIVER` | `postgresql+asyncpg` | SQLAlchemy driver (`sqlite+aiosqlite` for quick local runs) |
+| `DB_HOST/PORT/USER/PASSWORD/NAME` | localhost / cycling / cycling_router | Database connection |
+| `JWT_SECRET_KEY` | dev value | **Change in production**; signs access and refresh tokens |
+| `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
+
+Migrations run through Alembic (`start.sh` executes
+`alembic -c migrations/alembic.ini upgrade head` before the API boots).
+
+---
+
+## Authentication
+
+Business endpoints require `Authorization: Bearer <access_token>`.
+Tokens are JWTs signed by the service: short-lived access tokens plus
+rotating refresh tokens persisted server-side (revocable). OAuth providers
+(Google/Strava) will reuse the same session issuance later.
+
+```bash
+# Register (or login with an existing account)
+curl -s -X POST localhost:8000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"rider@example.com","password":"secret123"}' | jq
+
+# Use the session
+curl -s -X POST localhost:8000/api/v1/loops \
+  -H "Authorization: Bearer $ACCESS_TOKEN" ...
+```
+
+Session shape (`register`, `login` and `refresh` all answer it):
+
+```json
+{
+  "user": {"id": 1, "email": "rider@example.com", "full_name": "", "is_active": true},
+  "tokens": {"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
+}
+```
+
+Refresh rotates: the used refresh token is revoked and a fresh pair is
+returned. Logging out revokes the given refresh token.
 
 All endpoints return JSON. Route geometry comes as an **encoded polyline**
 (`polyline` field, [polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)
@@ -36,7 +90,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.8.0"}
+{"status": "ok", "version": "0.9.0"}
 ```
 
 ---
