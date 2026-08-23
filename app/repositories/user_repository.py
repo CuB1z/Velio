@@ -67,17 +67,31 @@ class UserRepository:
         """
         user_id = await self.find_identity_user_id(provider, provider_user_id)
         if user_id is not None:
-            return await self.get_by_id(user_id)
+            user = await self.get_by_id(user_id)
+            # Keep stale profiles fresh when the provider shares a name.
+            if full_name and user and not user.full_name:
+                user.full_name = full_name
+                await self.db.commit()
+                await self.db.refresh(user)
+            return user
 
         user = await self.get_by_email(email)
         if user is None:
             user = User(email=email, full_name=full_name)
+            # A brand-new aggregate may build its identities collection.
+            user.identities.append(
+                UserIdentity(provider=provider, provider_user_id=provider_user_id)
+            )
             self.db.add(user)
-            await self.db.flush()
-
-        user.identities.append(
-            UserIdentity(provider=provider, provider_user_id=provider_user_id)
-        )
+        else:
+            # Fetched instances must not trigger lazy loads: insert straight.
+            self.db.add(
+                UserIdentity(
+                    user_id=user.id,
+                    provider=provider,
+                    provider_user_id=provider_user_id,
+                )
+            )
         await self.db.commit()
         await self.db.refresh(user)
         return user

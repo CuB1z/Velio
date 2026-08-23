@@ -1,8 +1,8 @@
 """SQLAlchemy models for users and their login identities.
 
 A user owns one account; each way of logging in (local password, Google,
-Strava, ...) is a row in `user_identities` linked to it. This lets the same
-person attach several providers to one account.
+Microsoft, ...) is a row in `user_identities` linked to it. This lets the
+same person attach several providers to one account.
 """
 
 from datetime import datetime

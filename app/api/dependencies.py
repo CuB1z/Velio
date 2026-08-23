@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.clients.oauth import OAuthGateway
 from app.clients.valhalla import ValhallaClient
 from app.core.database import get_db
 from app.core.security import ACCESS_TYPE, decode_token
@@ -53,12 +54,18 @@ def get_refresh_token_repository(
 # Services -------------------------------------------------------------------
 
 
+def get_oauth_gateway() -> OAuthGateway:
+    """Gateway performing the OAuth provider round trips."""
+    return OAuthGateway()
+
+
 def get_auth_service(
     users: UserRepository = Depends(get_user_repository),
     tokens: RefreshTokenRepository = Depends(get_refresh_token_repository),
+    oauth: OAuthGateway = Depends(get_oauth_gateway),
 ) -> AuthService:
-    """Compose the auth service on top of its repositories."""
-    return AuthService(users=users, tokens=tokens)
+    """Compose the auth service on top of its repositories and gateway."""
+    return AuthService(users=users, tokens=tokens, oauth=oauth)
 
 
 def get_loop_service(
