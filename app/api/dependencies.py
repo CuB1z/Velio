@@ -7,14 +7,19 @@ from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.clients.mail import MailSender, build_mail_sender
 from app.clients.oauth import OAuthGateway
 from app.clients.valhalla import ValhallaClient
 from app.core.database import get_db
+from app.core.exceptions import AccountSuspendedError, EmailNotVerifiedError
 from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.dem import DemSource
 from app.models import User
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
+from app.repositories.verification_code_repository import (
+    VerificationCodeRepository,
+)
 from app.services.analysis_service import RouteAnalysisService
 from app.services.auth_service import AuthService, InvalidCredentialsError
 from app.services.loop_service import LoopService
@@ -51,6 +56,20 @@ def get_refresh_token_repository(
     return RefreshTokenRepository(db)
 
 
+def get_verification_code_repository(
+    db: AsyncSession = Depends(get_db),
+) -> VerificationCodeRepository:
+    """Provide a VerificationCodeRepository bound to the request session."""
+    return VerificationCodeRepository(db)
+
+
+def get_mail_sender(request: Request) -> MailSender:
+    """Shared mail adapter; built lazily when lifespan has not run."""
+    if not hasattr(request.app.state, "mail"):
+        request.app.state.mail = build_mail_sender()
+    return request.app.state.mail
+
+
 # Services -------------------------------------------------------------------
 
 
@@ -62,10 +81,14 @@ def get_oauth_gateway() -> OAuthGateway:
 def get_auth_service(
     users: UserRepository = Depends(get_user_repository),
     tokens: RefreshTokenRepository = Depends(get_refresh_token_repository),
+    codes: VerificationCodeRepository = Depends(get_verification_code_repository),
     oauth: OAuthGateway = Depends(get_oauth_gateway),
+    mail: MailSender = Depends(get_mail_sender),
 ) -> AuthService:
-    """Compose the auth service on top of its repositories and gateway."""
-    return AuthService(users=users, tokens=tokens, oauth=oauth)
+    """Compose the auth service on top of its repositories and gateways."""
+    return AuthService(
+        users=users, tokens=tokens, codes=codes, oauth=oauth, mail=mail
+    )
 
 
 def get_loop_service(
@@ -118,7 +141,11 @@ async def get_current_user(
 
     try:
         return await auth.get_active_user(int(payload["sub"]))
-    except InvalidCredentialsError as exc:
+    except (
+        InvalidCredentialsError,
+        EmailNotVerifiedError,
+        AccountSuspendedError,
+    ) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",

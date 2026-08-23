@@ -1,4 +1,5 @@
-"""Authentication endpoints: local credentials plus OAuth round trips."""
+"""Authentication endpoints: local credentials, email verification and
+OAuth round trips."""
 
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,7 +9,15 @@ from app.api.dependencies import get_auth_service, get_current_user
 from app.core.exceptions import ServiceUnavailableError
 from app.core.exceptions import OAuthError
 from app.repositories.user_repository import EmailAlreadyRegisteredError
-from app.schemas.auth import AuthSession, LoginIn, RefreshIn, RegisterIn, UserOut
+from app.schemas.auth import (
+    AuthSession,
+    LoginIn,
+    RefreshIn,
+    RegisterIn,
+    ResendVerificationIn,
+    UserOut,
+    VerifyIn,
+)
 from app.services.auth_service import (
     AuthService,
     InvalidCredentialsError,
@@ -21,15 +30,35 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post(
-    "/register", response_model=AuthSession, status_code=status.HTTP_201_CREATED
+    "/register", response_model=UserOut, status_code=status.HTTP_201_CREATED
 )
-async def register(data: RegisterIn, service: AuthService = Depends(get_auth_service)) -> AuthSession:
+async def register(data: RegisterIn, service: AuthService = Depends(get_auth_service)) -> UserOut:
+    """Create a pending account; the verification code arrives by email."""
     try:
-        return await service.register(
+        user = await service.register(
             email=data.email, password=data.password, full_name=data.full_name
         )
     except EmailAlreadyRegisteredError:
         raise HTTPException(status_code=409, detail="Email already registered")
+    return UserOut.from_model(user)
+
+
+@router.post("/verify", response_model=UserOut)
+async def verify_email(
+    data: VerifyIn, service: AuthService = Depends(get_auth_service)
+) -> UserOut:
+    """Confirm the emailed code and activate the account."""
+    user = await service.verify_email(email=data.email, code=data.code)
+    return UserOut.from_model(user)
+
+
+@router.post("/resend-verification", status_code=status.HTTP_202_ACCEPTED)
+async def resend_verification(
+    data: ResendVerificationIn, service: AuthService = Depends(get_auth_service)
+) -> dict:
+    """Always 202 so the endpoint cannot probe registered emails."""
+    await service.resend_verification(email=data.email)
+    return {"detail": "If the account is pending, a new code was sent"}
 
 
 @router.post("/login", response_model=AuthSession)

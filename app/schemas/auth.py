@@ -18,19 +18,29 @@ class RefreshIn(BaseModel):
     refresh_token: str
 
 
+class VerifyIn(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+
+
+class ResendVerificationIn(BaseModel):
+    email: EmailStr
+
+
 class UserOut(BaseModel):
     id: int
     email: str
     full_name: str
-    is_active: bool
+    status: str
 
     @classmethod
     def from_model(cls, user) -> "UserOut":
+        status = getattr(user.status, "value", user.status)
         return cls(
             id=user.id,
             email=user.email,
             full_name=user.full_name,
-            is_active=user.is_active,
+            status=status,
         )
 
 

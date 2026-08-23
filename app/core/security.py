@@ -1,5 +1,6 @@
-"""JWT issuing/verification and password hashing helpers."""
+"""JWT issuing/verification, one-time codes and password hashing helpers."""
 
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -15,6 +16,11 @@ STATE_TYPE = "state"
 
 # Anti-CSRF lifetime for OAuth authorize->callback round trips.
 STATE_EXPIRE_SECONDS = 600
+
+
+def generate_otp(digits: int = 6) -> str:
+    """Cryptographically random numeric one-time code, zero padded."""
+    return f"{secrets.randbelow(10 ** digits):0{digits}d}"
 
 
 def create_state_token(provider: str) -> str:

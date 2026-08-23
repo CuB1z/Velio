@@ -92,6 +92,39 @@ class OAuthError(AppError):
         )
 
 
+class EmailNotVerifiedError(AppError):
+    """A pending account tried to open or refresh a session (403)."""
+
+    def __init__(self, message: str = "Email address not verified"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="EMAIL_NOT_VERIFIED",
+        )
+
+
+class AccountSuspendedError(AppError):
+    """A suspended account tried to open or refresh a session (403)."""
+
+    def __init__(self, message: str = "Account suspended"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="ACCOUNT_SUSPENDED",
+        )
+
+
+class EmailVerificationError(AppError):
+    """The submitted code is wrong, expired or exhausted (400)."""
+
+    def __init__(self, message: str = "Invalid or expired verification code"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="VERIFY_ERROR",
+        )
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     logger.warning(
         f"{exc.error_code}: {exc.message}",

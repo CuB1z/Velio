@@ -1,24 +1,36 @@
-"""Authentication use case: register, login, refresh, revoke and OAuth."""
+"""Authentication use cases: register, login, refresh, revoke, OAuth and
+email verification."""
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import jwt
 
+from app.clients.mail import MailSender, verification_email
 from app.clients.oauth import (
     OAuthGateway,
     OAuthRejectedError,
     OAuthUnavailableError,
     ProviderNotConfiguredError,
 )
-from app.core.exceptions import OAuthError, ServiceUnavailableError
+from app.core.config import settings
+from app.core.exceptions import (
+    AccountSuspendedError,
+    EmailNotVerifiedError,
+    EmailVerificationError,
+    OAuthError,
+    ServiceUnavailableError,
+)
+from app.core.logging import get_logger
 from app.core.security import (
     REFRESH_TYPE,
     create_access_token,
     create_refresh_token,
     decode_token,
+    generate_otp,
     verify_password,
     verify_state_token,
 )
+from app.models import User, UserStatus
 from app.repositories.refresh_token_repository import (
     InvalidRefreshTokenError,
     RefreshTokenRepository,
@@ -27,7 +39,12 @@ from app.repositories.user_repository import (
     EmailAlreadyRegisteredError,
     UserRepository,
 )
+from app.repositories.verification_code_repository import (
+    VerificationCodeRepository,
+)
 from app.schemas.auth import AuthSession, TokenPair, UserOut
+
+logger = get_logger("auth")
 
 __all__ = [
     "AuthService",
@@ -36,9 +53,11 @@ __all__ = [
     "InvalidRefreshTokenError",
 ]
 
+EMAIL_VERIFY_PURPOSE = "email_verify"
+
 
 class InvalidCredentialsError(Exception):
-    """Wrong email/password or inactive account."""
+    """Wrong email/password."""
 
 
 class UnknownProviderError(Exception):
@@ -52,22 +71,32 @@ class AuthService:
         self,
         users: UserRepository,
         tokens: RefreshTokenRepository,
+        codes: VerificationCodeRepository,
         oauth: OAuthGateway | None = None,
+        mail: MailSender | None = None,
     ):
         self._users = users
         self._tokens = tokens
+        self._codes = codes
         self._oauth = oauth or OAuthGateway()
+        self._mail = mail
 
     async def register(
         self, *, email: str, password: str, full_name: str = ""
-    ) -> AuthSession:
+    ) -> User:
+        """Create a pending account and deliver its verification code.
+
+        No session is issued: the account activates once the emailed
+        code is confirmed. Mail failures are logged, never raised.
+        """
         try:
             user = await self._users.create_local(
                 email=email, password=password, full_name=full_name
             )
         except EmailAlreadyRegisteredError:
             raise
-        return await self._start_session(user)
+        await self._send_verification_code(user)
+        return user
 
     async def login(self, *, email: str, password: str) -> AuthSession:
         user = await self._users.get_by_email(email)
@@ -75,10 +104,43 @@ class AuthService:
             user is None
             or not user.hashed_password
             or not verify_password(password, user.hashed_password)
-            or not user.is_active
         ):
             raise InvalidCredentialsError(email)
+        self._require_active(user)
         return await self._start_session(user)
+
+    async def verify_email(self, *, email: str, code: str) -> User:
+        """Confirm the emailed code and activate the account."""
+        user = await self._users.get_by_email(email)
+        if user is None:
+            raise EmailVerificationError
+        status = self._status_of(user)
+        if status is UserStatus.ACTIVE:
+            return user  # Already confirmed: keep the endpoint idempotent.
+        if status is UserStatus.SUSPENDED:
+            raise AccountSuspendedError
+
+        stored = await self._codes.find_active(user.id, purpose=EMAIL_VERIFY_PURPOSE)
+        if stored is None or stored.attempts >= settings.otp_max_attempts:
+            raise EmailVerificationError
+        if not verify_password(code, stored.code_hash):
+            await self._codes.register_attempt(stored)
+            raise EmailVerificationError
+
+        await self._codes.consume(stored)
+        return await self._users.mark_active(user)
+
+    async def resend_verification(self, *, email: str) -> bool:
+        """Re-issue and send a code; report whether one was actually sent.
+
+        Callers answer 202 regardless so the endpoint cannot probe which
+        emails are registered.
+        """
+        user = await self._users.get_by_email(email)
+        if user is None or self._status_of(user) is not UserStatus.PENDING:
+            return False
+        await self._send_verification_code(user)
+        return True
 
     async def refresh(self, raw_token: str) -> AuthSession:
         payload = self._decode_refresh(raw_token)
@@ -135,16 +197,54 @@ class AuthService:
             email=identity.email,
             full_name=identity.full_name,
         )
+        # A provider-validated mailbox proves ownership of a pending
+        # local account created with the same address.
+        if self._status_of(user) is UserStatus.PENDING:
+            user = await self._users.mark_active(user)
         return await self._start_session(user)
 
     async def get_active_user(self, user_id: int):
         """Resolve an existing active account or fail with 401 semantics."""
         user = await self._users.get_by_id(user_id)
-        if user is None or not user.is_active:
+        if user is None:
             raise InvalidCredentialsError(user_id)
+        self._require_active(user)
         return user
 
     # Internals --------------------------------------------------------------
+
+    @staticmethod
+    def _status_of(user) -> UserStatus:
+        return UserStatus(getattr(user.status, "value", user.status))
+
+    def _require_active(self, user) -> None:
+        """Only ACTIVE accounts may open or refresh sessions."""
+        status = self._status_of(user)
+        if status is UserStatus.PENDING:
+            raise EmailNotVerifiedError
+        if status is UserStatus.SUSPENDED:
+            raise AccountSuspendedError
+
+    async def _send_verification_code(self, user) -> None:
+        """Store a fresh hashed OTP and hand the raw code to the sender.
+
+        Delivery problems are logged and swallowed: the account exists
+        and the client can always ask for a resend.
+        """
+        code = generate_otp()
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            minutes=settings.otp_expire_minutes
+        )
+        await self._codes.issue(
+            user.id, purpose=EMAIL_VERIFY_PURPOSE, code=code, expires_at=expires_at
+        )
+
+        message = verification_email(user.email, code, settings.otp_expire_minutes)
+        try:
+            if self._mail is not None:
+                await self._mail.send(message)
+        except Exception as exc:  # noqa: BLE001 - delivery must not fail auth
+            logger.warning(f"verification email to {user.email} failed: {exc}")
 
     async def _start_session(self, user) -> AuthSession:
         access = create_access_token(user.id, user.email)
