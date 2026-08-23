@@ -15,10 +15,15 @@ from app.clients.oauth import (
 from app.core.config import settings
 from app.core.exceptions import (
     AccountSuspendedError,
+    EmailAlreadyRegisteredError,
     EmailNotVerifiedError,
     EmailVerificationError,
+    InvalidCredentialsError,
+    InvalidRefreshTokenError,
+    NoLocalPasswordError,
     OAuthError,
     ServiceUnavailableError,
+    UnknownProviderError,
 )
 from app.core.logging import get_logger
 from app.core.security import (
@@ -27,18 +32,14 @@ from app.core.security import (
     create_refresh_token,
     decode_token,
     generate_otp,
+    hash_password,
+    validate_password_strength,
     verify_password,
     verify_state_token,
 )
 from app.models import User, UserStatus
-from app.repositories.refresh_token_repository import (
-    InvalidRefreshTokenError,
-    RefreshTokenRepository,
-)
-from app.repositories.user_repository import (
-    EmailAlreadyRegisteredError,
-    UserRepository,
-)
+from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.repositories.user_repository import UserRepository
 from app.repositories.verification_code_repository import (
     VerificationCodeRepository,
 )
@@ -46,22 +47,9 @@ from app.schemas.auth import AuthSession, TokenPair, UserOut
 
 logger = get_logger("auth")
 
-__all__ = [
-    "AuthService",
-    "EmailAlreadyRegisteredError",
-    "InvalidCredentialsError",
-    "InvalidRefreshTokenError",
-]
+__all__ = ["AuthService"]
 
 EMAIL_VERIFY_PURPOSE = "email_verify"
-
-
-class InvalidCredentialsError(Exception):
-    """Wrong email/password."""
-
-
-class UnknownProviderError(Exception):
-    """The provider name is not one of the configured ones."""
 
 
 class AuthService:
@@ -128,7 +116,9 @@ class AuthService:
             raise EmailVerificationError
 
         await self._codes.consume(stored)
-        return await self._users.mark_active(user)
+        user = await self._users.mark_active(user)
+        await self._register_contact(user)
+        return user
 
     async def resend_verification(self, *, email: str) -> bool:
         """Re-issue and send a code; report whether one was actually sent.
@@ -153,6 +143,24 @@ class AuthService:
         # Rotation: the used token dies with its row; a new pair is issued.
         await self._tokens.revoke(stored)
         return await self._start_session(user)
+
+    async def change_password(
+        self, user_id: int, *, current_password: str, new_password: str
+    ) -> None:
+        """Rotate the local credential and force re-login everywhere.
+
+        Every live refresh token dies with the change; access tokens
+        simply run out within their short lifetime.
+        """
+        user = await self._users.get_by_id(user_id)
+        if user is None or not user.hashed_password:
+            raise NoLocalPasswordError
+        if not verify_password(current_password, user.hashed_password):
+            raise InvalidCredentialsError(user.email)
+
+        validate_password_strength(new_password, email=user.email)
+        await self._users.set_password(user, hashed_password=hash_password(new_password))
+        await self._tokens.revoke_all_for_user(user.id)
 
     async def logout(self, raw_token: str) -> None:
         payload = self._decode_refresh(raw_token)
@@ -191,6 +199,12 @@ class AuthService:
         except OAuthUnavailableError as exc:
             raise ServiceUnavailableError(f"{provider} unavailable: {exc}") from exc
 
+        existed = (
+            await self._users.find_identity_user_id(
+                identity.provider, identity.provider_user_id
+            )
+            is not None
+        )
         user = await self._users.get_or_create_oauth(
             provider=identity.provider,
             provider_user_id=identity.provider_user_id,
@@ -199,8 +213,14 @@ class AuthService:
         )
         # A provider-validated mailbox proves ownership of a pending
         # local account created with the same address.
+        activated = False
         if self._status_of(user) is UserStatus.PENDING:
             user = await self._users.mark_active(user)
+            activated = True
+        # Contact filing happens once, when the account is born or
+        # activated — never on routine logins.
+        if not existed or activated:
+            await self._register_contact(user)
         return await self._start_session(user)
 
     async def get_active_user(self, user_id: int):
@@ -245,6 +265,14 @@ class AuthService:
                 await self._mail.send(message)
         except Exception as exc:  # noqa: BLE001 - delivery must not fail auth
             logger.warning(f"verification email to {user.email} failed: {exc}")
+
+    async def _register_contact(self, user) -> None:
+        """File the verified rider into the Brevo list; never fatal."""
+        try:
+            if self._mail is not None:
+                await self._mail.add_contact(user.email, user.full_name)
+        except Exception as exc:  # noqa: BLE001 - CRM sync must not fail auth
+            logger.warning(f"contact sync for {user.email} failed: {exc}")
 
     async def _start_session(self, user) -> AuthSession:
         access = create_access_token(user.id, user.email)

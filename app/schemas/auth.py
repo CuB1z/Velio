@@ -1,12 +1,19 @@
 """HTTP schemas for the authentication endpoints."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
+
+from app.core.security import validate_password_strength
 
 
 class RegisterIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(default="", max_length=255)
+
+    @model_validator(mode="after")
+    def _password_policy(self):
+        validate_password_strength(self.password, email=self.email)
+        return self
 
 
 class LoginIn(BaseModel):
@@ -25,6 +32,16 @@ class VerifyIn(BaseModel):
 
 class ResendVerificationIn(BaseModel):
     email: EmailStr
+
+
+class ChangePasswordIn(BaseModel):
+    current_password: str
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def _password_policy(self):
+        validate_password_strength(self.new_password)
+        return self
 
 
 class UserOut(BaseModel):

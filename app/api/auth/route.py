@@ -6,11 +6,18 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 
 from app.api.dependencies import get_auth_service, get_current_user
-from app.core.exceptions import ServiceUnavailableError
-from app.core.exceptions import OAuthError
-from app.repositories.user_repository import EmailAlreadyRegisteredError
+from app.core.exceptions import (
+    EmailAlreadyRegisteredError,
+    InvalidCredentialsError,
+    InvalidRefreshTokenError,
+    NoLocalPasswordError,
+    OAuthError,
+    ServiceUnavailableError,
+    UnknownProviderError,
+)
 from app.schemas.auth import (
     AuthSession,
+    ChangePasswordIn,
     LoginIn,
     RefreshIn,
     RegisterIn,
@@ -18,13 +25,7 @@ from app.schemas.auth import (
     UserOut,
     VerifyIn,
 )
-from app.services.auth_service import (
-    AuthService,
-    InvalidCredentialsError,
-    InvalidRefreshTokenError,
-    OAuthError,
-    UnknownProviderError,
-)
+from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -59,6 +60,25 @@ async def resend_verification(
     """Always 202 so the endpoint cannot probe registered emails."""
     await service.resend_verification(email=data.email)
     return {"detail": "If the account is pending, a new code was sent"}
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    data: ChangePasswordIn,
+    current_user=Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+) -> None:
+    """Rotate the local credential; every live session is revoked."""
+    try:
+        await service.change_password(
+            current_user.id,
+            current_password=data.current_password,
+            new_password=data.new_password,
+        )
+    except InvalidCredentialsError:
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    except NoLocalPasswordError:
+        raise HTTPException(status_code=400, detail="This account has no local password")
 
 
 @router.post("/login", response_model=AuthSession)

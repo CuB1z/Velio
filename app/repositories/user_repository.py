@@ -3,12 +3,9 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import EmailAlreadyRegisteredError
 from app.core.security import hash_password
 from app.models import User, UserIdentity, UserStatus
-
-
-class EmailAlreadyRegisteredError(Exception):
-    """The email is taken by another account."""
 
 
 class UserRepository:
@@ -108,3 +105,9 @@ class UserRepository:
         await self.db.commit()
         await self.db.refresh(user)
         return user
+
+    async def set_password(self, user: User, *, hashed_password: str) -> None:
+        """Persist a new local credential hash."""
+        user.hashed_password = hashed_password
+        await self.db.commit()
+        await self.db.refresh(user)

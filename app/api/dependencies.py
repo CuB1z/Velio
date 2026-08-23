@@ -12,6 +12,7 @@ from app.clients.oauth import OAuthGateway
 from app.clients.valhalla import ValhallaClient
 from app.core.database import get_db
 from app.core.exceptions import AccountSuspendedError, EmailNotVerifiedError
+from app.core.exceptions import InvalidCredentialsError
 from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.dem import DemSource
 from app.models import User
@@ -21,7 +22,7 @@ from app.repositories.verification_code_repository import (
     VerificationCodeRepository,
 )
 from app.services.analysis_service import RouteAnalysisService
-from app.services.auth_service import AuthService, InvalidCredentialsError
+from app.services.auth_service import AuthService
 from app.services.loop_service import LoopService
 from app.services.route_service import RouteService
 

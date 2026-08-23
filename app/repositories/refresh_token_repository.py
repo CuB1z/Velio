@@ -2,7 +2,7 @@
 
 import hashlib
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import RefreshToken
@@ -11,10 +11,6 @@ from app.models import RefreshToken
 def jti_digest(jti: str) -> str:
     """Only hashed jtis touch the database."""
     return hashlib.sha256(jti.encode()).hexdigest()
-
-
-class InvalidRefreshTokenError(Exception):
-    """Unknown, revoked or expired refresh token."""
 
 
 class RefreshTokenRepository:
@@ -50,4 +46,14 @@ class RefreshTokenRepository:
 
     async def revoke(self, token: RefreshToken) -> None:
         token.revoked = True
+        await self.db.commit()
+
+    async def revoke_all_for_user(self, user_id: int) -> None:
+        """Kill every live session of the account (e.g. after a password
+        change): refreshes die at once, access tokens expire on their own."""
+        await self.db.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == user_id, RefreshToken.revoked.is_(False))
+            .values(revoked=True)
+        )
         await self.db.commit()

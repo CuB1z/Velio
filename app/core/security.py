@@ -1,4 +1,4 @@
-"""JWT issuing/verification, one-time codes and password hashing helpers."""
+"""JWT issuing/verification, one-time codes, password policy and hashing."""
 
 import secrets
 import uuid
@@ -9,6 +9,7 @@ import bcrypt
 import jwt
 
 from app.core.config import settings
+from app.core.exceptions import WeakPasswordError
 
 ACCESS_TYPE = "access"
 REFRESH_TYPE = "refresh"
@@ -16,6 +17,38 @@ STATE_TYPE = "state"
 
 # Anti-CSRF lifetime for OAuth authorize->callback round trips.
 STATE_EXPIRE_SECONDS = 600
+
+PASSWORD_MIN_LENGTH = 8
+PASSWORD_MAX_LENGTH = 128
+
+
+def validate_password_strength(
+    password: str, *, email: str | None = None
+) -> None:
+    """Raise WeakPasswordError unless the password satisfies the policy.
+
+    Rules: 8-128 characters with at least one lowercase, one uppercase
+    and one digit; it must not equal the account email nor contain its
+    local part. Symbols are allowed but not required.
+    """
+    problems: list[str] = []
+    if not PASSWORD_MIN_LENGTH <= len(password) <= PASSWORD_MAX_LENGTH:
+        problems.append(f"must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long")
+    if not any(c.islower() for c in password):
+        problems.append("must contain a lowercase letter")
+    if not any(c.isupper() for c in password):
+        problems.append("must contain an uppercase letter")
+    if not any(c.isdigit() for c in password):
+        problems.append("must contain a digit")
+
+    if email:
+        local = email.split("@", 1)[0].casefold()
+        candidate = password.casefold()
+        if candidate == email.casefold() or local and local in candidate:
+            problems.append("must not match or contain the email")
+
+    if problems:
+        raise WeakPasswordError("password " + ", ".join(problems))
 
 
 def generate_otp(digits: int = 6) -> str:
