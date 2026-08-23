@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from app.core.logging import StructuredFormatter, get_logger, setup_logging
+from app.core.logging import StructuredFormatter, setup_logging
 
 
 @pytest.fixture(autouse=True)
@@ -17,7 +17,7 @@ def _restore_root_handlers():
 
 def test_formatter_emits_structured_fields():
     record = logging.LogRecord(
-        "cycling-router.test", logging.INFO, __file__, 1, "hello %s", ("world",), None
+        "test", logging.INFO, __file__, 1, "hello %s", ("world",), None
     )
     record.extra_data = {"distance_km": 70.0, "profile": "safe"}
 
@@ -36,7 +36,7 @@ def test_formatter_includes_exceptions():
         import sys
 
         record = logging.LogRecord(
-            "cycling-router.test",
+            "test",
             logging.ERROR,
             __file__,
             1,

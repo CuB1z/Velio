@@ -5,15 +5,15 @@ development use the console adapter (the content lands in the logs),
 production plugs Brevo's transactional API in through settings alone.
 """
 
+import logging
 from dataclasses import dataclass
 
 import httpx
 
 from app.core.config import settings
 from app.core.exceptions import MailDeliveryError
-from app.core.logging import get_logger
 
-logger = get_logger("mail")
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)

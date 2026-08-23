@@ -12,7 +12,7 @@ class StructuredFormatter(logging.Formatter):
         log_data = {
             "timestamp": self.formatTime(record),
             "level": record.levelname,
-            "logger": record.name,
+            "source": record.name,
             "message": record.getMessage(),
         }
         if hasattr(record, "extra_data"):
@@ -48,10 +48,3 @@ def setup_logging() -> None:
         native = logging.getLogger(name)
         native.handlers.clear()
         native.propagate = True
-
-
-logger = logging.getLogger("cycling-router")
-
-
-def get_logger(name: str) -> logging.Logger:
-    return logging.getLogger(f"cycling-router.{name}")

@@ -14,9 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
-from app.core.logging import get_logger
 
-logger = get_logger("access")
+logger = logging.getLogger(__name__)
 
 HEALTH_PATH = "/api/health"
 

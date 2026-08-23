@@ -1,8 +1,9 @@
 """Loop generation use case bridging the HTTP layer and the engine."""
 
+import logging
+
 from app.clients.valhalla import RouteError, ValhallaClient, ValhallaError
 from app.core.exceptions import ServiceUnavailableError
-from app.core.logging import get_logger
 from app.engine.analysis import Analysis, analyze_edges
 from app.engine.cycling_score import BALANCED_WEIGHTS, Weights
 from app.engine.dem import DemSource
@@ -28,7 +29,7 @@ from app.schemas.loop import (
 class LoopService:
     """Generates and scores loops; the only entry point used by routes."""
 
-    logger = get_logger("services.loop")
+    logger = logging.getLogger(__name__)
 
     def __init__(self, valhalla: ValhallaClient, dem: DemSource):
         self.valhalla = valhalla

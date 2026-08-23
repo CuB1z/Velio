@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.engine.polyline import encode
 from app.main import app
 
-ACCESS_LOGGER = "cycling-router.access"
+ACCESS_LOGGER = "app.core.middleware"
 
 
 class ListHandler(logging.Handler):

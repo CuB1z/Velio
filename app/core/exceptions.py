@@ -6,9 +6,9 @@ from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.core.logging import get_logger
+import logging
 
-logger = get_logger("errors")
+logger = logging.getLogger(__name__)
 
 
 class AppError(Exception):

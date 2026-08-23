@@ -1,6 +1,7 @@
 """Authentication use cases: register, login, refresh, revoke, OAuth and
 email verification."""
 
+import logging
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -25,7 +26,6 @@ from app.core.exceptions import (
     ServiceUnavailableError,
     UnknownProviderError,
 )
-from app.core.logging import get_logger
 from app.core.security import (
     REFRESH_TYPE,
     create_access_token,
@@ -45,7 +45,7 @@ from app.repositories.verification_code_repository import (
 )
 from app.schemas.auth import AuthSession, TokenPair, UserOut
 
-logger = get_logger("auth")
+logger = logging.getLogger(__name__)
 
 __all__ = ["AuthService"]
 

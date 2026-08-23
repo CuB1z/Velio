@@ -8,7 +8,6 @@ from contextlib import contextmanager
 import pytest
 from fastapi.testclient import TestClient
 
-from app.core.logging import get_logger
 from app.main import app
 
 pytestmark = [pytest.mark.e2e]
@@ -28,7 +27,7 @@ class _ListHandler(logging.Handler):
 @contextmanager
 def collect_verification_codes():
     collector = _ListHandler()
-    mail_logger = get_logger("mail")
+    mail_logger = logging.getLogger("app.clients.mail")
     previous_level = mail_logger.level
     mail_logger.addHandler(collector)
     mail_logger.setLevel("INFO")

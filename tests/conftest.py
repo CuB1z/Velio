@@ -72,7 +72,6 @@ from contextlib import contextmanager
 
 from fastapi.testclient import TestClient
 
-from app.core.logging import get_logger
 from app.main import app
 
 
@@ -102,7 +101,7 @@ class _ListHandler(logging.Handler):
 def collect_mail():
     """Capture what the console mail sender logs while the block runs."""
     collector = _ListHandler()
-    mail_logger = get_logger("mail")
+    mail_logger = logging.getLogger("app.clients.mail")
     previous_level = mail_logger.level
     mail_logger.addHandler(collector)
     mail_logger.setLevel(logging.INFO)

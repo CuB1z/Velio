@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import re
 
 import httpx
@@ -15,7 +16,6 @@ from app.clients.mail import (
 )
 from app.core.config import settings
 from app.core.exceptions import MailDeliveryError
-from app.core.logging import get_logger
 
 
 def _capture_client(handler) -> httpx.AsyncClient:
@@ -118,7 +118,7 @@ def test_brevo_add_contact_skips_without_list():
 
 
 def test_console_add_contact_logs(caplog):
-    mail_logger = get_logger("mail")
+    mail_logger = logging.getLogger("app.clients.mail")
 
     class _Capture:
         def __enter__(self):

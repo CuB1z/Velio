@@ -8,7 +8,6 @@ from contextlib import contextmanager
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
-from app.core.logging import get_logger
 from app.main import app
 
 PASSWORD = "Secret-123"
@@ -27,7 +26,7 @@ class _ListHandler(logging.Handler):
 def collect_verification_codes():
     """Capture OTPs logged by the console mail sender inside the block."""
     collector = _ListHandler()
-    mail_logger = get_logger("mail")
+    mail_logger = logging.getLogger("app.clients.mail")
     previous_level = mail_logger.level
     mail_logger.addHandler(collector)
     mail_logger.setLevel("INFO")
