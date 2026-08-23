@@ -1,0 +1,83 @@
+"""User and identity persistence."""
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.security import hash_password
+from app.models import User, UserIdentity
+
+
+class EmailAlreadyRegisteredError(Exception):
+    """The email is taken by another account."""
+
+
+class UserRepository:
+    """Every read/write on users and their login identities."""
+
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
+    async def get_by_email(self, email: str) -> User | None:
+        result = await self.db.execute(select(User).where(User.email == email))
+        return result.scalar_one_or_none()
+
+    async def get_by_id(self, user_id: int) -> User | None:
+        return await self.db.get(User, user_id)
+
+    async def find_identity_user_id(
+        self, provider: str, provider_user_id: str
+    ) -> int | None:
+        result = await self.db.execute(
+            select(UserIdentity.user_id).where(
+                UserIdentity.provider == provider,
+                UserIdentity.provider_user_id == provider_user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_local(
+        self, *, email: str, password: str, full_name: str = ""
+    ) -> User:
+        if await self.get_by_email(email):
+            raise EmailAlreadyRegisteredError(email)
+
+        user = User(
+            email=email,
+            hashed_password=hash_password(password),
+            full_name=full_name,
+        )
+        user.identities.append(UserIdentity(provider="local", provider_user_id=email))
+        self.db.add(user)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def get_or_create_oauth(
+        self,
+        *,
+        provider: str,
+        provider_user_id: str,
+        email: str,
+        full_name: str = "",
+    ) -> User:
+        """Find the account behind an external identity or create one.
+
+        Existing emails are linked to the incoming provider so the same
+        person can log in through several channels with a single account.
+        """
+        user_id = await self.find_identity_user_id(provider, provider_user_id)
+        if user_id is not None:
+            return await self.get_by_id(user_id)
+
+        user = await self.get_by_email(email)
+        if user is None:
+            user = User(email=email, full_name=full_name)
+            self.db.add(user)
+            await self.db.flush()
+
+        user.identities.append(
+            UserIdentity(provider=provider, provider_user_id=provider_user_id)
+        )
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
