@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.clients.mail import build_mail_sender
 from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
 from app.core.database import close_db
@@ -22,6 +23,7 @@ async def init_state(app: FastAPI) -> None:
         base_url=settings.valhalla_url, timeout_s=settings.valhalla_timeout_s
     )
     app.state.dem = DemSource(settings.elevation_dir)
+    app.state.mail = build_mail_sender()
 
 
 async def shutdown_state(app: FastAPI) -> None:

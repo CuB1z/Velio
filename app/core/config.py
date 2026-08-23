@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "cycling-router"
-    app_version: str = "0.10.0"
+    app_version: str = "0.11.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -71,6 +71,12 @@ class Settings(BaseSettings):
     auth_redirect_base: str = Field(
         default="http://localhost:8000", alias="AUTH_REDIRECT_BASE"
     )
+
+    brevo_api_key: str | None = Field(default=None, alias="BREVO_API_KEY")
+    mail_from: str = Field(default="no-reply@localhost", alias="MAIL_FROM")
+
+    otp_expire_minutes: int = Field(default=15, alias="OTP_EXPIRE_MINUTES")
+    otp_max_attempts: int = Field(default=5, alias="OTP_MAX_ATTEMPTS")
 
     @property
     def database_url(self) -> str:
