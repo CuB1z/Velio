@@ -1,11 +1,15 @@
 """Offline unit tests for the authentication endpoints."""
 
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
-REGISTER = {"email": "auth-test@rider.dev", "password": "secret123"}
+EMAIL = f"auth-test-{uuid.uuid4().hex}@rider.dev"
+PASSWORD = "secret123"
+REGISTER = {"email": EMAIL, "password": PASSWORD}
 
 
 @pytest.fixture(scope="module")
@@ -40,7 +44,7 @@ def test_login_with_wrong_password_fails():
     with _login() as client:
         resp = client.post(
             "/api/v1/auth/login",
-            json={"email": REGISTER["email"], "password": "wrong-pass"},
+            json={"email": EMAIL, "password": "wrong-pass"},
         )
     assert resp.status_code == 401
 
@@ -72,7 +76,7 @@ def test_refresh_rotates_and_revokes_the_old_token(session_tokens):
 def test_logout_revokes_the_refresh_token():
     with _login() as client:
         registered = client.post("/api/v1/auth/register", json={
-            "email": "logout-test@rider.dev", "password": "secret123"
+            "email": f"logout-{uuid.uuid4().hex}@rider.dev", "password": "secret123"
         })
         tokens = registered.json()["tokens"]
 
