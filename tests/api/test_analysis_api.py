@@ -41,11 +41,31 @@ class ConstantDem(DemSource):
         return 100.0
 
 
-def make_client() -> TestClient:
+class AuthorizedClient:
+    """TestClient that attaches the session Bearer token to every call."""
+
+    def __init__(self, inner: TestClient, authorization: str):
+        self._inner = inner
+        self._authorization = authorization
+
+    def request(self, method: str, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.request(method, url, **kwargs)
+
+    def get(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.get(url, **kwargs)
+
+    def post(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.post(url, **kwargs)
+
+
+def make_client(auth_headers) -> AuthorizedClient:
     app.dependency_overrides[get_analysis_service] = lambda: RouteAnalysisService(
         valhalla=OutAndBackValhalla(), dem=ConstantDem()
     )
-    return TestClient(app)
+    return AuthorizedClient(TestClient(app), auth_headers['Authorization'])
 
 
 def teardown_function():
@@ -61,8 +81,8 @@ def _out_and_back(steps: int, step_deg: float) -> str:
 BODY = {"polyline": _out_and_back(8, 0.01)}  # ~15.5 km out and back
 
 
-def test_analyze_scores_a_polyline():
-    client = make_client()
+def test_analyze_scores_a_polyline(auth_headers):
+    client = make_client(auth_headers)
     resp = client.post("/api/v1/routes/analyze", json=BODY)
     app.dependency_overrides.clear()
 
@@ -76,8 +96,8 @@ def test_analyze_scores_a_polyline():
     assert body["gain_m"] == pytest.approx(0.0, abs=0.5)
 
 
-def test_analyze_with_targets_drives_the_rating():
-    client = make_client()
+def test_analyze_with_targets_drives_the_rating(auth_headers):
+    client = make_client(auth_headers)
     far_off = client.post(
         "/api/v1/routes/analyze", json={**BODY, "target_km": 499}
     ).json()
@@ -92,8 +112,8 @@ def test_analyze_with_targets_drives_the_rating():
     )
 
 
-def test_elevation_profiles_a_polyline():
-    client = make_client()
+def test_elevation_profiles_a_polyline(auth_headers):
+    client = make_client(auth_headers)
     resp = client.post("/api/v1/routes/elevation", json=BODY)
     app.dependency_overrides.clear()
 
@@ -105,8 +125,8 @@ def test_elevation_profiles_a_polyline():
     assert body["profile"][0]["elevation_m"] == pytest.approx(100.0)
 
 
-def test_single_point_polyline_is_rejected():
-    client = make_client()
+def test_single_point_polyline_is_rejected(auth_headers):
+    client = make_client(auth_headers)
     resp = client.post(
         "/api/v1/routes/elevation",
         json={"polyline": encode([(40.0, -3.0)])},

@@ -10,7 +10,7 @@ pytestmark = pytest.mark.e2e
 ALGETE = (40.5964, -3.6318)
 
 
-def test_service_generates_scored_loop(base_url, elevation_dir):
+def test_service_generates_scored_loop(base_url, elevation_dir, auth_headers):
     with TestClient(app) as client:
         resp = client.post(
             "/api/v1/loops",
@@ -19,6 +19,7 @@ def test_service_generates_scored_loop(base_url, elevation_dir):
                 "distance_km": 70,
                 "gain_m": 900,
             },
+            headers=auth_headers,
         )
 
     assert resp.status_code == 200

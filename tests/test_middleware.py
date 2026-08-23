@@ -11,23 +11,39 @@ from app.main import app
 ACCESS_LOGGER = "cycling-router.access"
 
 
-class _OkValhalla:
-    async def trace_attributes(self, polyline, costing_options=None):
-        from app.engine.edges import RouteEdge
+class ListHandler(logging.Handler):
+    """Captures records straight from the target logger, bypassing root."""
 
-        return [RouteEdge.from_trace({"length": 1.0, "surface": "paved"})]
+    def __init__(self):
+        super().__init__()
+        self.records: list[logging.LogRecord] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.records.append(record)
 
 
-def _last_access_record(caplog) -> logging.LogRecord:
-    return next(r for r in caplog.records if r.name == ACCESS_LOGGER)
+@pytest.fixture
+def access_events() -> ListHandler:
+    handler = ListHandler()
+    logger = logging.getLogger(ACCESS_LOGGER)
+    old_level = logger.level
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    yield handler
+    logger.removeHandler(handler)
+    logger.setLevel(old_level)
 
 
-def test_access_log_emits_structured_fields(caplog):
-    with caplog.at_level(logging.DEBUG, logger=ACCESS_LOGGER):
-        resp = TestClient(app).get("/api/health")
+def _last(access_events: ListHandler) -> logging.LogRecord:
+    assert access_events.records, "no access events were emitted"
+    return access_events.records[-1]
+
+
+def test_access_log_emits_structured_fields(access_events):
+    resp = TestClient(app).get("/api/health")
 
     assert resp.status_code == 200
-    data = _last_access_record(caplog).extra_data
+    data = _last(access_events).extra_data
     assert data["method"] == "GET"
     assert data["path"] == "/api/health"
     assert data["status"] == 200
@@ -35,10 +51,13 @@ def test_access_log_emits_structured_fields(caplog):
     assert data["request_id"]
 
 
-def test_health_is_logged_at_debug_only(caplog):
-    caplog.set_level(logging.INFO, logger=ACCESS_LOGGER)
+def test_health_is_logged_at_debug_only(access_events):
+    import logging as _logging
+
+    logger = logging.getLogger(ACCESS_LOGGER)
+    logger.setLevel(_logging.INFO)
     TestClient(app).get("/api/health")
-    assert not [r for r in caplog.records if r.name == ACCESS_LOGGER]
+    assert access_events.records == []
 
 
 def test_request_id_is_echoed_as_header():
@@ -47,21 +66,23 @@ def test_request_id_is_echoed_as_header():
     assert len(request_id) == 12
 
 
-def test_forwarded_for_wins_over_remote_address(caplog):
-    with caplog.at_level(logging.DEBUG, logger=ACCESS_LOGGER):
-        TestClient(app).get(
-            "/api/health", headers={"x-forwarded-for": "203.0.113.7, 10.0.0.1"}
-        )
+def test_forwarded_for_wins_over_remote_address(access_events):
+    TestClient(app).get(
+        "/api/health", headers={"x-forwarded-for": "203.0.113.7, 10.0.0.1"}
+    )
 
-    assert _last_access_record(caplog).extra_data["client_ip"] == "203.0.113.7"
+    assert _last(access_events).extra_data["client_ip"] == "203.0.113.7"
 
 
-def test_regular_endpoints_log_at_info(caplog):
+def test_regular_endpoints_log_at_info(access_events, auth_headers):
     class DownValhalla:
         async def trace_attributes(self, polyline, costing_options=None):
             from app.clients.valhalla import ValhallaError
 
             raise ValhallaError("valhalla down")
+
+        async def aclose(self):
+            pass
 
     class AnyDem:
         def elevation(self, lat, lon):
@@ -69,24 +90,28 @@ def test_regular_endpoints_log_at_info(caplog):
 
     app.state.valhalla = DownValhalla()
     app.state.dem = AnyDem()
-    from app.engine.polyline import encode
 
     valid_polyline = encode([(40.0, -3.0), (40.01, -3.01)])
-    with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
-        # Unavailable Valhalla answers 503; the access line must exist either way.
-        TestClient(app).post(
-            "/api/v1/routes/analyze", json={"polyline": valid_polyline}
-        )
-    records = [r for r in caplog.records if r.name == ACCESS_LOGGER]
-    assert records and records[-1].extra_data["status"] == 503
+    # Unavailable Valhalla answers 503; the access line must exist either way.
+    resp = TestClient(app).post(
+        "/api/v1/routes/analyze",
+        json={"polyline": valid_polyline},
+        headers=auth_headers,
+    )
+
+    assert resp.status_code == 503
+    assert _last(access_events).extra_data["status"] == 503
 
 
-def test_access_line_survives_unhandled_errors(caplog):
+def test_access_line_survives_unhandled_errors(access_events, auth_headers):
     class ExplodingValhalla:
         async def trace_attributes(self, polyline, costing_options=None):
             # Not a ValhallaError: nothing in the app converts this, so it
             # escapes as an unhandled 500.
             raise RuntimeError("boom")
+
+        async def aclose(self):
+            pass
 
     class AnyDem:
         def elevation(self, lat, lon):
@@ -96,9 +121,11 @@ def test_access_line_survives_unhandled_errors(caplog):
     app.state.dem = AnyDem()
     polyline = encode([(40.0, -3.0), (40.01, -3.01)])
 
-    with caplog.at_level(logging.INFO, logger=ACCESS_LOGGER):
-        with pytest.raises(RuntimeError):
-            TestClient(app).post("/api/v1/routes/analyze", json={"polyline": polyline})
+    with pytest.raises(RuntimeError):
+        TestClient(app).post(
+            "/api/v1/routes/analyze",
+            json={"polyline": polyline},
+            headers=auth_headers,
+        )
 
-    records = [r for r in caplog.records if r.name == ACCESS_LOGGER]
-    assert records and records[-1].extra_data["status"] == 500
+    assert _last(access_events).extra_data["status"] == 500

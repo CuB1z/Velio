@@ -12,7 +12,7 @@ MADRID = (40.4168, -3.7038)
 NAVACERRADA = (40.7850, -3.9600)
 
 
-def test_service_routes_madrid_to_navacerrada(base_url, elevation_dir):
+def test_service_routes_madrid_to_navacerrada(base_url, elevation_dir, auth_headers):
     with TestClient(app) as client:
         resp = client.post(
             "/api/v1/routes",
@@ -22,6 +22,7 @@ def test_service_routes_madrid_to_navacerrada(base_url, elevation_dir):
                     {"lat": NAVACERRADA[0], "lon": NAVACERRADA[1]},
                 ]
             },
+            headers=auth_headers,
         )
 
     assert resp.status_code == 200
@@ -37,7 +38,7 @@ def test_service_routes_madrid_to_navacerrada(base_url, elevation_dir):
     assert len(points) > 100
 
 
-def test_route_gpx_export_carries_dem_elevation(base_url, elevation_dir):
+def test_route_gpx_export_carries_dem_elevation(base_url, elevation_dir, auth_headers):
     with TestClient(app) as client:
         resp = client.post(
             "/api/v1/routes?format=gpx",
@@ -47,6 +48,7 @@ def test_route_gpx_export_carries_dem_elevation(base_url, elevation_dir):
                     {"lat": NAVACERRADA[0], "lon": NAVACERRADA[1]},
                 ]
             },
+            headers=auth_headers,
         )
 
     assert resp.status_code == 200
@@ -55,7 +57,7 @@ def test_route_gpx_export_carries_dem_elevation(base_url, elevation_dir):
     assert "<ele>" in resp.text
 
 
-def test_route_alternatives_request_is_valid(base_url, elevation_dir):
+def test_route_alternatives_request_is_valid(base_url, elevation_dir, auth_headers):
     """Servers may ignore `alternatives`; the contract must hold either way."""
     with TestClient(app) as client:
         resp = client.post(
@@ -67,6 +69,7 @@ def test_route_alternatives_request_is_valid(base_url, elevation_dir):
                 ],
                 "alternatives": 2,
             },
+            headers=auth_headers,
         )
 
     assert resp.status_code == 200

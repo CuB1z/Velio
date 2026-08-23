@@ -14,6 +14,10 @@ from app.main import app
 class FakeValhalla:
     """Fake client returning plausible routing and scoring payloads."""
 
+    async def aclose(self):
+        pass
+
+
     async def route(self, locations, costing_options=None, avoid_locations=None):
         return RouteResult(list(locations), 74.0, 3600.0)
 
@@ -59,10 +63,10 @@ class ConstantDem(DemSource):
         return 100.0
 
 
-def make_client(valhalla) -> TestClient:
+def make_client(valhalla, auth_headers) -> AuthorizedClient:
     app.dependency_overrides[get_valhalla_client] = lambda: valhalla
     app.dependency_overrides[get_dem_source] = lambda: ConstantDem()
-    return TestClient(app)
+    return AuthorizedClient(TestClient(app), auth_headers['Authorization'])
 
 
 ROUTE_BODY = {
@@ -73,12 +77,29 @@ ROUTE_BODY = {
 }
 
 
+
+class AuthorizedClient:
+    """TestClient that attaches the session Bearer token to every call."""
+
+    def __init__(self, inner: TestClient, authorization: str):
+        self._inner = inner
+        self._authorization = authorization
+
+    def post(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.post(url, **kwargs)
+
+    def get(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.get(url, **kwargs)
+
+
 def teardown_function():
     app.dependency_overrides.clear()
 
 
-def test_create_route_returns_scored_path():
-    client = make_client(FakeValhalla())
+def test_create_route_returns_scored_path(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
     resp = client.post("/api/v1/routes", json=ROUTE_BODY)
     app.dependency_overrides.clear()
 
@@ -93,8 +114,8 @@ def test_create_route_returns_scored_path():
     assert body["duration_min"] == pytest.approx(60.0)
 
 
-def test_alternatives_return_scored_variants():
-    client = make_client(FakeValhalla())
+def test_alternatives_return_scored_variants(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
     resp = client.post("/api/v1/routes", json={**ROUTE_BODY, "alternatives": 2})
     app.dependency_overrides.clear()
 
@@ -108,16 +129,16 @@ def test_alternatives_return_scored_variants():
         assert alt["cycling_score"]["total"] >= 0.0
 
 
-def test_too_many_alternatives_is_rejected():
-    resp = make_client(FakeValhalla()).post(
+def test_too_many_alternatives_is_rejected(auth_headers):
+    resp = make_client(FakeValhalla(), auth_headers).post(
         "/api/v1/routes", json={**ROUTE_BODY, "alternatives": 5}
     )
     app.dependency_overrides.clear()
     assert resp.status_code == 422
 
 
-def test_single_waypoint_is_rejected():
-    client = make_client(FakeValhalla())
+def test_single_waypoint_is_rejected(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
     resp = client.post("/api/v1/routes", json={"waypoints": [ROUTE_BODY["waypoints"][0]]})
     app.dependency_overrides.clear()
 
@@ -125,8 +146,8 @@ def test_single_waypoint_is_rejected():
     assert resp.json()["error"] == "VALIDATION_ERROR"
 
 
-def test_no_possible_route_maps_to_422_routing_error():
-    client = make_client(UnroutableValhalla())
+def test_no_possible_route_maps_to_422_routing_error(auth_headers):
+    client = make_client(UnroutableValhalla(), auth_headers)
     resp = client.post("/api/v1/routes", json=ROUTE_BODY)
     app.dependency_overrides.clear()
 
@@ -134,8 +155,8 @@ def test_no_possible_route_maps_to_422_routing_error():
     assert resp.json()["error"] == "ROUTING_ERROR"
 
 
-def test_valhalla_outage_maps_to_503():
-    client = make_client(UnreachableValhalla())
+def test_valhalla_outage_maps_to_503(auth_headers):
+    client = make_client(UnreachableValhalla(), auth_headers)
     resp = client.post("/api/v1/routes", json=ROUTE_BODY)
     app.dependency_overrides.clear()
 

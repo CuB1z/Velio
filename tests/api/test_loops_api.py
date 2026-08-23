@@ -1,19 +1,22 @@
-"""Offline unit tests for the HTTP API, using fake Valhalla and DEM state."""
+"""Offline unit tests for the loops API, using fake Valhalla and DEM state."""
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.dependencies import get_dem_source, get_valhalla_client
-from app.clients.valhalla import RouteResult, ValhallaError
-from app.engine.edges import RouteEdge
+from app.api.dependencies import get_loop_service
 from app.core.config import settings
 from app.engine.dem import DemSource
 from app.engine.polyline import decode
 from app.main import app
+from app.services.loop_service import LoopService
 
 
 class FakeValhalla:
     """Fake client returning plausible routing and scoring payloads."""
+
+    async def aclose(self):
+        pass
+
 
     def __init__(self, distance_km: float = 60.0):
         self.distance_km = distance_km
@@ -21,9 +24,13 @@ class FakeValhalla:
 
     async def route(self, locations, costing_options=None, avoid_locations=None):
         self.costing_calls.append(costing_options)
+        from app.clients.valhalla import RouteResult
+
         return RouteResult(list(locations), self.distance_km, 3600.0)
 
     async def trace_attributes(self, encoded_polyline, costing_options=None):
+        from app.engine.edges import RouteEdge
+
         raw = [
             {
                 "length": 1.0,
@@ -37,6 +44,8 @@ class FakeValhalla:
 
 class UnreachableValhalla(FakeValhalla):
     async def route(self, locations, costing_options=None, avoid_locations=None):
+        from app.clients.valhalla import ValhallaError
+
         raise ValhallaError("connection refused")
 
 
@@ -48,10 +57,27 @@ class ConstantDem(DemSource):
         return 100.0
 
 
-def make_client(valhalla) -> TestClient:
-    app.dependency_overrides[get_valhalla_client] = lambda: valhalla
-    app.dependency_overrides[get_dem_source] = lambda: ConstantDem()
-    return TestClient(app)
+class AuthorizedClient:
+    """TestClient that attaches the session Bearer token to every call."""
+
+    def __init__(self, inner: TestClient, authorization: str):
+        self._inner = inner
+        self._authorization = authorization
+
+    def get(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.get(url, **kwargs)
+
+    def post(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.post(url, **kwargs)
+
+
+def make_client(valhalla, auth_headers) -> AuthorizedClient:
+    app.dependency_overrides[get_loop_service] = lambda: LoopService(
+        valhalla=valhalla, dem=ConstantDem()
+    )
+    return AuthorizedClient(TestClient(app), auth_headers["Authorization"])
 
 
 LOOP_BODY = {"origin": {"lat": 40.4168, "lon": -3.7038}, "distance_km": 50}
@@ -62,14 +88,13 @@ def teardown_function():
 
 
 def test_health_reports_status_and_version():
-    with TestClient(app) as client:
-        resp = client.get("/api/health")
+    resp = TestClient(app).get("/api/health")
     assert resp.status_code == 200
     assert resp.json() == {"status": "ok", "version": settings.app_version}
 
 
-def test_create_loop_returns_scored_route():
-    client = make_client(FakeValhalla(distance_km=50.0))
+def test_create_loop_returns_scored_route(auth_headers):
+    client = make_client(FakeValhalla(distance_km=50.0), auth_headers)
     resp = client.post("/api/v1/loops", json={**LOOP_BODY, "max_iterations": 4})
 
     assert resp.status_code == 200
@@ -91,51 +116,46 @@ def test_create_loop_returns_scored_route():
     assert rating["distance"] == pytest.approx(10.0)
     assert rating["safety"] == pytest.approx(8.0)
     assert rating["total"] == pytest.approx(0.4 * 10 + 0.6 * 8)
-    app.dependency_overrides.clear()
 
 
-def test_unachievable_target_returns_best_effort_infeasible():
-    client = make_client(FakeValhalla(distance_km=75.0))
+def test_unachievable_target_returns_best_effort_infeasible(auth_headers):
+    client = make_client(FakeValhalla(distance_km=75.0), auth_headers)
     resp = client.post("/api/v1/loops", json={**LOOP_BODY, "max_iterations": 3})
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 200
     assert resp.json()["feasible"] is False
 
 
-def test_invalid_payload_is_rejected():
-    client = make_client(FakeValhalla())
+def test_invalid_payload_is_rejected(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
     resp = client.post("/api/v1/loops", json={**LOOP_BODY, "distance_km": 0})
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 422
     assert resp.json()["error"] == "VALIDATION_ERROR"
 
 
-def test_unknown_profile_is_rejected():
-    client = make_client(FakeValhalla())
+def test_unknown_profile_is_rejected(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
     resp = client.post(
         "/api/v1/loops", json={**LOOP_BODY, "profile": "gravel-grinder"}
     )
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 422
     assert resp.json()["error"] == "VALIDATION_ERROR"
 
 
-def test_out_of_range_costing_option_is_rejected():
-    client = make_client(FakeValhalla())
+def test_out_of_range_costing_option_is_rejected(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
     resp = client.post(
         "/api/v1/loops", json={**LOOP_BODY, "costing": {"use_hills": 5.0}}
     )
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 422
 
 
-def test_profile_and_raw_costing_are_merged():
+def test_profile_and_raw_costing_are_merged(auth_headers):
     fake = FakeValhalla(distance_km=50.0)
-    client = make_client(fake)
+    client = make_client(fake, auth_headers)
     resp = client.post(
         "/api/v1/loops",
         json={
@@ -145,7 +165,6 @@ def test_profile_and_raw_costing_are_merged():
             "costing": {"use_hills": 0.5},
         },
     )
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 200
     assert fake.costing_calls[0] == {
@@ -155,11 +174,10 @@ def test_profile_and_raw_costing_are_merged():
     }
 
 
-def test_extra_routes_return_alternatives():
+def test_extra_routes_return_alternatives(auth_headers):
     fake = FakeValhalla(distance_km=50.0)
-    client = make_client(fake)
+    client = make_client(fake, auth_headers)
     resp = client.post("/api/v1/loops", json={**LOOP_BODY, "routes": 2})
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 200
     body = resp.json()
@@ -169,13 +187,12 @@ def test_extra_routes_return_alternatives():
     assert body["alternatives"][0]["distance_km"] == pytest.approx(50.0)
 
 
-def test_include_profile_returns_resampled_points():
-    client = make_client(FakeValhalla(distance_km=50.0))
+def test_include_profile_returns_resampled_points(auth_headers):
+    client = make_client(FakeValhalla(distance_km=50.0), auth_headers)
     resp = client.post(
         "/api/v1/loops",
         json={**LOOP_BODY, "max_iterations": 4, "include_profile": True},
     )
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 200
     profile = resp.json()["profile"]
@@ -191,19 +208,17 @@ def test_include_profile_returns_resampled_points():
     assert point["elevation_m"] == pytest.approx(100.0)
 
 
-def test_profile_is_absent_by_default():
-    client = make_client(FakeValhalla(distance_km=50.0))
+def test_profile_is_absent_by_default(auth_headers):
+    client = make_client(FakeValhalla(distance_km=50.0), auth_headers)
     resp = client.post("/api/v1/loops", json={**LOOP_BODY, "max_iterations": 4})
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 200
     assert resp.json()["profile"] is None
 
 
-def test_gpx_format_returns_xml_document():
-    client = make_client(FakeValhalla(distance_km=50.0))
-    resp = client.post("/api/v1/loops?format=gpx", json={**LOOP_BODY})
-    app.dependency_overrides.clear()
+def test_gpx_format_returns_xml_document(auth_headers):
+    client = make_client(FakeValhalla(distance_km=50.0), auth_headers)
+    resp = client.post("/api/v1/loops?format=gpx", json=LOOP_BODY)
 
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("application/gpx+xml")
@@ -212,10 +227,9 @@ def test_gpx_format_returns_xml_document():
     assert "<ele>" in resp.text
 
 
-def test_geojson_format_returns_feature_collection():
-    client = make_client(FakeValhalla(distance_km=50.0))
-    resp = client.post("/api/v1/loops?format=geojson", json={**LOOP_BODY})
-    app.dependency_overrides.clear()
+def test_geojson_format_returns_feature_collection(auth_headers):
+    client = make_client(FakeValhalla(distance_km=50.0), auth_headers)
+    resp = client.post("/api/v1/loops?format=geojson", json=LOOP_BODY)
 
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("application/geo+json")
@@ -226,10 +240,9 @@ def test_geojson_format_returns_feature_collection():
     assert props["duration_min"] > 0.0
 
 
-def test_valhalla_outage_maps_to_503():
-    client = make_client(UnreachableValhalla())
+def test_valhalla_outage_maps_to_503(auth_headers):
+    client = make_client(UnreachableValhalla(), auth_headers)
     resp = client.post("/api/v1/loops", json=LOOP_BODY)
-    app.dependency_overrides.clear()
 
     assert resp.status_code == 503
     body = resp.json()
