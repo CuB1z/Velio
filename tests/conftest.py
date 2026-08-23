@@ -62,11 +62,61 @@ def _dispose_engine():
 
 # Shared auth helpers --------------------------------------------------------
 
-import uuid  # noqa: E402
+import re
+import uuid
+from contextlib import contextmanager
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from app.main import app  # noqa: E402
+from app.core.logging import get_logger
+from app.main import app
+
+
+class _ListHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.messages: list[str] = []
+
+    def emit(self, record):
+        self.messages.append(record.getMessage())
+
+
+@contextmanager
+def collect_mail():
+    """Capture what the console mail sender logs while the block runs."""
+    collector = _ListHandler()
+    mail_logger = get_logger("mail")
+    previous_level = mail_logger.level
+    mail_logger.addHandler(collector)
+    mail_logger.setLevel(logging.INFO)
+    try:
+        yield collector.messages
+    finally:
+        mail_logger.removeHandler(collector)
+        mail_logger.setLevel(previous_level)
+
+
+def verification_code(messages: list[str]) -> str:
+    """Extract the last OTP logged by the console mail sender."""
+    found = re.findall(r"verification code is (\d{6})", "\n".join(messages))
+    assert found, f"no verification code logged in: {messages}"
+    return found[-1]
+
+
+def register_and_verify(client: TestClient, email: str) -> None:
+    """Drive an account from PENDING to ACTIVE through the real endpoints."""
+    with collect_mail() as messages:
+        resp = client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "secret123", "full_name": "Test"},
+        )
+    assert resp.status_code == 201, resp.text
+
+    resp = client.post(
+        "/api/v1/auth/verify",
+        json={"email": email, "code": verification_code(messages)},
+    )
+    assert resp.status_code == 200, resp.text
 
 
 @pytest.fixture(scope="session")
@@ -78,12 +128,13 @@ def api_client():
 
 @pytest.fixture(scope="session")
 def auth_headers(api_client) -> dict:
-    """Bearer header for a freshly registered throwaway account."""
+    """Bearer header for a freshly registered, verified throwaway account."""
     email = f"user-{uuid.uuid4().hex}@test.dev"
+    register_and_verify(api_client, email)
+
     resp = api_client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "secret123", "full_name": "Test"},
+        "/api/v1/auth/login", json={"email": email, "password": "secret123"}
     )
-    assert resp.status_code == 201, resp.text
+    assert resp.status_code == 200, resp.text
     tokens = resp.json()["tokens"]
     return {"Authorization": f"Bearer {tokens['access_token']}"}

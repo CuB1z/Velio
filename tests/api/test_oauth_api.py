@@ -1,5 +1,7 @@
 """Offline unit tests for the OAuth endpoints, with a mocked provider."""
 
+import uuid
+
 import httpx
 from fastapi.testclient import TestClient
 
@@ -19,16 +21,24 @@ def _configure_google(monkeypatch):
     monkeypatch.setattr(settings, "oauth_google_client_secret", "secret")
 
 
-def _google_round_trip_gateway() -> OAuthGateway:
+def _google_round_trip(email: str | None = None) -> tuple[OAuthGateway, str]:
+    """Gateway for one fresh provider identity; returns (gateway, email).
+
+    The provider subject is unique per call so repeated runs against a
+    long-lived test database always exercise account creation.
+    """
+    email = email or f"oauth-{uuid.uuid4().hex}@rider.dev"
+    subject = uuid.uuid4().hex
+
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "oauth2.googleapis.com":
             return httpx.Response(200, json={"access_token": "g-tok"})
         return httpx.Response(
             200,
-            json={"sub": "google-123", "email": "oauth@rider.dev", "name": "O"},
+            json={"sub": subject, "email": email, "name": "O"},
         )
 
-    return _mock_transport(handler)
+    return _mock_transport(handler), email
 
 
 # OAuth endpoints answer 307; never chase them to the real provider.
@@ -71,7 +81,8 @@ def test_authorize_redirects_to_google(monkeypatch):
 
 def test_callback_happy_path_opens_the_account(monkeypatch):
     _configure_google(monkeypatch)
-    app.dependency_overrides[get_oauth_gateway] = lambda: _google_round_trip_gateway()
+    gateway, oauth_email = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
 
     state = create_state_token("google")
     try:
@@ -84,7 +95,8 @@ def test_callback_happy_path_opens_the_account(monkeypatch):
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["user"]["email"] == "oauth@rider.dev"
+    assert body["user"]["email"] == oauth_email
+    assert body["user"]["status"] == "active"
     assert body["tokens"]["access_token"]
 
     # The session is a real one: /me answers with the same account.
@@ -93,12 +105,51 @@ def test_callback_happy_path_opens_the_account(monkeypatch):
         headers={"Authorization": f"Bearer {body['tokens']['access_token']}"},
     )
     assert me.status_code == 200
-    assert me.json()["email"] == "oauth@rider.dev"
+    assert me.json()["email"] == oauth_email
+
+
+def test_callback_links_and_activates_a_pending_local_account(monkeypatch):
+    """A provider-validated mailbox proves ownership of a pending account."""
+    from conftest import collect_mail
+
+    _configure_google(monkeypatch)
+    email = f"pending-{uuid.uuid4().hex}@rider.dev"
+    client = TestClient(app)
+
+    with collect_mail():
+        registered = client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "secret123"},
+        )
+    assert registered.status_code == 201
+
+    app.dependency_overrides[get_oauth_gateway] = lambda: _google_round_trip(email)[0]
+    try:
+        resp = _client().get(
+            "/api/v1/auth/google/callback",
+            params={
+                "code": "good-code",
+                "state": create_state_token("google"),
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+
+    assert resp.status_code == 200
+    assert resp.json()["user"]["status"] == "active"
+
+    # The local password now works too: the account was activated, and the
+    # verification code that was mailed out became irrelevant.
+    logged = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "secret123"}
+    )
+    assert logged.status_code == 200
 
 
 def test_callback_with_tampered_state_is_rejected(monkeypatch):
     _configure_google(monkeypatch)
-    app.dependency_overrides[get_oauth_gateway] = lambda: _google_round_trip_gateway()
+    gateway, _ = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
 
     forged = uuid_hex_forged_state()
     try:
