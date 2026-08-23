@@ -20,7 +20,7 @@ class RouteAnalysisService:
     async def analyze(self, data: PolylineIn) -> AnalysisOut:
         coords = self._coords(data.polyline)
         distance_km = self._distance_km(coords)
-        profile = build_profile(self.dem, coords)
+        profile = self._profile(coords)
 
         try:
             edges = await self.valhalla.trace_attributes(data.polyline)
@@ -49,7 +49,7 @@ class RouteAnalysisService:
 
     def elevation(self, data: PolylineIn) -> ElevationOut:
         coords = self._coords(data.polyline)
-        profile = build_profile(self.dem, coords)
+        profile = self._profile(coords)
         return ElevationOut(
             distance_km=profile.distance_km,
             gain_m=profile.gain_m,
@@ -67,6 +67,14 @@ class RouteAnalysisService:
         if len(coords) < 2:
             raise ValidationError("polyline must decode to at least two points")
         return coords
+
+    def _profile(self, coords):
+        try:
+            return build_profile(self.dem, coords)
+        except ValueError as exc:
+            raise ValidationError(
+                f"polyline has no usable DEM coverage: {exc}"
+            ) from exc
 
     @staticmethod
     def _distance_km(coords) -> float:
