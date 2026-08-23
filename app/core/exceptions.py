@@ -76,6 +76,22 @@ class RoutingError(AppError):
         )
 
 
+class OAuthError(AppError):
+    """The OAuth round trip was rejected (bad state, code or scope) (400)."""
+
+    def __init__(
+        self,
+        message: str = "OAuth authentication failed",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="OAUTH_ERROR",
+            details=details,
+        )
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     logger.warning(
         f"{exc.error_code}: {exc.message}",

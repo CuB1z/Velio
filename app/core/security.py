@@ -11,6 +11,32 @@ from app.core.config import settings
 
 ACCESS_TYPE = "access"
 REFRESH_TYPE = "refresh"
+STATE_TYPE = "state"
+
+# Anti-CSRF lifetime for OAuth authorize->callback round trips.
+STATE_EXPIRE_SECONDS = 600
+
+
+def create_state_token(provider: str) -> str:
+    """Signed CSRF guard binding an OAuth round trip to one provider."""
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": provider,
+        "type": STATE_TYPE,
+        "iat": now,
+        "exp": now + timedelta(seconds=STATE_EXPIRE_SECONDS),
+        "jti": uuid.uuid4().hex,
+    }
+    return jwt.encode(payload, settings.jwt_secret_key, settings.jwt_algorithm)
+
+
+def verify_state_token(token: str, provider: str) -> None:
+    """Raise jwt.PyJWTError unless the state matches this provider."""
+    payload = jwt.decode(
+        token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
+    )
+    if payload.get("type") != STATE_TYPE or payload.get("sub") != provider:
+        raise jwt.InvalidTokenError("state/provider mismatch")
 
 
 def hash_password(password: str) -> str:
