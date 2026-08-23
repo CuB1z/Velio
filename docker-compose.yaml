@@ -16,13 +16,43 @@ services:
 
     restart: unless-stopped
 
+  db:
+    image: postgres:16-alpine
+    container_name: cycling-router-db
+
+    environment:
+      POSTGRES_USER: cycling
+      POSTGRES_PASSWORD: cycling
+      POSTGRES_DB: cycling_router
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cycling -d cycling_router"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    restart: unless-stopped
+
   api:
     build: .
     container_name: cycling-router-api
 
     environment:
+      ENV: dev
       VALHALLA_URL: http://valhalla-router:8002
       VALHALLA_ELEVATION_DIR: /data/elevation
+      DB_DRIVER: postgresql+asyncpg
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: cycling
+      DB_PASSWORD: cycling
+      DB_NAME: cycling_router
 
     ports:
       - "8000:8000"
@@ -31,6 +61,12 @@ services:
       - ./valhalla/elevation:/data/elevation:ro
 
     depends_on:
-      - valhalla
+      db:
+        condition: service_healthy
+      valhalla:
+        condition: service_started
 
     restart: unless-stopped
+
+volumes:
+  pgdata:

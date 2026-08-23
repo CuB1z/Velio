@@ -8,7 +8,8 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # --- Pre-start hooks -------------------------------------------------------
-# (migrations, cache warmup, ...) — nothing to do yet.
+# Database migrations run before the API accepts traffic.
+alembic -c migrations/alembic.ini upgrade head
 
 exec uvicorn app.main:app \
     --host 0.0.0.0 \
