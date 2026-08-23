@@ -4,8 +4,10 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import get_dem_source, get_loop_service
+from app.api.dependencies import get_current_user, get_dem_source, get_loop_service
 from app.api.v1.exports import export_response
+from app.engine.dem import DemSource
+from app.models import User
 from app.schemas.loop import LoopOut, LoopRequestIn
 from app.services.loop_service import LoopService
 
@@ -16,7 +18,8 @@ router = APIRouter(prefix="/loops", tags=["loops"])
 async def create_loop(
     data: LoopRequestIn,
     service: LoopService = Depends(get_loop_service),
-    dem: object = Depends(get_dem_source),
+    dem: DemSource = Depends(get_dem_source),
+    _: User = Depends(get_current_user),
     response_format: Literal["json", "gpx", "geojson"] = Query(
         default="json", alias="format"
     ),
