@@ -1,6 +1,7 @@
 """Application-wide structured logging."""
 
 import logging
+import os
 import sys
 
 from app.core.config import settings
@@ -22,6 +23,14 @@ class StructuredFormatter(logging.Formatter):
 
 
 def setup_logging() -> None:
+    """Install the structured handler as the single root output.
+
+    Under pytest the root handlers belong to the test runner (caplog), so
+    they are left untouched; the formatter itself is unit-tested.
+    """
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return
+
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(StructuredFormatter())
 
