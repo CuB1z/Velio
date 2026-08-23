@@ -155,7 +155,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json'
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.7.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.8.0"}
 open localhost:8000/docs
 
 # Export any route as GPX (DEM elevation included) or GeoJSON
@@ -170,8 +170,12 @@ docker compose up -d --build api
 
 Configuration comes from the environment (or a `.env`): `VALHALLA_URL`,
 `VALHALLA_ELEVATION_DIR`, `VALHALLA_TIMEOUT_S`, `CORS_ORIGINS`, `DEBUG`.
-Logs are structured one-dict-per-line on stdout (`app/core/logging.py`),
-with service events carrying their fields alongside the message.
+Logging is structured one-dict-per-line on stdout (`app/core/logging.py`):
+service events carry their fields, uvicorn's own records flow through the
+same pipeline, and every HTTP request emits one access event with
+`request_id`, `method`, `path`, `status`, `duration_ms` and the
+proxy-aware `client_ip` (`X-Forwarded-For`). The container entry point is
+`start.sh`, where pre-start steps (e.g. future migrations) belong.
 
 Both endpoints return the geometry as an encoded polyline (`polyline`,
 [polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)
@@ -195,6 +199,7 @@ an unreachable Valhalla answers `503`.
 | `scripts/download_elevation.sh` | Download elevation tiles covered by the graph |
 | `scripts/setup_valhalla.sh` | Orchestrate everything end to end |
 | `scripts/smoke_test_height.sh` | Validate the `/height` endpoint |
+| `scripts/deploy_tiles.sh` | Ship tiles/config/elevation to the runtime host (`--local` or `--host user@vps`) and smoke test it |
 
 Shared helpers live in `scripts/lib/common.sh`.
 

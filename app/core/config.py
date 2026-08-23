@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "cycling-router"
-    app_version: str = "0.7.0"
+    app_version: str = "0.8.0"
     debug: bool = False
 
     valhalla_url: str = Field(
