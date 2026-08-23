@@ -1,12 +1,28 @@
 """FastAPI dependency providers."""
 
-from fastapi import Depends, Request
+from typing import Annotated
+
+import jwt
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.clients.valhalla import ValhallaClient
+from app.core.database import get_db
+from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.dem import DemSource
+from app.models import User
+from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.repositories.user_repository import UserRepository
 from app.services.analysis_service import RouteAnalysisService
+from app.services.auth_service import AuthService, InvalidCredentialsError
 from app.services.loop_service import LoopService
 from app.services.route_service import RouteService
+
+_bearer = HTTPBearer(auto_error=False)
+
+
+# Shared singletons ----------------------------------------------------------
 
 
 def get_valhalla_client(request: Request) -> ValhallaClient:
@@ -17,6 +33,32 @@ def get_valhalla_client(request: Request) -> ValhallaClient:
 def get_dem_source(request: Request) -> DemSource:
     """Shared DEM source created at startup."""
     return request.app.state.dem
+
+
+# Repositories ---------------------------------------------------------------
+
+
+def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:
+    """Provide a UserRepository bound to the request-scoped session."""
+    return UserRepository(db)
+
+
+def get_refresh_token_repository(
+    db: AsyncSession = Depends(get_db),
+) -> RefreshTokenRepository:
+    """Provide a RefreshTokenRepository bound to the request session."""
+    return RefreshTokenRepository(db)
+
+
+# Services -------------------------------------------------------------------
+
+
+def get_auth_service(
+    users: UserRepository = Depends(get_user_repository),
+    tokens: RefreshTokenRepository = Depends(get_refresh_token_repository),
+) -> AuthService:
+    """Compose the auth service on top of its repositories."""
+    return AuthService(users=users, tokens=tokens)
 
 
 def get_loop_service(
@@ -41,3 +83,37 @@ def get_analysis_service(
 ) -> RouteAnalysisService:
     """Compose the shared client and DEM source into the analysis service."""
     return RouteAnalysisService(valhalla=valhalla, dem=dem)
+
+
+# Authentication -------------------------------------------------------------
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    auth: AuthService = Depends(get_auth_service),
+) -> User:
+    """Resolve the user behind a valid Bearer access token."""
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    try:
+        payload = decode_token(credentials.credentials, ACCESS_TYPE)
+    except jwt.PyJWTError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
+
+    try:
+        return await auth.get_active_user(int(payload["sub"]))
+    except InvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from exc
