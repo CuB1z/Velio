@@ -25,3 +25,4 @@ data/*.osm.pbf
 
 test.db
 *.db
+!.env.example

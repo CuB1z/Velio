@@ -43,6 +43,9 @@ services:
     build: .
     container_name: cycling-router-api
 
+    env_file:
+      - .env
+
     environment:
       ENV: dev
       VALHALLA_URL: http://valhalla-router:8002
