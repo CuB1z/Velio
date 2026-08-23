@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
-from app.models import User, UserIdentity
+from app.models import User, UserIdentity, UserStatus
 
 
 class EmailAlreadyRegisteredError(Exception):
@@ -45,6 +45,7 @@ class UserRepository:
             email=email,
             hashed_password=hash_password(password),
             full_name=full_name,
+            status=UserStatus.PENDING,
         )
         user.identities.append(UserIdentity(provider="local", provider_user_id=email))
         self.db.add(user)
@@ -77,7 +78,12 @@ class UserRepository:
 
         user = await self.get_by_email(email)
         if user is None:
-            user = User(email=email, full_name=full_name)
+            user = User(
+                email=email,
+                full_name=full_name,
+                # The provider already validated this mailbox.
+                status=UserStatus.ACTIVE,
+            )
             # A brand-new aggregate may build its identities collection.
             user.identities.append(
                 UserIdentity(provider=provider, provider_user_id=provider_user_id)
@@ -92,6 +98,13 @@ class UserRepository:
                     provider_user_id=provider_user_id,
                 )
             )
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def mark_active(self, user: User) -> User:
+        """Promote a pending account to active once its email is verified."""
+        user.status = UserStatus.ACTIVE
         await self.db.commit()
         await self.db.refresh(user)
         return user
