@@ -3,13 +3,13 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
+from app.core.middleware import setup_middlewares
 from app.engine.dem import DemSource
 
 
@@ -34,13 +34,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+setup_middlewares(app)
 register_exception_handlers(app)
 app.include_router(api_router)

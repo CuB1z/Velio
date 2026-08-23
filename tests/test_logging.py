@@ -57,3 +57,11 @@ def test_setup_logging_installs_a_single_structured_handler():
 
 def test_get_logger_namespaces_under_the_app():
     assert get_logger("services.loop").name == "cycling-router.services.loop"
+
+
+def test_uvicorn_loggers_flow_through_the_structured_pipeline():
+    setup_logging()
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+        native = logging.getLogger(name)
+        assert not native.handlers, f"{name} keeps native handlers"
+        assert native.propagate, f"{name} does not propagate to root"

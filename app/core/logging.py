@@ -33,6 +33,13 @@ def setup_logging() -> None:
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
+    # Route uvicorn's own records through the structured pipeline instead of
+    # its console handlers, so every line shares a single format.
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+        native = logging.getLogger(name)
+        native.handlers.clear()
+        native.propagate = True
+
 
 logger = logging.getLogger("cycling-router")
 
