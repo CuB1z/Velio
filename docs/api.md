@@ -50,7 +50,7 @@ Migrations run through Alembic (`start.sh` executes
 Business endpoints require `Authorization: Bearer <access_token>`.
 Tokens are JWTs signed by the service: short-lived access tokens plus
 rotating refresh tokens persisted server-side (revocable). OAuth providers
-(Google/Strava) will reuse the same session issuance later.
+(e.g. Google) reuse the same session issuance later.
 
 ```bash
 # Register (or login with an existing account)
@@ -75,6 +75,34 @@ Session shape (`register`, `login` and `refresh` all answer it):
 Refresh rotates: the used refresh token is revoked and a fresh pair is
 returned. Logging out revokes the given refresh token.
 
+### OAuth (Google)
+
+Two round trips, minimum data requested: Google asks `openid email` only —
+the service stores nothing beyond email, provider id and optional name.
+
+> **Note:** additional providers plug into the same round trips via the
+> provider registry in `app/clients/oauth.py`.
+
+```bash
+# 1. Send the user to the consent screen (307 redirect)
+curl -s -o /dev/null -w '%{redirect_url}' \
+  localhost:8000/api/v1/auth/google/authorize
+
+# 2. Provider calls back; the code+state become an app session
+curl -s "localhost:8000/api/v1/auth/google/callback?code=CODE&state=STATE"
+```
+The callback answers the same `AuthSession` shape as login. The `state`
+parameter is a signed anti-CSRF token valid for 10 minutes; forged or
+expired states answer `400 OAUTH_ERROR`. Providers without client
+credentials configured answer `503` on `authorize`.
+
+Environment additions:
+
+| Variable | Purpose |
+|---|---|
+| `OAUTH_GOOGLE_CLIENT_ID/SECRET` | Google OAuth app credentials |
+| `AUTH_REDIRECT_BASE` | Public base URL used to build the Google callback URI |
+
 All endpoints return JSON. Route geometry comes as an **encoded polyline**
 (`polyline` field, [polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)
 precision, 1e-6): a compact string that map libraries (Google Maps Geometry,
@@ -90,7 +118,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.9.0"}
+{"status": "ok", "version": "0.10.0"}
 ```
 
 ---
