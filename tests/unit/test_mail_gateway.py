@@ -12,6 +12,7 @@ from app.clients.mail import (
     BrevoMailSender,
     ConsoleMailSender,
     build_mail_sender,
+    password_reset_email,
     verification_email,
 )
 from app.core.config import settings
@@ -136,6 +137,15 @@ def test_console_add_contact_logs(caplog):
 def test_verification_email_carries_the_code():
     message = verification_email("rider@example.com", "654321", expire_minutes=15)
     assert message.to == "rider@example.com"
+    code_in_text = re.search(r"\b654321\b", message.text)
+    code_in_html = re.search(r"\b654321\b", message.html)
+    assert code_in_text and code_in_html
+
+
+def test_password_reset_email_carries_the_code():
+    message = password_reset_email("rider@example.com", "654321", expire_minutes=15)
+    assert message.to == "rider@example.com"
+    assert message.subject
     code_in_text = re.search(r"\b654321\b", message.text)
     code_in_html = re.search(r"\b654321\b", message.html)
     assert code_in_text and code_in_html

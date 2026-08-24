@@ -154,3 +154,24 @@ def verification_email(to: str, code: str, expire_minutes: int) -> Message:
         "<p>If you did not create an account, you can ignore this email.</p>"
     )
     return Message(to=to, subject=subject, text=text, html=html)
+
+
+def password_reset_email(to: str, code: str, expire_minutes: int) -> Message:
+    """Compose the password reset email carrying the OTP."""
+    subject = "Your Cycling Router password reset code"
+    text = (
+        f"We received a request to reset your Cycling Router password.\n\n"
+        f"Your reset code is {code}. It expires in {expire_minutes} "
+        f"minutes.\n\nIf you did not request a reset, you can ignore this "
+        f"email and your password will stay unchanged."
+    )
+    html = (
+        "<p>We received a request to reset your "
+        "<strong>Cycling Router</strong> password.</p>"
+        f"<p>Your reset code is "
+        f"<strong style=\"font-size:1.4em\">{code}</strong>. "
+        f"It expires in {expire_minutes} minutes.</p>"
+        "<p>If you did not request a reset, you can ignore this email "
+        "and your password will stay unchanged.</p>"
+    )
+    return Message(to=to, subject=subject, text=text, html=html)
