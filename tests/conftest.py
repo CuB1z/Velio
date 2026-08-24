@@ -98,7 +98,7 @@ class _ListHandler(logging.Handler):
 
 
 @contextmanager
-def collect_mail():
+def _collect_mail():
     """Capture what the console mail sender logs while the block runs."""
     collector = _ListHandler()
     mail_logger = logging.getLogger("app.clients.mail")
@@ -112,6 +112,12 @@ def collect_mail():
         mail_logger.setLevel(previous_level)
 
 
+@pytest.fixture
+def collect_mail():
+    """Fixture wrapper so any test directory can capture mail output."""
+    return _collect_mail
+
+
 def verification_code(messages: list[str]) -> str:
     """Extract the last OTP logged by the console mail sender."""
     found = re.findall(r"verification code is (\d{6})", "\n".join(messages))
@@ -121,7 +127,7 @@ def verification_code(messages: list[str]) -> str:
 
 def register_and_verify(client: TestClient, email: str) -> None:
     """Drive an account from PENDING to ACTIVE through the real endpoints."""
-    with collect_mail() as messages:
+    with _collect_mail() as messages:
         resp = client.post(
             "/api/v1/auth/register",
             json={"email": email, "password": "Secret-123", "full_name": "Test"},

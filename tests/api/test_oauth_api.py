@@ -108,10 +108,10 @@ def test_callback_happy_path_opens_the_account(monkeypatch):
     assert me.json()["email"] == oauth_email
 
 
-def test_callback_links_and_activates_a_pending_local_account(monkeypatch):
+def test_callback_links_and_activates_a_pending_local_account(
+    monkeypatch, collect_mail
+):
     """A provider-validated mailbox proves ownership of a pending account."""
-    from conftest import collect_mail
-
     _configure_google(monkeypatch)
     email = f"pending-{uuid.uuid4().hex}@rider.dev"
     client = TestClient(app)
