@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.13.0"
+    app_version: str = "0.14.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -78,6 +78,8 @@ class Settings(BaseSettings):
 
     otp_expire_minutes: int = Field(default=15, alias="OTP_EXPIRE_MINUTES")
     otp_max_attempts: int = Field(default=5, alias="OTP_MAX_ATTEMPTS")
+
+    rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
 
     @property
     def database_url(self) -> str:

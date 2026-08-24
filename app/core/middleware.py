@@ -11,13 +11,16 @@ import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
+from app.core.ratelimit import GLOBAL_RPM, WINDOW_S, client_ip, limiter
 
 logger = logging.getLogger(__name__)
 
 HEALTH_PATH = "/api/health"
+RATE_LIMIT_SKIP_PREFIXES = ("/docs", "/redoc", "/openapi.json")
 
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
@@ -52,22 +55,47 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
                         "path": request.url.path,
                         "status": status_code,
                         "duration_ms": duration_ms,
-                        "client_ip": self._client_ip(request),
+                        "client_ip": client_ip(request),
                     }
                 },
             )
 
-    @staticmethod
-    def _client_ip(request: Request) -> str | None:
-        """Real client address honouring the proxy chain (Dokploy/Traefik)."""
-        forwarded = request.headers.get("x-forwarded-for")
-        if forwarded:
-            return forwarded.split(",")[0].strip()
-        return request.client.host if request.client else None
+
+class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
+    """Courtesy ceiling: one budget per client IP across every route.
+
+    Sits outside the exception handlers, so it answers with the 429
+    envelope directly instead of raising.
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if (
+            not settings.rate_limit_enabled
+            or path == HEALTH_PATH
+            or path.startswith(RATE_LIMIT_SKIP_PREFIXES)
+        ):
+            return await call_next(request)
+
+        retry_after = await limiter.hit(
+            f"global:ip:{client_ip(request)}", GLOBAL_RPM, WINDOW_S
+        )
+        if retry_after:
+            return JSONResponse(
+                status_code=429,
+                content={
+                    "error": "RATE_LIMITED",
+                    "message": "Too many requests",
+                    "details": {},
+                },
+                headers={"Retry-After": str(retry_after)},
+            )
+        return await call_next(request)
 
 
 def setup_middlewares(app: FastAPI) -> None:
     """Install every cross-cutting middleware in one place."""
+    app.add_middleware(GlobalRateLimitMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,

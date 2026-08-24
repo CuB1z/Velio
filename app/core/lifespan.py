@@ -13,6 +13,7 @@ from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
 from app.core.database import close_db
 from app.core.logging import setup_logging
+from app.core.ratelimit import limiter as rate_limiter
 from app.engine.dem import DemSource
 
 
@@ -24,6 +25,7 @@ async def init_state(app: FastAPI) -> None:
     )
     app.state.dem = DemSource(settings.elevation_dir)
     app.state.mail = build_mail_sender()
+    app.state.rate_limiter = rate_limiter
 
 
 async def shutdown_state(app: FastAPI) -> None:
