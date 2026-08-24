@@ -19,6 +19,8 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/auth/register` | — | Create a pending local account; a verification code is emailed |
 | POST | `/api/v1/auth/verify` | — | Confirm the emailed six digit code and activate the account |
 | POST | `/api/v1/auth/resend-verification` | — | Re-issue and resend the verification code (always 202) |
+| POST | `/api/v1/auth/forgot-password` | — | Email a reset code to active local accounts (always 202) |
+| POST | `/api/v1/auth/reset-password` | — | Confirm the emailed reset code, set the new password and revoke sessions |
 | POST | `/api/v1/auth/change-password` | Bearer | Rotate the local credential; live sessions are revoked |
 | POST | `/api/v1/auth/login` | — | Email/password login (verified accounts only) |
 | POST | `/api/v1/auth/refresh` | — | Rotate refresh token into a new pair |
@@ -122,11 +124,11 @@ never on routine logins.
 
 ### Passwords
 
-Every local credential (registration, password change and the future
-reset) enforces the same policy: 8–128 characters with at least one
-lowercase, one uppercase and one digit; it must not equal the account
-email nor contain its local part. Symbols are allowed but not required.
-Violations answer `422 VALIDATION_ERROR`.
+Every local credential (registration, password change and reset) enforces
+the same policy: 8–128 characters with at least one lowercase, one
+uppercase and one digit; it must not equal the account email nor contain
+its local part. Symbols are allowed but not required. Violations answer
+`422 VALIDATION_ERROR`.
 
 ```bash
 # Change the password of the logged-in account
@@ -142,10 +144,31 @@ tokens simply expire within their short lifetime. Wrong current
 password answers `401`; accounts created through OAuth only answer
 `400` until they set a password.
 
-> **Planned — password reset:** the same code infrastructure (table with a
-> `purpose` column) will back `POST /auth/forgot-password` (202, emails a
-> reset code) and `POST /auth/reset-password` (verifies the code, sets the
-> new password hash and revokes every refresh token of the account).
+### Password reset (OTP)
+
+Forgotten passwords go through the same single-use code infrastructure
+as email verification (`purpose = password_reset`, same expiry and
+wrong-guess budget):
+
+```bash
+# Ask for a reset code. Always 202: the endpoint cannot probe emails.
+curl -s -X POST localhost:8000/api/v1/auth/forgot-password \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"rider@example.com"}'
+
+# Swap the credential for the new one.
+curl -s -o /dev/null -w '%{http_code}\n' -X POST localhost:8000/api/v1/auth/reset-password \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"rider@example.com","code":"123456","new_password":"Fresh-Secret9"}'
+```
+
+| Endpoint | Behaviour |
+|---|---|
+| `POST /auth/forgot-password {email}` | Always `202`. A code is only mailed to existing **active** accounts holding a local credential — pending accounts verify through the signup flow and OAuth-only accounts have no password to reset. While a code is still live no new one is sent, so the endpoint cannot be turned into a mail-bombing vector. |
+| `POST /auth/reset-password {email, code, new_password}` | Verifies the code, stores the new hash and revokes every refresh token of the account (`204`). Wrong, expired or exhausted codes answer `400 RESET_ERROR`; suspended accounts answer `403 ACCOUNT_SUSPENDED`. |
+
+A reset never activates a pending account nor files Brevo contacts;
+those belong to the verification flow alone.
 
 ### OAuth (Google)
 
@@ -190,7 +213,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.11.0"}
+{"status": "ok", "version": "0.12.0"}
 ```
 
 ---

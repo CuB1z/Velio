@@ -155,7 +155,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json'
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.11.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.12.0"}
 open localhost:8000/docs
 
 # Export any route as GPX (DEM elevation included) or GeoJSON
@@ -173,8 +173,10 @@ Configuration comes from the environment (or a `.env`): `VALHALLA_URL`,
 Accounts are verified by email before they can log in: registration sends a
 six digit code (Brevo transactional API when `BREVO_API_KEY` is set, the
 application log otherwise) and `POST /api/v1/auth/verify` activates the
-account. Passwords follow a shared strength policy, can be rotated through
-`POST /api/v1/auth/change-password` (which revokes live sessions), and
+account. Passwords follow a shared strength policy, can be rotated
+through `POST /api/v1/auth/change-password` or recovered without a
+session via `POST /api/v1/auth/forgot-password` + `POST /api/v1/auth/reset-password`
+(both revoke live sessions), and
 activated riders are filed into a Brevo contacts list when `BREVO_LIST_ID`
 is set — full flow in [docs/api.md](docs/api.md).
 Logging is structured one-dict-per-line on stdout (`app/core/logging.py`):
