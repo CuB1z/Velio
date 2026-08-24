@@ -2,6 +2,7 @@
 email verification."""
 
 import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 
 import jwt
@@ -201,14 +202,18 @@ class AuthService:
         if stored is None:
             raise InvalidRefreshTokenError
 
-        user = await self.get_active_user(int(payload["sub"]))
+        try:
+            subject = uuid.UUID(payload["sub"])
+        except (KeyError, ValueError) as exc:
+            raise InvalidRefreshTokenError from exc
+        user = await self.get_active_user(subject)
 
         # Rotation: the used token dies with its row; a new pair is issued.
         await self._tokens.revoke(stored)
         return await self._start_session(user)
 
     async def change_password(
-        self, user_id: int, *, current_password: str, new_password: str
+        self, user_id: uuid.UUID, *, current_password: str, new_password: str
     ) -> None:
         """Rotate the local credential and force re-login everywhere.
 
@@ -286,7 +291,7 @@ class AuthService:
             await self._register_contact(user)
         return await self._start_session(user)
 
-    async def get_active_user(self, user_id: int):
+    async def get_active_user(self, user_id: uuid.UUID):
         """Resolve an existing active account or fail with 401 semantics."""
         user = await self._users.get_by_id(user_id)
         if user is None:

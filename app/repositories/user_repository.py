@@ -1,5 +1,7 @@
 """User and identity persistence."""
 
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,12 +20,12 @@ class UserRepository:
         result = await self.db.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
-    async def get_by_id(self, user_id: int) -> User | None:
+    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
         return await self.db.get(User, user_id)
 
     async def find_identity_user_id(
         self, provider: str, provider_user_id: str
-    ) -> int | None:
+    ) -> uuid.UUID | None:
         result = await self.db.execute(
             select(UserIdentity.user_id).where(
                 UserIdentity.provider == provider,

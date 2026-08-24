@@ -1,5 +1,7 @@
 """HTTP schemas for the authentication endpoints."""
 
+import uuid
+
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from app.core.security import validate_password_strength
@@ -60,7 +62,7 @@ class ChangePasswordIn(BaseModel):
 
 
 class UserOut(BaseModel):
-    id: int
+    id: uuid.UUID
     email: str
     full_name: str
     status: str

@@ -1,6 +1,7 @@
 """Refresh token persistence for issuance, rotation and revocation."""
 
 import hashlib
+import uuid
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +20,7 @@ class RefreshTokenRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def store(self, user_id: int, jti: str, expires_at) -> None:
+    async def store(self, user_id: uuid.UUID, jti: str, expires_at) -> None:
         self.db.add(
             RefreshToken(
                 user_id=user_id,
@@ -48,7 +49,7 @@ class RefreshTokenRepository:
         token.revoked = True
         await self.db.commit()
 
-    async def revoke_all_for_user(self, user_id: int) -> None:
+    async def revoke_all_for_user(self, user_id: uuid.UUID) -> None:
         """Kill every live session of the account (e.g. after a password
         change): refreshes die at once, access tokens expire on their own."""
         await self.db.execute(

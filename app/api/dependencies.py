@@ -1,6 +1,6 @@
 """FastAPI dependency providers."""
 
-from typing import Annotated
+import uuid
 
 import jwt
 from fastapi import Depends, HTTPException, Request, status
@@ -133,7 +133,8 @@ async def get_current_user(
 
     try:
         payload = decode_token(credentials.credentials, ACCESS_TYPE)
-    except jwt.PyJWTError as exc:
+        subject = uuid.UUID(payload["sub"])
+    except (jwt.PyJWTError, KeyError, ValueError, TypeError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
@@ -141,7 +142,7 @@ async def get_current_user(
         ) from exc
 
     try:
-        return await auth.get_active_user(int(payload["sub"]))
+        return await auth.get_active_user(subject)
     except (
         InvalidCredentialsError,
         EmailNotVerifiedError,

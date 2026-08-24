@@ -1,5 +1,6 @@
 """Persistence for single-use verification codes."""
 
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, select
@@ -16,7 +17,7 @@ class VerificationCodeRepository:
         self.db = db
 
     async def issue(
-        self, user_id: int, *, purpose: str, code: str, expires_at: datetime
+        self, user_id: uuid.UUID, *, purpose: str, code: str, expires_at: datetime
     ) -> VerificationCode:
         """Store a fresh code, replacing any previous live one."""
         await self.db.execute(
@@ -37,7 +38,7 @@ class VerificationCodeRepository:
         return row
 
     async def find_active(
-        self, user_id: int, *, purpose: str
+        self, user_id: uuid.UUID, *, purpose: str
     ) -> VerificationCode | None:
         """Return the live code for this purpose or None once expired."""
         result = await self.db.execute(

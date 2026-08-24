@@ -111,7 +111,7 @@ def _create_token(
     return token, jti
 
 
-def create_access_token(user_id: int, email: str) -> str:
+def create_access_token(user_id: uuid.UUID, email: str) -> str:
     token, _ = _create_token(
         str(user_id),
         ACCESS_TYPE,
@@ -121,7 +121,7 @@ def create_access_token(user_id: int, email: str) -> str:
     return token
 
 
-def create_refresh_token(user_id: int) -> tuple[str, str]:
+def create_refresh_token(user_id: uuid.UUID) -> tuple[str, str]:
     """Return (token, jti) so callers can persist and revoke refreshes."""
     return _create_token(
         str(user_id), REFRESH_TYPE, timedelta(days=settings.jwt_refresh_token_expire_days)
