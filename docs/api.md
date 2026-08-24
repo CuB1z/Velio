@@ -205,8 +205,9 @@ those belong to the verification flow alone.
 
 ### OAuth (Google)
 
-Two round trips, minimum data requested: Google asks `openid email` only —
-the service stores nothing beyond email, provider id and optional name.
+Two round trips, minimum data requested: Google asks `openid email
+profile` and the service stores nothing beyond email, provider id and
+optional name.
 
 > **Note:** additional providers plug into the same round trips via the
 > provider registry in `app/clients/oauth.py`.
@@ -416,7 +417,8 @@ generate alternatives answer with `alternatives: null`.
 
 ## Errors
 
-Every error answers with the same JSON shape:
+Every error answers with the same JSON shape — including authentication
+and rate-limit failures; no endpoint returns FastAPI's bare `detail` body:
 
 ```json
 {"error": "ERROR_CODE", "message": "human readable", "details": {}}
@@ -425,6 +427,13 @@ Every error answers with the same JSON shape:
 | Status | `error` | Cause |
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | A well-formed request carries an unusable value (e.g. a polyline that decodes to one point) |
+| 400 | `NO_LOCAL_PASSWORD` | An OAuth-only account attempted a local-credential operation |
+| 400 | `VERIFY_ERROR` / `RESET_ERROR` | Wrong, expired or exhausted emailed code |
+| 400 | `OAUTH_ERROR` | Forged or expired OAuth state, rejected code |
+| 401 | `UNAUTHORIZED` / `INVALID_CREDENTIALS` / `INVALID_REFRESH_TOKEN` | Missing/invalid Bearer token, wrong password, replayed refresh token |
+| 403 | `EMAIL_NOT_VERIFIED` / `ACCOUNT_SUSPENDED` | Account exists but is pending or suspended |
+| 404 | `NOT_FOUND` / `UNKNOWN_PROVIDER` | Unknown resource for this caller or provider name |
+| 409 | `EMAIL_ALREADY_REGISTERED` | The email already belongs to an account |
 | 422 | `VALIDATION_ERROR` | Request body fails schema validation |
 | 422 | `ROUTING_ERROR` | Valhalla cannot route through the given points |
 | 429 | `RATE_LIMITED` | Too many requests: the per-endpoint budget (see `RATE_LIMIT_ENABLED`) or the global per-IP ceiling tripped; retry after the seconds stated in the `Retry-After` header |
