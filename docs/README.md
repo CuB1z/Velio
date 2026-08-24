@@ -50,7 +50,6 @@ app/
 
 migrations/               Alembic environment + versioned migrations
 tools/                    Development CLIs (not part of the app)
-├── valhalla.py           Minimal Valhalla HTTP client shared by the CLIs
 ├── elevation_cli.py      Profile for a route, validated against /height
 └── loop_cli.py           Circular route generator CLI
 

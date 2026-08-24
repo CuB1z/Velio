@@ -8,9 +8,17 @@ from app.core.config import settings
 from app.main import app
 from tests.conftest import (
     PASSWORD,
+)
+from tests.conftest import (
     mail_capture as collect_verification_codes,
+)
+from tests.conftest import (
     register_account as _register,
+)
+from tests.conftest import (
     unique_email as _unique_email,
+)
+from tests.conftest import (
     verification_code as latest_code,
 )
 

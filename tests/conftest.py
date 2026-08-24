@@ -7,10 +7,8 @@ session exactly like production startup does.
 
 import asyncio
 import os
-import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
 
 # --- Hermetic environment ----------------------------------------------------
 # The ONE place where external touchpoints are forced to test doubles.
@@ -177,8 +175,24 @@ def auth_headers(api_client) -> dict:
     register_and_verify(api_client, email)
 
     resp = api_client.post(
-        "/api/v1/auth/login", json={"email": email, "password": "Secret-123"}
+        "/api/v1/auth/login", json={"email": email, "password": PASSWORD}
     )
     assert resp.status_code == 200, resp.text
     tokens = resp.json()["tokens"]
     return {"Authorization": f"Bearer {tokens['access_token']}"}
+
+
+class AuthorizedClient:
+    """TestClient that attaches the session Bearer token to every call."""
+
+    def __init__(self, inner: TestClient, authorization: str):
+        self._inner = inner
+        self._authorization = authorization
+
+    def get(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.get(url, **kwargs)
+
+    def post(self, url: str, **kwargs):
+        kwargs.setdefault("headers", {"Authorization": self._authorization})
+        return self._inner.post(url, **kwargs)

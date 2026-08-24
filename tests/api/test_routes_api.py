@@ -10,6 +10,7 @@ from app.engine.dem import DemSource
 from app.engine.edges import RouteEdge
 from app.engine.polyline import decode
 from app.main import app
+from tests.conftest import AuthorizedClient
 
 
 class FakeValhalla:
@@ -79,20 +80,6 @@ ROUTE_BODY = {
 
 
 
-class AuthorizedClient:
-    """TestClient that attaches the session Bearer token to every call."""
-
-    def __init__(self, inner: TestClient, authorization: str):
-        self._inner = inner
-        self._authorization = authorization
-
-    def post(self, url: str, **kwargs):
-        kwargs.setdefault("headers", {"Authorization": self._authorization})
-        return self._inner.post(url, **kwargs)
-
-    def get(self, url: str, **kwargs):
-        kwargs.setdefault("headers", {"Authorization": self._authorization})
-        return self._inner.get(url, **kwargs)
 
 
 def teardown_function():

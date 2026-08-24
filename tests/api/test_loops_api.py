@@ -9,6 +9,7 @@ from app.engine.dem import DemSource
 from app.engine.polyline import decode
 from app.main import app
 from app.services.loop_service import LoopService
+from tests.conftest import AuthorizedClient
 
 
 class FakeValhalla:
@@ -55,22 +56,6 @@ class ConstantDem(DemSource):
 
     def elevation(self, lat: float, lon: float) -> float:
         return 100.0
-
-
-class AuthorizedClient:
-    """TestClient that attaches the session Bearer token to every call."""
-
-    def __init__(self, inner: TestClient, authorization: str):
-        self._inner = inner
-        self._authorization = authorization
-
-    def get(self, url: str, **kwargs):
-        kwargs.setdefault("headers", {"Authorization": self._authorization})
-        return self._inner.get(url, **kwargs)
-
-    def post(self, url: str, **kwargs):
-        kwargs.setdefault("headers", {"Authorization": self._authorization})
-        return self._inner.post(url, **kwargs)
 
 
 def make_client(valhalla, auth_headers) -> AuthorizedClient:

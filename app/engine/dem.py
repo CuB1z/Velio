@@ -101,5 +101,5 @@ class DemSource:
 def _load_hgt(path: Path) -> np.ndarray:
     with gzip.open(path, "rb") as fh:
         raw = fh.read()
-    size = int(round(math.sqrt(len(raw) / 2)))
+    size = round(math.sqrt(len(raw) / 2))
     return np.frombuffer(raw, dtype=">i2").reshape(size, size)

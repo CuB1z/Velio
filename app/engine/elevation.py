@@ -87,7 +87,7 @@ def _resample(
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Densify the route at regular distance intervals by linear interpolation."""
     total = float(distances[-1])
-    count = max(2, int(math.ceil(total / interval_m)) + 1)
+    count = max(2, math.ceil(total / interval_m) + 1)
     targets = np.linspace(0.0, total, count)
     vertex_lat = np.array([c[0] for c in coords])
     vertex_lon = np.array([c[1] for c in coords])

@@ -48,11 +48,20 @@ class Settings(BaseSettings):
         default="postgresql+asyncpg",
         validation_alias=AliasChoices("db_driver", "DB_DRIVER"),
     )
-    db_host: str = Field(default="localhost", alias="DB_HOST")
-    db_port: int = Field(default=5432, alias="DB_PORT")
-    db_user: str = Field(default="cycling", alias="DB_USER")
-    db_password: str = Field(default="cycling", alias="DB_PASSWORD")
-    db_name: str = Field(default="cycling_router", alias="DB_NAME")
+    db_host: str = Field(
+        default="localhost", validation_alias=AliasChoices("db_host", "DB_HOST")
+    )
+    db_port: int = Field(default=5432, validation_alias=AliasChoices("db_port", "DB_PORT"))
+    db_user: str = Field(
+        default="cycling", validation_alias=AliasChoices("db_user", "DB_USER")
+    )
+    db_password: str = Field(
+        default="cycling", validation_alias=AliasChoices("db_password", "DB_PASSWORD")
+    )
+    db_name: str = Field(
+        default="cycling_router",
+        validation_alias=AliasChoices("db_name", "DB_NAME"),
+    )
 
     jwt_secret_key: str = Field(
         default="dev-secret-change-in-production",
