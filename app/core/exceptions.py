@@ -20,11 +20,13 @@ class AppError(Exception):
         status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
         error_code: str = "INTERNAL_ERROR",
         details: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
     ):
         self.message = message
         self.status_code = status_code
         self.error_code = error_code
         self.details = details or {}
+        self.headers = headers
         super().__init__(message)
 
 
@@ -136,6 +138,18 @@ class PasswordResetError(AppError):
         )
 
 
+class RateLimitingError(AppError):
+    """The caller exhausted a rate budget (429)."""
+
+    def __init__(self, retry_after: int):
+        super().__init__(
+            message="Too many requests",
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            error_code="RATE_LIMITED",
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
 # ---------------------------------------------------------------------------
 # Domain errors — plain exceptions; routes and services map them to HTTP.
 
@@ -200,6 +214,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": exc.error_code, "message": exc.message, "details": exc.details},
+        headers=exc.headers,
     )
 
 
