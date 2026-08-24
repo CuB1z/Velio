@@ -7,6 +7,8 @@ production plugs Brevo's transactional API in through settings alone.
 
 import logging
 from dataclasses import dataclass
+from pathlib import Path
+from string import Template
 
 import httpx
 
@@ -14,6 +16,8 @@ from app.core.config import settings
 from app.core.exceptions import MailDeliveryError
 
 logger = logging.getLogger(__name__)
+
+_TEMPLATES_DIR = Path(__file__).parent.parent / "mail"
 
 
 @dataclass(frozen=True)
@@ -138,40 +142,22 @@ def build_mail_sender() -> MailSender:
     return ConsoleMailSender()
 
 
+def _render(name: str, **values: object) -> tuple[str, str]:
+    """Fill the raw .txt/.html pair from app/mail."""
+    text = Template((_TEMPLATES_DIR / f"{name}.txt").read_text(encoding="utf-8"))
+    html = Template((_TEMPLATES_DIR / f"{name}.html").read_text(encoding="utf-8"))
+    return text.substitute(**values), html.substitute(**values)
+
+
 def verification_email(to: str, code: str, expire_minutes: int) -> Message:
     """Compose the account verification email carrying the OTP."""
-    subject = "Your Velio verification code"
-    text = (
-        f"Welcome to Velio!\n\nYour verification code is "
-        f"{code}. It expires in {expire_minutes} minutes.\n\n"
-        f"If you did not create an account, you can ignore this email."
-    )
-    html = (
-        "<p>Welcome to <strong>Velio</strong>!</p>"
-        f"<p>Your verification code is "
-        f"<strong style=\"font-size:1.4em\">{code}</strong>. "
-        f"It expires in {expire_minutes} minutes.</p>"
-        "<p>If you did not create an account, you can ignore this email.</p>"
-    )
-    return Message(to=to, subject=subject, text=text, html=html)
+    text, html = _render("verification", code=code, expire_minutes=expire_minutes)
+    return Message(to=to, subject="Your Velio verification code", text=text, html=html)
 
 
 def password_reset_email(to: str, code: str, expire_minutes: int) -> Message:
     """Compose the password reset email carrying the OTP."""
-    subject = "Your Velio password reset code"
-    text = (
-        f"We received a request to reset your Velio password.\n\n"
-        f"Your reset code is {code}. It expires in {expire_minutes} "
-        f"minutes.\n\nIf you did not request a reset, you can ignore this "
-        f"email and your password will stay unchanged."
+    text, html = _render("password_reset", code=code, expire_minutes=expire_minutes)
+    return Message(
+        to=to, subject="Your Velio password reset code", text=text, html=html
     )
-    html = (
-        "<p>We received a request to reset your "
-        "<strong>Velio</strong> password.</p>"
-        f"<p>Your reset code is "
-        f"<strong style=\"font-size:1.4em\">{code}</strong>. "
-        f"It expires in {expire_minutes} minutes.</p>"
-        "<p>If you did not request a reset, you can ignore this email "
-        "and your password will stay unchanged.</p>"
-    )
-    return Message(to=to, subject=subject, text=text, html=html)
