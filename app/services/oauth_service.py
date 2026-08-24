@@ -78,6 +78,11 @@ class OAuthService:
             )
             is not None
         )
+        # Linking an existing local account requires a provider-verified
+        # email; unverified addresses never take over accounts.
+        if not existed and not identity.email_verified:
+            if await self._users.get_by_email(identity.email) is not None:
+                raise OAuthError("provider did not verify your email")
         user = await self._users.get_or_create_oauth(
             provider=identity.provider,
             provider_user_id=identity.provider_user_id,

@@ -209,6 +209,11 @@ Two round trips, minimum data requested: Google asks `openid email
 profile` and the service stores nothing beyond email, provider id and
 optional name.
 
+Linking a provider identity to an existing local account requires the
+provider to have verified the email (`email_verified`); an unverified
+address answering for a registered account is rejected with
+`400 OAUTH_ERROR` and the account is left untouched.
+
 > **Note:** additional providers plug into the same round trips via the
 > provider registry in `app/clients/oauth.py`.
 

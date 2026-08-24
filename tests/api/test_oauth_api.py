@@ -21,7 +21,9 @@ def _configure_google(monkeypatch):
     monkeypatch.setattr(settings, "oauth_google_client_secret", "secret")
 
 
-def _google_round_trip(email: str | None = None) -> tuple[OAuthGateway, str]:
+def _google_round_trip(
+    email: str | None = None, *, email_verified: bool = True
+) -> tuple[OAuthGateway, str]:
     """Gateway for one fresh provider identity; returns (gateway, email).
 
     The provider subject is unique per call so repeated runs against a
@@ -35,7 +37,12 @@ def _google_round_trip(email: str | None = None) -> tuple[OAuthGateway, str]:
             return httpx.Response(200, json={"access_token": "g-tok"})
         return httpx.Response(
             200,
-            json={"sub": subject, "email": email, "name": "O"},
+            json={
+                "sub": subject,
+                "email": email,
+                "name": "O",
+                "email_verified": email_verified,
+            },
         )
 
     return _mock_transport(handler), email
@@ -144,6 +151,45 @@ def test_callback_links_and_activates_a_pending_local_account(
         "/api/v1/auth/login", json={"email": email, "password": "Secret-123"}
     )
     assert logged.status_code == 200
+
+
+def test_callback_with_unverified_email_cannot_take_over_an_account(
+    monkeypatch, collect_mail
+):
+    """Linking requires the provider to have verified the email."""
+    _configure_google(monkeypatch)
+    email = f"owner-{uuid.uuid4().hex}@rider.dev"
+    client = TestClient(app)
+
+    with collect_mail():
+        registered = client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "Secret-123"},
+        )
+    assert registered.status_code == 201
+
+    gateway, _ = _google_round_trip(email, email_verified=False)
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
+    try:
+        resp = _client().get(
+            "/api/v1/auth/google/callback",
+            params={
+                "code": "good-code",
+                "state": create_state_token("google"),
+            },
+        )
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+
+    assert resp.status_code == 400
+    assert resp.json()["error"] == "OAUTH_ERROR"
+
+    # The account is untouched: still pending, no identity attached.
+    logged = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "Secret-123"}
+    )
+    assert logged.status_code == 403
+    assert logged.json()["error"] == "EMAIL_NOT_VERIFIED"
 
 
 def test_callback_with_tampered_state_is_rejected(monkeypatch):

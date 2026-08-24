@@ -27,6 +27,7 @@ class OAuthIdentity:
     provider_user_id: str
     email: str
     full_name: str = ""
+    email_verified: bool = False
 
 
 @dataclass(frozen=True)
@@ -150,6 +151,7 @@ class OAuthGateway:
                 provider_user_id=str(profile["sub"]),
                 email=str(profile.get("email") or ""),
                 full_name=str(profile.get("name") or ""),
+                email_verified=bool(profile.get("email_verified", False)),
             )
 
         if not identity.provider_user_id or not identity.email:
