@@ -26,6 +26,9 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/auth/refresh` | — | Rotate refresh token into a new pair |
 | POST | `/api/v1/auth/logout` | — | Revoke a refresh token |
 | GET | `/api/v1/auth/me` | Bearer | Current user profile |
+| GET | `/api/v1/auth/sessions` | Bearer | List live sessions with device metadata |
+| DELETE | `/api/v1/auth/sessions/{session_id}` | Bearer | Revoke one session (404 if not owned) |
+| DELETE | `/api/v1/auth/sessions` | Bearer | Revoke every session except the caller's |
 | GET | `/api/v1/auth/{provider}/authorize` | — | Start the OAuth round trip (307) |
 | GET | `/api/v1/auth/{provider}/callback` | — | Finish the OAuth round trip, returns session |
 | POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets |
@@ -103,6 +106,35 @@ Session shape (`login` and `refresh` answer it):
 
 Refresh rotates: the used refresh token is revoked and a fresh pair is
 returned. Logging out revokes the given refresh token.
+
+### Sessions
+
+Every login, refresh and OAuth callback stamps the issuing device into the
+refresh row (`user_agent`, truncated to 256 chars, plus `created_at`).
+Access tokens carry a `sid` claim naming the refresh session they were
+issued alongside, so `GET /auth/sessions` can flag which entry is the
+caller's own; the marker is accurate until the access token expires or its
+refresh rotates away.
+
+```bash
+curl -s localhost:8000/api/v1/auth/sessions \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | jq
+```
+
+```json
+[
+  {"id": 7, "created_at": "2026-08-24T10:12:09Z", "user_agent": "RiderApp/1.0", "current": true},
+  {"id": 5, "created_at": "2026-08-23T18:44:51Z", "user_agent": "RiderWeb/2.0", "current": false}
+]
+```
+
+`DELETE /auth/sessions/{id}` revokes a single row (`404` when it belongs to
+someone else); `DELETE /auth/sessions` revokes every live session except
+the caller's — when the token carries no usable `sid`, everything dies.
+
+Replaying an already-rotated refresh token is treated as theft: the service
+revokes all live sessions of the account and answers the usual `401`.
+Unknown garbage tokens just fail without side effects.
 
 ### Email verification (OTP)
 
