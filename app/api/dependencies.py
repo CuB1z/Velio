@@ -10,9 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.clients.mail import MailSender, build_mail_sender
 from app.clients.oauth import OAuthGateway
 from app.clients.valhalla import ValhallaClient
+from app.core.config import settings
 from app.core.database import get_db
-from app.core.exceptions import AccountSuspendedError, EmailNotVerifiedError
-from app.core.exceptions import InvalidCredentialsError
+from app.core.exceptions import (
+    AccountSuspendedError,
+    EmailNotVerifiedError,
+    InvalidCredentialsError,
+)
+from app.core.ratelimit import RULES, client_ip, enforce, match_rule
 from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.dem import DemSource
 from app.models import User
@@ -153,3 +158,47 @@ async def get_current_user(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+
+async def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    auth: AuthService = Depends(get_auth_service),
+) -> User | None:
+    """Best-effort identity for rate limiting; None when anonymous."""
+    if credentials is None:
+        return None
+    try:
+        payload = decode_token(credentials.credentials, ACCESS_TYPE)
+        subject = uuid.UUID(payload["sub"])
+    except (jwt.PyJWTError, KeyError, ValueError, TypeError):
+        return None
+    try:
+        return await auth.get_active_user(subject)
+    except (
+        InvalidCredentialsError,
+        EmailNotVerifiedError,
+        AccountSuspendedError,
+    ):
+        # Any rejection means "no attributable caller" for budgets.
+        return None
+
+
+async def rate_limit_guard(
+    request: Request,
+    user: User | None = Depends(get_optional_user),
+) -> None:
+    """Enforce the RULES entry matching the requested path, if any.
+
+    Router-level dependency covering every endpoint at once: the ip side
+    always applies, the user side once a Bearer identifies the caller.
+    Endpoints without a rule fall back to the global ceiling alone.
+    """
+    if not settings.rate_limit_enabled:
+        return
+    path = match_rule(request.url.path)
+    if path is None:
+        return
+    if RULES[path]["ip"] is not None:
+        await enforce(path, "ip", client_ip(request) or "unknown")
+    if user is not None and RULES[path]["user"] is not None:
+        await enforce(path, "user", str(user.id))

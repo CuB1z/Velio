@@ -24,12 +24,23 @@ HERMETIC_ENV = {
     "BREVO_API_KEY": "",
     "BREVO_LIST_ID": "0",
     "MAIL_FROM": "no-reply@test.dev",
+    "RATE_LIMIT_ENABLED": "false",
 }
 os.environ.update(HERMETIC_ENV)
 
 import logging
 
 import pytest
+
+from app.core.ratelimit import limiter as _rate_limiter
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Keep rate budgets from leaking between test cases."""
+    _rate_limiter.reset()
+    yield
+    _rate_limiter.reset()
 
 
 def pytest_configure(config):
