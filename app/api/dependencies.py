@@ -27,10 +27,12 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.verification_code_repository import (
     VerificationCodeRepository,
 )
+from app.services.account_service import AccountService, ensure_active
 from app.services.analysis_service import RouteAnalysisService
-from app.services.auth_service import AuthService, ensure_active
 from app.services.loop_service import LoopService
+from app.services.oauth_service import OAuthService
 from app.services.route_service import RouteService
+from app.services.session_service import SessionService
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -85,17 +87,32 @@ def get_oauth_gateway() -> OAuthGateway:
     return OAuthGateway()
 
 
-def get_auth_service(
+def get_account_service(
+    users: UserRepository = Depends(get_user_repository),
+    codes: VerificationCodeRepository = Depends(get_verification_code_repository),
+    tokens: RefreshTokenRepository = Depends(get_refresh_token_repository),
+    mail: MailSender = Depends(get_mail_sender),
+) -> AccountService:
+    """Compose the account lifecycle service (OTP + credentials)."""
+    return AccountService(users=users, codes=codes, tokens=tokens, mail=mail)
+
+
+def get_session_service(
     users: UserRepository = Depends(get_user_repository),
     tokens: RefreshTokenRepository = Depends(get_refresh_token_repository),
-    codes: VerificationCodeRepository = Depends(get_verification_code_repository),
-    oauth: OAuthGateway = Depends(get_oauth_gateway),
+) -> SessionService:
+    """Compose the session lifecycle service (mint / rotate / revoke)."""
+    return SessionService(users=users, tokens=tokens)
+
+
+def get_oauth_service(
+    users: UserRepository = Depends(get_user_repository),
+    sessions: SessionService = Depends(get_session_service),
     mail: MailSender = Depends(get_mail_sender),
-) -> AuthService:
-    """Compose the auth service on top of its repositories and gateways."""
-    return AuthService(
-        users=users, tokens=tokens, codes=codes, oauth=oauth, mail=mail
-    )
+    oauth: OAuthGateway = Depends(get_oauth_gateway),
+) -> OAuthService:
+    """Compose the OAuth round trips; token issuance comes from sessions."""
+    return OAuthService(users=users, sessions=sessions, mail=mail, oauth=oauth)
 
 
 def get_loop_service(
@@ -128,7 +145,6 @@ def get_analysis_service(
 async def get_current_user(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    auth: AuthService = Depends(get_auth_service),
 ) -> User:
     """Resolve the user behind a valid Bearer access token.
 
