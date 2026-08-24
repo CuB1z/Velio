@@ -7,9 +7,13 @@ Repositories never commit: the request-scoped session in
 import uuid
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import EmailAlreadyRegisteredError
+from app.core.exceptions import (
+    ConflictError,
+    EmailAlreadyRegisteredError,
+)
 from app.models import User, UserIdentity, UserStatus
 
 
@@ -51,7 +55,11 @@ class UserRepository:
         )
         user.identities.append(UserIdentity(provider="local", provider_user_id=email))
         self.db.add(user)
-        await self.db.flush()
+        try:
+            await self.db.flush()
+        except IntegrityError as exc:
+            # Lost the unique race: answer the conflict.
+            raise EmailAlreadyRegisteredError(email) from exc
         await self.db.refresh(user)
         return user
 
@@ -98,7 +106,11 @@ class UserRepository:
                     provider_user_id=provider_user_id,
                 )
             )
-        await self.db.flush()
+        try:
+            await self.db.flush()
+        except IntegrityError as exc:
+            # Lost a unique race: conflict, caller retries.
+            raise ConflictError from exc
         return user
 
     async def mark_active(self, user: User) -> User:

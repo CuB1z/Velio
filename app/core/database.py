@@ -38,7 +38,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             yield session
             await session.commit()
         except AppError:
-            await session.commit()
+            try:
+                await session.commit()
+            except Exception:  # noqa: BLE001 - poisoned tx, best effort
+                await session.rollback()
             raise
         except Exception:
             await session.rollback()
