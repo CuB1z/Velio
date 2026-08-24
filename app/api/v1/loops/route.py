@@ -27,15 +27,4 @@ async def create_loop(
     loop_out = await service.generate(data)
     if response_format == "json":
         return loop_out
-    return export_response(
-        loop_out.polyline,
-        dem,
-        response_format,
-        name=f"loop-{loop_out.distance_km:.1f}km",
-        distance_km=loop_out.distance_km,
-        gain_m=loop_out.gain_m,
-        loss_m=loop_out.loss_m,
-        duration_min=loop_out.duration_min,
-        overlap_ratio=loop_out.overlap_ratio,
-        cycling_score=loop_out.cycling_score,
-    )
+    return export_response(loop_out, dem, response_format, kind="loop")

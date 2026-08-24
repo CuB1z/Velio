@@ -5,9 +5,9 @@ from .user import RefreshToken, User, UserIdentity, UserStatus, VerificationCode
 
 __all__ = [
     "Base",
+    "RefreshToken",
     "User",
     "UserIdentity",
     "UserStatus",
-    "RefreshToken",
     "VerificationCode",
 ]

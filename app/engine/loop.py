@@ -20,8 +20,8 @@ Development CLI (from the repo root):
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass, replace
-from typing import Callable
 
 from .elevation import build_profile
 from .geo import destination_point, haversine_m

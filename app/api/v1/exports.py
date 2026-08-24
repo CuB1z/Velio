@@ -11,27 +11,25 @@ from app.engine.elevation import build_profile
 from app.engine.geojson import build_geojson
 from app.engine.gpx import build_gpx
 from app.engine.polyline import decode
-from app.schemas.loop import CyclingScoreOut
 
 
 def export_response(
-    polyline: str,
+    result,
     dem: DemSource,
     fmt: Literal["gpx", "geojson"],
     *,
-    name: str,
-    distance_km: float,
-    gain_m: float,
-    loss_m: float,
-    duration_min: float,
-    overlap_ratio: float | None = None,
-    cycling_score: CyclingScoreOut | None = None,
+    kind: Literal["loop", "route"],
 ) -> Response:
-    """Render one routed shape as GPX 1.1 or GeoJSON with DEM elevations."""
-    samples = build_profile(dem, decode(polyline)).samples
-    description = f"{distance_km:.1f} km, {gain_m:.0f} m D+, {loss_m:.0f} m D-"
-    if cycling_score:
-        description += f", score {cycling_score.total:.1f}/10"
+    """Render a routed result (LoopOut/RouteOut) as GPX or GeoJSON."""
+    coords = decode(result.polyline)
+    samples = build_profile(dem, coords).samples
+    name = f"{kind}-{result.distance_km:.1f}km"
+    description = (
+        f"{result.distance_km:.1f} km, {result.gain_m:.0f} m D+, "
+        f"{result.loss_m:.0f} m D-"
+    )
+    if result.cycling_score:
+        description += f", score {result.cycling_score.total:.1f}/10"
 
     if fmt == "gpx":
         return Response(
@@ -41,15 +39,17 @@ def export_response(
         )
 
     doc = build_geojson(
-        decode(polyline),
+        coords,
         name=name,
-        distance_km=distance_km,
-        duration_min=duration_min,
-        gain_m=gain_m,
-        loss_m=loss_m,
-        overlap_ratio=overlap_ratio,
+        distance_km=result.distance_km,
+        duration_min=result.duration_min,
+        gain_m=result.gain_m,
+        loss_m=result.loss_m,
+        overlap_ratio=result.overlap_ratio,
         cycling_score=(
-            CyclingScore(**cycling_score.model_dump()) if cycling_score else None
+            CyclingScore(**result.cycling_score.model_dump())
+            if result.cycling_score
+            else None
         ),
         elevations=[sample.elevation_m for sample in samples],
     )

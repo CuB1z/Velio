@@ -1,11 +1,12 @@
 """OAuth provider definitions and the async gateway that talks to them.
 
 Privacy stance: request the minimum scopes that identify the rider
-(Google: openid+email). Nothing about training, contacts or health is
-asked for.
+(Google: openid, email, profile). Nothing about training, contacts or
+health is asked for.
 """
 
 from dataclasses import dataclass
+from urllib.parse import urlencode
 
 import httpx
 
@@ -71,8 +72,6 @@ def get_provider(name: str) -> ProviderConfig:
 
 
 def build_authorize_url(config: ProviderConfig, redirect_uri: str, state: str) -> str:
-    from urllib.parse import urlencode
-
     params = {
         "response_type": "code",
         "client_id": config.client_id,

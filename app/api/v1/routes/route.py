@@ -34,18 +34,7 @@ async def create_route(
     route_out = await service.generate(data)
     if response_format == "json":
         return route_out
-    return export_response(
-        route_out.polyline,
-        dem,
-        response_format,
-        name=f"route-{route_out.distance_km:.1f}km",
-        distance_km=route_out.distance_km,
-        gain_m=route_out.gain_m,
-        loss_m=route_out.loss_m,
-        duration_min=route_out.duration_min,
-        overlap_ratio=route_out.overlap_ratio,
-        cycling_score=route_out.cycling_score,
-    )
+    return export_response(route_out, dem, response_format, kind="route")
 
 
 @router.post("/analyze", response_model=AnalysisOut)

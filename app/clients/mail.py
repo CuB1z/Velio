@@ -61,6 +61,7 @@ class BrevoMailSender(MailSender):
 
     BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email"
     BREVO_CONTACTS_URL = "https://api.brevo.com/v3/contacts"
+    TIMEOUT_S = 10.0
 
     def __init__(
         self,
@@ -72,6 +73,24 @@ class BrevoMailSender(MailSender):
         self._list_id = list_id
         self._client = client
 
+    async def _post(self, url: str, payload: dict) -> httpx.Response:
+        """POST once through the injected client or a fresh one."""
+        headers = {"api-key": self._api_key}
+        try:
+            if self._client is not None:
+                return await self._client.post(url, json=payload, headers=headers)
+            async with httpx.AsyncClient(timeout=self.TIMEOUT_S) as client:
+                return await client.post(url, json=payload, headers=headers)
+        except httpx.HTTPError as exc:
+            raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
+
+    @staticmethod
+    def _require_ok(response: httpx.Response, what: str) -> None:
+        if response.status_code >= 400:
+            raise MailDeliveryError(
+                f"brevo rejected the {what} ({response.status_code})"
+            )
+
     async def send(self, message: Message) -> None:
         payload = {
             # The display name comes from the sender verified in Brevo.
@@ -81,24 +100,7 @@ class BrevoMailSender(MailSender):
             "textContent": message.text,
             "htmlContent": message.html,
         }
-        headers = {"api-key": self._api_key}
-        try:
-            if self._client is not None:
-                response = await self._client.post(
-                    self.BREVO_SEND_URL, json=payload, headers=headers
-                )
-            else:
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    response = await client.post(
-                        self.BREVO_SEND_URL, json=payload, headers=headers
-                    )
-        except httpx.HTTPError as exc:
-            raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
-
-        if response.status_code >= 400:
-            raise MailDeliveryError(
-                f"brevo rejected the message ({response.status_code})"
-            )
+        self._require_ok(await self._post(self.BREVO_SEND_URL, payload), "message")
 
     async def add_contact(self, email: str, full_name: str = "") -> None:
         """Upsert the rider into the configured Brevo contacts list."""
@@ -112,27 +114,8 @@ class BrevoMailSender(MailSender):
             "listIds": [self._list_id],
             "updateEnabled": True,
         }
-        try:
-            if self._client is not None:
-                response = await self._client.post(
-                    self.BREVO_CONTACTS_URL,
-                    json=payload,
-                    headers={"api-key": self._api_key},
-                )
-            else:
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    response = await client.post(
-                        self.BREVO_CONTACTS_URL,
-                        json=payload,
-                        headers={"api-key": self._api_key},
-                    )
-        except httpx.HTTPError as exc:
-            raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
-
-        if response.status_code >= 400:
-            raise MailDeliveryError(
-                f"brevo rejected the contact ({response.status_code})"
-            )
+        response = await self._post(self.BREVO_CONTACTS_URL, payload)
+        self._require_ok(response, "contact")
 
 
 def build_mail_sender() -> MailSender:
