@@ -111,12 +111,18 @@ def _create_token(
     return token, jti
 
 
-def create_access_token(user_id: uuid.UUID, email: str) -> str:
+def create_access_token(
+    user_id: uuid.UUID, email: str, *, sid: str | None = None
+) -> str:
+    """Issue an access token; `sid` names the refresh session it came with."""
+    claims: dict[str, Any] = {"email": email}
+    if sid is not None:
+        claims["sid"] = sid
     token, _ = _create_token(
         str(user_id),
         ACCESS_TYPE,
         timedelta(minutes=settings.jwt_access_token_expire_minutes),
-        {"email": email},
+        claims,
     )
     return token
 

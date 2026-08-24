@@ -44,7 +44,10 @@ from app.core.security import (
     verify_state_token,
 )
 from app.models import User, UserStatus
-from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.repositories.refresh_token_repository import (
+    RefreshTokenRepository,
+    jti_digest,
+)
 from app.repositories.user_repository import UserRepository
 from app.repositories.verification_code_repository import (
     VerificationCodeRepository,
@@ -93,7 +96,9 @@ class AuthService:
         await self._send_verification_code(user)
         return user
 
-    async def login(self, *, email: str, password: str) -> AuthSession:
+    async def login(
+        self, *, email: str, password: str, user_agent: str | None = None
+    ) -> AuthSession:
         user = await self._users.get_by_email(email)
         if (
             user is None
@@ -102,7 +107,7 @@ class AuthService:
         ):
             raise InvalidCredentialsError(email)
         self._require_active(user)
-        return await self._start_session(user)
+        return await self._start_session(user, user_agent=user_agent)
 
     async def verify_email(self, *, email: str, code: str) -> User:
         """Confirm the emailed code and activate the account."""
@@ -196,10 +201,19 @@ class AuthService:
         )
         await self._tokens.revoke_all_for_user(user.id)
 
-    async def refresh(self, raw_token: str) -> AuthSession:
+    async def refresh(
+        self, raw_token: str, user_agent: str | None = None
+    ) -> AuthSession:
         payload = self._decode_refresh(raw_token)
         stored = await self._tokens.find_active_by_jti(payload["jti"])
         if stored is None:
+            # A known-but-dead token coming back means a rotated or revoked
+            # refresh was replayed — treat it as theft and kill the account's
+            # live sessions. Unknown tokens just fail.
+            replayed = await self._tokens.find_any_by_jti(payload["jti"])
+            if replayed is not None:
+                logger.warning(f"refresh replay detected for user {replayed.user_id}")
+                await self._tokens.revoke_all_for_user(replayed.user_id)
             raise InvalidRefreshTokenError
 
         try:
@@ -210,7 +224,7 @@ class AuthService:
 
         # Rotation: the used token dies with its row; a new pair is issued.
         await self._tokens.revoke(stored)
-        return await self._start_session(user)
+        return await self._start_session(user, user_agent=user_agent)
 
     async def change_password(
         self, user_id: uuid.UUID, *, current_password: str, new_password: str
@@ -237,6 +251,41 @@ class AuthService:
             raise InvalidRefreshTokenError
         await self._tokens.revoke(stored)
 
+    # Sessions ---------------------------------------------------------------
+
+    async def list_sessions(
+        self, user_id: uuid.UUID, sid: str | None = None
+    ) -> list[dict]:
+        """Live sessions of the account, flagging the caller's own (`sid`)."""
+        current_hash = jti_digest(sid) if sid else None
+        return [
+            {
+                "id": token.id,
+                "created_at": token.created_at,
+                "user_agent": token.user_agent,
+                "current": bool(current_hash) and token.jti_hash == current_hash,
+            }
+            for token in await self._tokens.list_live_for_user(user_id)
+        ]
+
+    async def revoke_session(self, user_id: uuid.UUID, session_id: int) -> bool:
+        """Revoke one live session; False when it does not belong here."""
+        return await self._tokens.revoke_by_id(user_id, session_id)
+
+    async def revoke_other_sessions(
+        self, user_id: uuid.UUID, sid: str | None = None
+    ) -> int:
+        """Revoke every live session except the caller's; all when the `sid`
+        no longer matches a live row (e.g. rotated away)."""
+        if sid:
+            for token in await self._tokens.list_live_for_user(user_id):
+                if token.jti_hash == jti_digest(sid):
+                    return await self._tokens.revoke_all_for_user_except(
+                        user_id, keep_id=token.id
+                    )
+        await self._tokens.revoke_all_for_user(user_id)
+        return 0
+
     # OAuth ------------------------------------------------------------------
 
     def authorize_url(self, provider: str) -> tuple[str, str]:
@@ -249,7 +298,7 @@ class AuthService:
             raise ServiceUnavailableError(str(exc)) from exc
 
     async def oauth_login(
-        self, provider: str, code: str, state: str
+        self, provider: str, code: str, state: str, user_agent: str | None = None
     ) -> AuthSession:
         """Complete the round trip and open (or reuse) the account."""
         try:
@@ -289,7 +338,7 @@ class AuthService:
         # activated — never on routine logins.
         if not existed or activated:
             await self._register_contact(user)
-        return await self._start_session(user)
+        return await self._start_session(user, user_agent=user_agent)
 
     async def get_active_user(self, user_id: uuid.UUID):
         """Resolve an existing active account or fail with 401 semantics."""
@@ -351,13 +400,23 @@ class AuthService:
         except Exception as exc:  # noqa: BLE001 - CRM sync must not fail auth
             logger.warning(f"contact sync for {user.email} failed: {exc}")
 
-    async def _start_session(self, user) -> AuthSession:
-        access = create_access_token(user.id, user.email)
+    async def _start_session(
+        self, user, user_agent: str | None = None
+    ) -> AuthSession:
+        """Issue a token pair; the access token carries the refresh's jti as
+        `sid` so endpoints can tell the caller's session apart."""
+        # Refresh first: its jti becomes the access token's session id.
         refresh, jti = create_refresh_token(user.id)
+        access = create_access_token(user.id, user.email, sid=jti)
 
         payload = decode_token(refresh, REFRESH_TYPE)
         expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        await self._tokens.store(user.id, jti, expires_at)
+        await self._tokens.store(
+            user.id,
+            jti,
+            expires_at,
+            user_agent=user_agent[:256] if user_agent else None,
+        )
 
         return AuthSession(
             user=UserOut.from_model(user),
