@@ -6,7 +6,7 @@ from app.engine.analysis import Analysis, analyze_edges
 from app.engine.dem import DemSource
 from app.engine.elevation import build_profile
 from app.engine.polyline import encode
-from app.schemas.loop import CyclingScoreOut, ProfilePointOut, Quality
+from app.mappers.analysis import AnalysisMapper
 from app.schemas.route import RouteOut, RouteRequestIn
 
 
@@ -50,36 +50,12 @@ class RouteService:
             loss_m=profile.loss_m,
             polyline=encode(result.coords),
             duration_min=result.duration_s / 60.0,
-            score=(
-                Quality(
-                    comfort=analysis.comfort.comfort,
-                    paved_share=analysis.comfort.paved_share,
-                    surface_km=analysis.comfort.surface_km,
-                    climb_load_m=analysis.comfort.climb_load_m,
-                    max_grade_pct=analysis.comfort.max_grade_pct,
-                )
-                if analysis.comfort
-                else None
-            ),
-            overlap_ratio=(
-                round(analysis.overlap, 4) if analysis.overlap is not None else None
-            ),
-            cycling_score=(
-                CyclingScoreOut(
-                    distance=analysis.rating.distance,
-                    safety=analysis.rating.safety,
-                    elevation=analysis.rating.elevation,
-                    overlap_penalty=analysis.rating.overlap_penalty,
-                    total=analysis.rating.total,
-                )
-                if analysis.rating
-                else None
-            ),
+            overlap_ratio=AnalysisMapper.overlap_ratio(analysis),
+            score=AnalysisMapper.quality(analysis),
+            cycling_score=AnalysisMapper.cycling_score(analysis),
         )
         if include_profile:
-            response.profile = [
-                ProfilePointOut(**sample.to_dict()) for sample in profile.samples
-            ]
+            response.profile = AnalysisMapper.profile_points(profile)
         return response
 
     async def _analyze(self, coords, distance_km: float) -> Analysis:

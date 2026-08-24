@@ -17,13 +17,8 @@ from app.engine.loop import (
 )
 from app.engine.polyline import encode
 from app.engine.profiles import RIDING_PROFILES
-from app.schemas.loop import (
-    CyclingScoreOut,
-    LoopOut,
-    LoopRequestIn,
-    ProfilePointOut,
-    Quality,
-)
+from app.mappers.analysis import AnalysisMapper
+from app.schemas.loop import LoopOut, LoopRequestIn
 
 
 class LoopService:
@@ -166,9 +161,7 @@ class LoopService:
         response = self._to_response(loop, analysis)
         if include_profile and loop.coords:
             profile = build_profile(self.dem, loop.coords)
-            response.profile = [
-                ProfilePointOut(**sample.to_dict()) for sample in profile.samples
-            ]
+            response.profile = AnalysisMapper.profile_points(profile)
         return response
 
     @staticmethod
@@ -213,29 +206,7 @@ class LoopService:
             iterations=loop.iterations,
             polyline=encode(loop.coords),
             duration_min=loop.duration_s / 60.0,
-            overlap_ratio=(
-                round(analysis.overlap, 4) if analysis.overlap is not None else None
-            ),
-            score=(
-                Quality(
-                    comfort=analysis.comfort.comfort,
-                    paved_share=analysis.comfort.paved_share,
-                    surface_km=analysis.comfort.surface_km,
-                    climb_load_m=analysis.comfort.climb_load_m,
-                    max_grade_pct=analysis.comfort.max_grade_pct,
-                )
-                if analysis.comfort
-                else None
-            ),
-            cycling_score=(
-                CyclingScoreOut(
-                    distance=analysis.rating.distance,
-                    safety=analysis.rating.safety,
-                    elevation=analysis.rating.elevation,
-                    overlap_penalty=analysis.rating.overlap_penalty,
-                    total=analysis.rating.total,
-                )
-                if analysis.rating
-                else None
-            ),
+            overlap_ratio=AnalysisMapper.overlap_ratio(analysis),
+            score=AnalysisMapper.quality(analysis),
+            cycling_score=AnalysisMapper.cycling_score(analysis),
         )

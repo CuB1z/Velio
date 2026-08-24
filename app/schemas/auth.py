@@ -68,16 +68,6 @@ class UserOut(BaseModel):
     full_name: str
     status: str
 
-    @classmethod
-    def from_model(cls, user) -> "UserOut":
-        status = getattr(user.status, "value", user.status)
-        return cls(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            status=status,
-        )
-
 
 class TokenPair(BaseModel):
     access_token: str

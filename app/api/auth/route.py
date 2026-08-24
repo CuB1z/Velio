@@ -15,6 +15,7 @@ from app.api.dependencies import (
     get_session_sid,
 )
 from app.core.exceptions import NotFoundError
+from app.mappers.user import UserMapper
 from app.schemas.auth import (
     AuthSession,
     ChangePasswordIn,
@@ -41,7 +42,7 @@ async def register(data: RegisterIn, service: AuthService = Depends(get_auth_ser
     user = await service.register(
         email=data.email, password=data.password, full_name=data.full_name
     )
-    return UserOut.from_model(user)
+    return UserMapper.out(user)
 
 
 @router.post("/verify", response_model=UserOut)
@@ -50,7 +51,7 @@ async def verify_email(
 ) -> UserOut:
     """Confirm the emailed code and activate the account."""
     user = await service.verify_email(email=data.email, code=data.code)
-    return UserOut.from_model(user)
+    return UserMapper.out(user)
 
 
 @router.post("/resend-verification", status_code=status.HTTP_202_ACCEPTED)
@@ -124,7 +125,7 @@ async def logout(
 
 @router.get("/me", response_model=UserOut)
 async def me(current_user=Depends(get_current_user)) -> UserOut:
-    return UserOut.from_model(current_user)
+    return UserMapper.out(current_user)
 
 
 # OAuth round trips ----------------------------------------------------------

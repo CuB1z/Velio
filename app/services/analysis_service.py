@@ -2,12 +2,12 @@
 
 from app.clients.valhalla import ValhallaClient, ValhallaError
 from app.core.exceptions import ServiceUnavailableError, ValidationError
-from app.engine.analysis import Analysis, analyze_edges
+from app.engine.analysis import analyze_edges
 from app.engine.dem import DemSource
 from app.engine.elevation import build_profile, cumulative_distances
 from app.engine.polyline import decode
+from app.mappers.analysis import AnalysisMapper
 from app.schemas.analysis import AnalysisOut, ElevationOut, PolylineIn
-from app.schemas.loop import CyclingScoreOut, ProfilePointOut, Quality
 
 
 class RouteAnalysisService:
@@ -40,11 +40,9 @@ class RouteAnalysisService:
             distance_km=distance_km,
             gain_m=profile.gain_m,
             loss_m=profile.loss_m,
-            score=self._comfort(analysis),
-            overlap_ratio=(
-                round(analysis.overlap, 4) if analysis.overlap is not None else None
-            ),
-            cycling_score=self._rating(analysis),
+            score=AnalysisMapper.quality(analysis),
+            overlap_ratio=AnalysisMapper.overlap_ratio(analysis),
+            cycling_score=AnalysisMapper.cycling_score(analysis),
         )
 
     def elevation(self, data: PolylineIn) -> ElevationOut:
@@ -56,9 +54,7 @@ class RouteAnalysisService:
             loss_m=profile.loss_m,
             max_uphill_grade_pct=profile.max_uphill_grade_pct,
             max_downhill_grade_pct=profile.max_downhill_grade_pct,
-            profile=[
-                ProfilePointOut(**sample.to_dict()) for sample in profile.samples
-            ],
+            profile=AnalysisMapper.profile_points(profile),
         )
 
     @staticmethod
@@ -79,29 +75,3 @@ class RouteAnalysisService:
     @staticmethod
     def _distance_km(coords) -> float:
         return cumulative_distances(coords)[-1] / 1000.0
-
-    @staticmethod
-    def _comfort(analysis: Analysis) -> Quality | None:
-        if analysis.comfort is None:
-            return None
-        c = analysis.comfort
-        return Quality(
-            comfort=c.comfort,
-            paved_share=c.paved_share,
-            surface_km=c.surface_km,
-            climb_load_m=c.climb_load_m,
-            max_grade_pct=c.max_grade_pct,
-        )
-
-    @staticmethod
-    def _rating(analysis: Analysis) -> CyclingScoreOut | None:
-        if analysis.rating is None:
-            return None
-        r = analysis.rating
-        return CyclingScoreOut(
-            distance=r.distance,
-            safety=r.safety,
-            elevation=r.elevation,
-            overlap_penalty=r.overlap_penalty,
-            total=r.total,
-        )

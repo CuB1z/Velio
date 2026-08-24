@@ -21,7 +21,6 @@ from app.clients.oauth import (
 from app.core.config import settings
 from app.core.exceptions import (
     AccountSuspendedError,
-    EmailAlreadyRegisteredError,
     EmailNotVerifiedError,
     EmailVerificationError,
     InvalidCredentialsError,
@@ -43,6 +42,7 @@ from app.core.security import (
     verify_password,
     verify_state_token,
 )
+from app.mappers.user import UserMapper
 from app.models import User, UserStatus
 from app.repositories.refresh_token_repository import (
     RefreshTokenRepository,
@@ -52,7 +52,7 @@ from app.repositories.user_repository import UserRepository
 from app.repositories.verification_code_repository import (
     VerificationCodeRepository,
 )
-from app.schemas.auth import AuthSession, TokenPair, UserOut
+from app.schemas.auth import AuthSession, TokenPair
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +87,9 @@ class AuthService:
         No session is issued: the account activates once the emailed
         code is confirmed. Mail failures are logged, never raised.
         """
-        try:
-            user = await self._users.create_local(
-                email=email, password=password, full_name=full_name
-            )
-        except EmailAlreadyRegisteredError:
-            raise
+        user = await self._users.create_local(
+            email=email, password=password, full_name=full_name
+        )
         await self._send_verification_code(user)
         return user
 
@@ -274,17 +271,18 @@ class AuthService:
 
     async def revoke_other_sessions(
         self, user_id: uuid.UUID, sid: str | None = None
-    ) -> int:
-        """Revoke every live session except the caller's; all when the `sid`
-        no longer matches a live row (e.g. rotated away)."""
-        if sid:
-            for token in await self._tokens.list_live_for_user(user_id):
-                if token.jti_hash == jti_digest(sid):
-                    return await self._tokens.revoke_all_for_user_except(
-                        user_id, keep_id=token.id
-                    )
-        await self._tokens.revoke_all_for_user(user_id)
-        return 0
+    ) -> None:
+        """Revoke every live session except the caller's; all of them when
+        no live row matches the caller's `sid` (e.g. rotated away)."""
+        live = await self._tokens.list_live_for_user(user_id)
+        keep = next(
+            (token.id for token in live if sid and token.jti_hash == jti_digest(sid)),
+            None,
+        )
+        if keep is None:
+            await self._tokens.revoke_all_for_user(user_id)
+        else:
+            await self._tokens.revoke_all_for_user_except(user_id, keep_id=keep)
 
     # OAuth ------------------------------------------------------------------
 
@@ -419,7 +417,7 @@ class AuthService:
         )
 
         return AuthSession(
-            user=UserOut.from_model(user),
+            user=UserMapper.out(user),
             tokens=TokenPair(access_token=access, refresh_token=refresh),
         )
 
