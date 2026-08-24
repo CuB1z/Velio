@@ -1,4 +1,4 @@
-# Cycling Router — Documentation
+# Velio — Documentation
 
 Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla/valhalla) and OpenStreetMap data, with an external elevation pipeline and a FastAPI service on top.
 

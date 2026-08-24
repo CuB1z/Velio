@@ -140,14 +140,14 @@ def build_mail_sender() -> MailSender:
 
 def verification_email(to: str, code: str, expire_minutes: int) -> Message:
     """Compose the account verification email carrying the OTP."""
-    subject = "Your Cycling Router verification code"
+    subject = "Your Velio verification code"
     text = (
-        f"Welcome to Cycling Router!\n\nYour verification code is "
+        f"Welcome to Velio!\n\nYour verification code is "
         f"{code}. It expires in {expire_minutes} minutes.\n\n"
         f"If you did not create an account, you can ignore this email."
     )
     html = (
-        "<p>Welcome to <strong>Cycling Router</strong>!</p>"
+        "<p>Welcome to <strong>Velio</strong>!</p>"
         f"<p>Your verification code is "
         f"<strong style=\"font-size:1.4em\">{code}</strong>. "
         f"It expires in {expire_minutes} minutes.</p>"
@@ -158,16 +158,16 @@ def verification_email(to: str, code: str, expire_minutes: int) -> Message:
 
 def password_reset_email(to: str, code: str, expire_minutes: int) -> Message:
     """Compose the password reset email carrying the OTP."""
-    subject = "Your Cycling Router password reset code"
+    subject = "Your Velio password reset code"
     text = (
-        f"We received a request to reset your Cycling Router password.\n\n"
+        f"We received a request to reset your Velio password.\n\n"
         f"Your reset code is {code}. It expires in {expire_minutes} "
         f"minutes.\n\nIf you did not request a reset, you can ignore this "
         f"email and your password will stay unchanged."
     )
     html = (
         "<p>We received a request to reset your "
-        "<strong>Cycling Router</strong> password.</p>"
+        "<strong>Velio</strong> password.</p>"
         f"<p>Your reset code is "
         f"<strong style=\"font-size:1.4em\">{code}</strong>. "
         f"It expires in {expire_minutes} minutes.</p>"

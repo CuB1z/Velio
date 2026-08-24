@@ -17,7 +17,7 @@ def build_gpx(
     *,
     name: str,
     description: str | None = None,
-    creator: str = "cycling-router",
+    creator: str = "velio",
 ) -> str:
     """Render profile samples as a GPX 1.1 document with elevation data."""
     if not samples:

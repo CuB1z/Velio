@@ -16,8 +16,8 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "cycling-router"
-    app_version: str = "0.12.0"
+    app_name: str = "velio"
+    app_version: str = "0.12.1"
     debug: bool = False
     environment: str = Field(
         default="dev",

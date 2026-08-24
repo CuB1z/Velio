@@ -1,4 +1,4 @@
-# Cycling Router
+# Velio
 
 Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla/valhalla)
 and OpenStreetMap data. Goal: point-to-point and circular cycling routes,

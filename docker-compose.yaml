@@ -18,7 +18,7 @@ services:
 
   db:
     image: postgres:16-alpine
-    container_name: cycling-router-db
+    container_name: velio-db
 
     environment:
       POSTGRES_USER: cycling
@@ -41,7 +41,7 @@ services:
 
   api:
     build: .
-    container_name: cycling-router-api
+    container_name: velio-api
 
     env_file:
       - .env
