@@ -1,8 +1,12 @@
 """Authentication endpoints: local credentials, email verification and
-OAuth round trips."""
+OAuth round trips.
+
+Services raise AppErrors directly; the central handler renders the
+shared error envelope, so no route translates exceptions here.
+"""
 
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import RedirectResponse
 
 from app.api.dependencies import (
@@ -10,15 +14,7 @@ from app.api.dependencies import (
     get_current_user,
     get_session_sid,
 )
-from app.core.exceptions import (
-    EmailAlreadyRegisteredError,
-    InvalidCredentialsError,
-    InvalidRefreshTokenError,
-    NoLocalPasswordError,
-    OAuthError,
-    ServiceUnavailableError,
-    UnknownProviderError,
-)
+from app.core.exceptions import NotFoundError
 from app.schemas.auth import (
     AuthSession,
     ChangePasswordIn,
@@ -42,12 +38,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 )
 async def register(data: RegisterIn, service: AuthService = Depends(get_auth_service)) -> UserOut:
     """Create a pending account; the verification code arrives by email."""
-    try:
-        user = await service.register(
-            email=data.email, password=data.password, full_name=data.full_name
-        )
-    except EmailAlreadyRegisteredError:
-        raise HTTPException(status_code=409, detail="Email already registered")
+    user = await service.register(
+        email=data.email, password=data.password, full_name=data.full_name
+    )
     return UserOut.from_model(user)
 
 
@@ -95,50 +88,38 @@ async def change_password(
     service: AuthService = Depends(get_auth_service),
 ) -> None:
     """Rotate the local credential; every live session is revoked."""
-    try:
-        await service.change_password(
-            current_user.id,
-            current_password=data.current_password,
-            new_password=data.new_password,
-        )
-    except InvalidCredentialsError:
-        raise HTTPException(status_code=401, detail="Current password is incorrect")
-    except NoLocalPasswordError:
-        raise HTTPException(status_code=400, detail="This account has no local password")
+    await service.change_password(
+        current_user.id,
+        current_password=data.current_password,
+        new_password=data.new_password,
+    )
 
 
 @router.post("/login", response_model=AuthSession)
 async def login(
     data: LoginIn, request: Request, service: AuthService = Depends(get_auth_service)
 ) -> AuthSession:
-    try:
-        return await service.login(
-            email=data.email,
-            password=data.password,
-            user_agent=request.headers.get("user-agent"),
-        )
-    except InvalidCredentialsError:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return await service.login(
+        email=data.email,
+        password=data.password,
+        user_agent=request.headers.get("user-agent"),
+    )
 
 
 @router.post("/refresh", response_model=AuthSession)
 async def refresh_tokens(
     data: RefreshIn, request: Request, service: AuthService = Depends(get_auth_service)
 ) -> AuthSession:
-    try:
-        return await service.refresh(
-            data.refresh_token, user_agent=request.headers.get("user-agent")
-        )
-    except InvalidRefreshTokenError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    return await service.refresh(
+        data.refresh_token, user_agent=request.headers.get("user-agent")
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout(data: RefreshIn, service: AuthService = Depends(get_auth_service)) -> None:
-    try:
-        await service.logout(data.refresh_token)
-    except InvalidRefreshTokenError:
-        raise HTTPException(status_code=401, detail="Invalid refresh token")
+async def logout(
+    data: RefreshIn, service: AuthService = Depends(get_auth_service)
+) -> None:
+    await service.logout(data.refresh_token)
 
 
 @router.get("/me", response_model=UserOut)
@@ -155,10 +136,7 @@ async def oauth_authorize(
     service: AuthService = Depends(get_auth_service),
 ) -> RedirectResponse:
     """Send the client to the provider consent screen."""
-    try:
-        url, _ = service.authorize_url(provider)
-    except UnknownProviderError as exc:
-        raise HTTPException(status_code=404, detail="Unknown provider") from exc
+    url, _ = service.authorize_url(provider)
     return RedirectResponse(url, status_code=307)
 
 
@@ -171,16 +149,9 @@ async def oauth_callback(
     service: AuthService = Depends(get_auth_service),
 ) -> AuthSession:
     """Exchange the authorization code for this app's session tokens."""
-    try:
-        return await service.oauth_login(
-            provider, code, state, user_agent=request.headers.get("user-agent")
-        )
-    except UnknownProviderError:
-        raise HTTPException(status_code=404, detail="Unknown provider")
-    except OAuthError:
-        raise
-    except ServiceUnavailableError as exc:
-        raise HTTPException(status_code=503, detail=str(exc.detail or exc.message))
+    return await service.oauth_login(
+        provider, code, state, user_agent=request.headers.get("user-agent")
+    )
 
 
 # Session management ---------------------------------------------------------
@@ -204,7 +175,7 @@ async def delete_session(
 ) -> None:
     """Revoke one live session of the account."""
     if not await service.revoke_session(current_user.id, session_id):
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise NotFoundError("Session not found")
 
 
 @router.delete("/sessions", status_code=status.HTTP_204_NO_CONTENT)

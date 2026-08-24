@@ -304,7 +304,9 @@ def test_change_password_needs_a_local_credential(monkeypatch):
         headers={"Authorization": f"Bearer {tokens['access_token']}"},
     )
     assert resp.status_code == 400
-    assert resp.json()["detail"] == "This account has no local password"
+    body = resp.json()
+    assert body["error"] == "NO_LOCAL_PASSWORD"
+    assert body["message"] == "This account has no local password"
 
 
 # Password reset --------------------------------------------------------------

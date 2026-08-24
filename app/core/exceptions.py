@@ -1,12 +1,11 @@
 """Centralised application errors and their HTTP handlers."""
 
+import logging
 from typing import Any
 
 from fastapi import Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -150,32 +149,109 @@ class RateLimitingError(AppError):
         )
 
 
+class UnauthorizedError(AppError):
+    """No or invalid credentials on an authenticated endpoint (401)."""
+
+    def __init__(self, message: str = "Authentication required"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            error_code="UNAUTHORIZED",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+class NotFoundError(AppError):
+    """The referenced resource does not exist for this caller (404)."""
+
+    def __init__(self, message: str = "Not found"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="NOT_FOUND",
+        )
+
+
+class ConflictError(AppError):
+    """The request clashes with existing state (409)."""
+
+    def __init__(self, message: str = "Conflict"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="CONFLICT",
+        )
+
+
 # ---------------------------------------------------------------------------
-# Domain errors — plain exceptions; routes and services map them to HTTP.
+# Domain errors — AppErrors too, so services raise once and the central
+# handler renders the envelope; `context` enriches logs, never responses.
 
 
-class InvalidCredentialsError(Exception):
-    """Wrong email or password."""
+class InvalidCredentialsError(AppError):
+    """Wrong email or password (401)."""
+
+    def __init__(self, context: str | None = None):
+        super().__init__(
+            message="Invalid credentials",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            error_code="INVALID_CREDENTIALS",
+        )
+        self.context = context
 
 
-class UnknownProviderError(Exception):
-    """The provider name is not one of the configured ones."""
+class InvalidRefreshTokenError(AppError):
+    """Unknown, revoked or expired refresh token (401)."""
+
+    def __init__(self):
+        super().__init__(
+            message="Invalid refresh token",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            error_code="INVALID_REFRESH_TOKEN",
+        )
 
 
-class NoLocalPasswordError(Exception):
-    """The account has no local credential (OAuth-only) to change."""
+class NoLocalPasswordError(AppError):
+    """The account has no local credential to operate on (400)."""
+
+    def __init__(self):
+        super().__init__(
+            message="This account has no local password",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="NO_LOCAL_PASSWORD",
+        )
 
 
-class EmailAlreadyRegisteredError(Exception):
-    """The email is taken by another account."""
+class EmailAlreadyRegisteredError(AppError):
+    """The email is taken by another account (409)."""
+
+    def __init__(self, context: str | None = None):
+        super().__init__(
+            message="Email already registered",
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="EMAIL_ALREADY_REGISTERED",
+        )
+        self.context = context
 
 
-class InvalidRefreshTokenError(Exception):
-    """Unknown, revoked or expired refresh token."""
+class UnknownProviderError(AppError):
+    """The provider name is not one of the configured ones (404)."""
+
+    def __init__(self, context: str | None = None):
+        super().__init__(
+            message="Unknown provider",
+            status_code=status.HTTP_404_NOT_FOUND,
+            error_code="UNKNOWN_PROVIDER",
+        )
+        self.context = context
 
 
 class WeakPasswordError(ValueError):
-    """The password does not satisfy the policy."""
+    """The password does not satisfy the policy.
+
+    Stays a ValueError: schema validators turn it into a 422 through the
+    request-validation pipeline.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -207,9 +283,17 @@ class RouteError(ValhallaError):
 
 
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    context = getattr(exc, "context", None)
     logger.warning(
         f"{exc.error_code}: {exc.message}",
-        extra={"error_code": exc.error_code, "details": exc.details, "path": str(request.url)},
+        extra={
+            "extra_data": {
+                "error_code": exc.error_code,
+                "details": exc.details,
+                "path": str(request.url),
+                **({"context": context} if context else {}),
+            }
+        },
     )
     return JSONResponse(
         status_code=exc.status_code,
@@ -232,22 +316,34 @@ def _jsonable_validation_errors(exc: RequestValidationError) -> list[dict[str, A
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
-    logger.warning("Validation error", extra={"errors": exc.errors(), "path": str(request.url)})
+    errors = _jsonable_validation_errors(exc)
+    logger.warning(
+        "Validation error",
+        extra={"extra_data": {"errors": errors, "path": str(request.url)}},
+    )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
             "error": "VALIDATION_ERROR",
             "message": "Invalid request data",
-            "details": _jsonable_validation_errors(exc),
+            "details": errors,
         },
     )
 
 
 async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.error("Unhandled exception", exc_info=exc, extra={"path": str(request.url)})
+    logger.error(
+        "Unhandled exception",
+        exc_info=exc,
+        extra={"extra_data": {"path": str(request.url)}},
+    )
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={"error": "INTERNAL_ERROR", "message": "An unexpected error occurred"},
+        content={
+            "error": "INTERNAL_ERROR",
+            "message": "An unexpected error occurred",
+            "details": {},
+        },
     )
 
 

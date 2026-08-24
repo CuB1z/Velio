@@ -3,7 +3,7 @@
 import uuid
 
 import jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,7 @@ from app.core.exceptions import (
     AccountSuspendedError,
     EmailNotVerifiedError,
     InvalidCredentialsError,
+    UnauthorizedError,
 )
 from app.core.ratelimit import RULES, client_ip, enforce, match_rule
 from app.core.security import ACCESS_TYPE, decode_token
@@ -129,39 +130,24 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     auth: AuthService = Depends(get_auth_service),
 ) -> User:
-    """Resolve the user behind a valid Bearer access token."""
+    """Resolve the user behind a valid Bearer access token.
+
+    Auth failures propagate as AppErrors: the central handler renders
+    the standard envelope (401 invalid, 403 unverified or suspended).
+    """
     if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise UnauthorizedError()
 
     try:
         payload = decode_token(credentials.credentials, ACCESS_TYPE)
         subject = uuid.UUID(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError, TypeError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+        raise UnauthorizedError("Invalid or expired token") from exc
 
     # Session-management endpoints read this instead of re-decoding.
     request.state.session_sid = payload.get("sid")
 
-    try:
-        return await auth.get_active_user(subject)
-    except (
-        InvalidCredentialsError,
-        EmailNotVerifiedError,
-        AccountSuspendedError,
-    ) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        ) from exc
+    return await auth.get_active_user(subject)
 
 
 async def get_optional_user(
