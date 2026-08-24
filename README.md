@@ -155,7 +155,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json'
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.12.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.14.0"}
 open localhost:8000/docs
 
 # Export any route as GPX (DEM elevation included) or GeoJSON
@@ -169,7 +169,8 @@ docker compose up -d --build api
 ```
 
 Configuration comes from the environment (or a `.env`): `VALHALLA_URL`,
-`VALHALLA_ELEVATION_DIR`, `VALHALLA_TIMEOUT_S`, `CORS_ORIGINS`, `DEBUG`.
+`VALHALLA_ELEVATION_DIR`, `VALHALLA_TIMEOUT_S`, `CORS_ORIGINS`, `DEBUG`,
+`RATE_LIMIT_ENABLED`.
 Accounts are verified by email before they can log in: registration sends a
 six digit code (Brevo transactional API when `BREVO_API_KEY` is set, the
 application log otherwise) and `POST /api/v1/auth/verify` activates the
@@ -197,7 +198,8 @@ cannot be met from that origin), riding `duration_min`, `overlap_ratio`
 `cycling_score` in 0-10 (distance accuracy + road safety - overlap penalty).
 Errors share one JSON body:
 `{"error", "message", "details"}` — validation/routing failures answer `422`,
-an unreachable Valhalla answers `503`.
+an unreachable Valhalla answers `503`, and exhausted rate-limit budgets
+answer `429` with a `Retry-After` header.
 
 ## Scripts
 

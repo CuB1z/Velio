@@ -30,7 +30,8 @@ app/
 │   ├── exceptions.py     Every exception: generic AppError family, domain, providers
 │   ├── lifespan.py       Startup/shutdown of shared resources
 │   ├── logging.py        Structured one-line-per-event logging
-│   ├── middleware.py     Request id + access log middleware
+│   ├── middleware.py     Access log middleware + global rate-limit ceiling
+│   ├── ratelimit.py      Per-endpoint budgets, sliding-window limiter port + memory adapter
 │   └── security.py       JWT issue/verify, OTP generation, password policy + hashing
 ├── engine/               Routing & elevation engine (library, no I/O beyond tiles)
 │   ├── polyline.py       Encoded polyline encode/decode (1e6 precision)

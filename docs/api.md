@@ -49,6 +49,7 @@ Everything is environment-driven (or `.env`):
 | `BREVO_LIST_ID` | — | Brevo contacts list id; verified riders are filed into it |
 | `MAIL_FROM` | `no-reply@localhost` | Sender address; the display name comes from the sender verified in Brevo |
 | `OTP_EXPIRE_MINUTES` / `OTP_MAX_ATTEMPTS` | `15` / `5` | Verification code lifetime and wrong-guess budget |
+| `RATE_LIMIT_ENABLED` | `true` | Per-endpoint budgets (see `app/core/ratelimit.py`) and the global per-IP ceiling; `false` disables both |
 | `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
 
 Migrations run through Alembic (`start.sh` executes
@@ -88,14 +89,14 @@ curl -s -X POST localhost:8000/api/v1/auth/login \
 Registration and verification answer the user object alone (no tokens):
 
 ```json
-{"id": 1, "email": "rider@example.com", "full_name": "", "status": "pending"}
+{"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "email": "rider@example.com", "full_name": "", "status": "pending"}
 ```
 
 Session shape (`login` and `refresh` answer it):
 
 ```json
 {
-  "user": {"id": 1, "email": "rider@example.com", "full_name": "", "status": "active"},
+  "user": {"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "email": "rider@example.com", "full_name": "", "status": "active"},
   "tokens": {"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
 }
 ```
@@ -213,7 +214,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.12.0"}
+{"status": "ok", "version": "0.14.0"}
 ```
 
 ---
@@ -394,7 +395,25 @@ Every error answers with the same JSON shape:
 | 400 | `VALIDATION_ERROR` | A well-formed request carries an unusable value (e.g. a polyline that decodes to one point) |
 | 422 | `VALIDATION_ERROR` | Request body fails schema validation |
 | 422 | `ROUTING_ERROR` | Valhalla cannot route through the given points |
+| 429 | `RATE_LIMITED` | Too many requests: the per-endpoint budget (see `RATE_LIMIT_ENABLED`) or the global per-IP ceiling tripped; retry after the seconds stated in the `Retry-After` header |
 | 503 | `SERVICE_UNAVAILABLE` | Valhalla unreachable |
+
+---
+
+## Rate limiting
+
+Every request counts against per-minute budgets; an exhausted budget
+answers `429 RATE_LIMITED` with a `Retry-After` header stating the seconds
+until the next request is accepted. Two layers apply:
+
+- **Per endpoint** (`RULES` in `app/core/ratelimit.py`): ruled paths carry
+  an IP budget and/or an authenticated-user budget (e.g. register 3/min/IP,
+  login 10/min/IP, `/auth/me` 60/min/user). Paths without a rule only face
+  the global layer.
+- **Global courtesy ceiling**: every route — ruled or not — shares
+  120 requests/min/IP, enforced by middleware.
+
+`RATE_LIMIT_ENABLED=false` disables both layers (local dev and tests).
 
 ---
 
