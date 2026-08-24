@@ -18,10 +18,12 @@ from app.core.exceptions import (
 from app.schemas.auth import (
     AuthSession,
     ChangePasswordIn,
+    ForgotPasswordIn,
     LoginIn,
     RefreshIn,
     RegisterIn,
     ResendVerificationIn,
+    ResetPasswordIn,
     UserOut,
     VerifyIn,
 )
@@ -60,6 +62,25 @@ async def resend_verification(
     """Always 202 so the endpoint cannot probe registered emails."""
     await service.resend_verification(email=data.email)
     return {"detail": "If the account is pending, a new code was sent"}
+
+
+@router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
+async def forgot_password(
+    data: ForgotPasswordIn, service: AuthService = Depends(get_auth_service)
+) -> dict:
+    """Always 202 so the endpoint cannot probe registered emails."""
+    await service.forgot_password(email=data.email)
+    return {"detail": "If the account exists, a reset code was sent"}
+
+
+@router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(
+    data: ResetPasswordIn, service: AuthService = Depends(get_auth_service)
+) -> None:
+    """Swap the credential for a new one; every live session is revoked."""
+    await service.reset_password(
+        email=data.email, code=data.code, new_password=data.new_password
+    )
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)

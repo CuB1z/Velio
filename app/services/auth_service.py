@@ -6,7 +6,11 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 
-from app.clients.mail import MailSender, verification_email
+from app.clients.mail import (
+    MailSender,
+    password_reset_email,
+    verification_email,
+)
 from app.clients.oauth import (
     OAuthGateway,
     OAuthRejectedError,
@@ -23,6 +27,7 @@ from app.core.exceptions import (
     InvalidRefreshTokenError,
     NoLocalPasswordError,
     OAuthError,
+    PasswordResetError,
     ServiceUnavailableError,
     UnknownProviderError,
 )
@@ -50,6 +55,7 @@ logger = logging.getLogger(__name__)
 __all__ = ["AuthService"]
 
 EMAIL_VERIFY_PURPOSE = "email_verify"
+PASSWORD_RESET_PURPOSE = "password_reset"
 
 
 class AuthService:
@@ -131,6 +137,63 @@ class AuthService:
             return False
         await self._send_verification_code(user)
         return True
+
+    async def forgot_password(self, *, email: str) -> bool:
+        """Send a reset code to active accounts with a local credential.
+
+        Returns whether anything was actually sent; callers answer 202
+        regardless so the endpoint cannot probe registered emails.
+        Pending accounts verify through the signup flow and OAuth-only
+        accounts have no local credential to reset.
+        """
+        user = await self._users.get_by_email(email)
+        if (
+            user is None
+            or not user.hashed_password
+            or self._status_of(user) is not UserStatus.ACTIVE
+        ):
+            return False
+        if await self._codes.find_active(
+            user.id, purpose=PASSWORD_RESET_PURPOSE
+        ):
+            # A code is already in flight: re-sending would turn the
+            # endpoint into a mail-bombing vector. The 202 stays identical.
+            return False
+        await self._deliver_code(
+            user,
+            purpose=PASSWORD_RESET_PURPOSE,
+            compose=lambda code: password_reset_email(
+                user.email, code, settings.otp_expire_minutes
+            ),
+        )
+        return True
+
+    async def reset_password(
+        self, *, email: str, code: str, new_password: str
+    ) -> None:
+        """Confirm the emailed code, rotate the credential and force
+        re-login everywhere."""
+        user = await self._users.get_by_email(email)
+        if user is None:
+            raise PasswordResetError
+        if self._status_of(user) is UserStatus.SUSPENDED:
+            raise AccountSuspendedError
+
+        stored = await self._codes.find_active(
+            user.id, purpose=PASSWORD_RESET_PURPOSE
+        )
+        if stored is None or stored.attempts >= settings.otp_max_attempts:
+            raise PasswordResetError
+        if not verify_password(code, stored.code_hash):
+            await self._codes.register_attempt(stored)
+            raise PasswordResetError
+
+        validate_password_strength(new_password, email=user.email)
+        await self._codes.consume(stored)
+        await self._users.set_password(
+            user, hashed_password=hash_password(new_password)
+        )
+        await self._tokens.revoke_all_for_user(user.id)
 
     async def refresh(self, raw_token: str) -> AuthSession:
         payload = self._decode_refresh(raw_token)
@@ -246,7 +309,17 @@ class AuthService:
             raise AccountSuspendedError
 
     async def _send_verification_code(self, user) -> None:
-        """Store a fresh hashed OTP and hand the raw code to the sender.
+        await self._deliver_code(
+            user,
+            purpose=EMAIL_VERIFY_PURPOSE,
+            compose=lambda code: verification_email(
+                user.email, code, settings.otp_expire_minutes
+            ),
+        )
+
+    async def _deliver_code(self, user, *, purpose: str, compose) -> None:
+        """Store a fresh hashed OTP and hand the composed message to the
+        sender.
 
         Delivery problems are logged and swallowed: the account exists
         and the client can always ask for a resend.
@@ -256,15 +329,14 @@ class AuthService:
             minutes=settings.otp_expire_minutes
         )
         await self._codes.issue(
-            user.id, purpose=EMAIL_VERIFY_PURPOSE, code=code, expires_at=expires_at
+            user.id, purpose=purpose, code=code, expires_at=expires_at
         )
 
-        message = verification_email(user.email, code, settings.otp_expire_minutes)
         try:
             if self._mail is not None:
-                await self._mail.send(message)
+                await self._mail.send(compose(code))
         except Exception as exc:  # noqa: BLE001 - delivery must not fail auth
-            logger.warning(f"verification email to {user.email} failed: {exc}")
+            logger.warning(f"{purpose} email to {user.email} failed: {exc}")
 
     async def _register_contact(self, user) -> None:
         """File the verified rider into the Brevo list; never fatal."""

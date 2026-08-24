@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "cycling-router"
-    app_version: str = "0.11.0"
+    app_version: str = "0.12.0"
     debug: bool = False
     environment: str = Field(
         default="dev",

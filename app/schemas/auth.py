@@ -34,6 +34,21 @@ class ResendVerificationIn(BaseModel):
     email: EmailStr
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=8, max_length=128)
+
+    @model_validator(mode="after")
+    def _password_policy(self):
+        validate_password_strength(self.new_password, email=self.email)
+        return self
+
+
 class ChangePasswordIn(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=128)

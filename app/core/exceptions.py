@@ -125,6 +125,17 @@ class EmailVerificationError(AppError):
         )
 
 
+class PasswordResetError(AppError):
+    """The submitted reset code is wrong, expired or exhausted (400)."""
+
+    def __init__(self, message: str = "Invalid or expired reset code"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="RESET_ERROR",
+        )
+
+
 # ---------------------------------------------------------------------------
 # Domain errors — plain exceptions; routes and services map them to HTTP.
 

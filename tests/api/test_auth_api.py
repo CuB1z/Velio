@@ -349,6 +349,179 @@ def test_change_password_needs_a_local_credential(monkeypatch):
     assert resp.json()["detail"] == "This account has no local password"
 
 
+# Password reset --------------------------------------------------------------
+
+
+def _reset_code(messages: list[str]) -> str:
+    found = re.findall(r"reset code is (\d{6})", "\n".join(messages))
+    assert found, f"no reset code logged: {messages}"
+    return found[-1]
+
+
+def test_forgot_and_reset_swap_the_credential_and_kill_sessions():
+    email = _unique_email()
+    client, tokens = _verified_session(email)
+
+    with collect_verification_codes() as messages:
+        asked = client.post("/api/v1/auth/forgot-password", json={"email": email})
+    assert asked.status_code == 202
+    code = _reset_code(messages)
+
+    reset = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": code, "new_password": "Fresh-Secret9"},
+    )
+    assert reset.status_code == 204
+
+    # Sessions opened before the reset are dead.
+    replay = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+    )
+    assert replay.status_code == 401
+
+    # Only the new credential opens sessions.
+    old_login = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": PASSWORD}
+    )
+    new_login = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": "Fresh-Secret9"}
+    )
+    assert old_login.status_code == 401
+    assert new_login.status_code == 200
+
+
+def test_forgot_password_stays_silent_for_unknown_and_pending_emails():
+    client = TestClient(app)
+    pending_email = _unique_email()
+    _register(pending_email)
+
+    with collect_verification_codes() as messages:
+        unknown = client.post(
+            "/api/v1/auth/forgot-password", json={"email": _unique_email()}
+        )
+        pending = client.post(
+            "/api/v1/auth/forgot-password", json={"email": pending_email}
+        )
+    assert unknown.status_code == 202
+    assert pending.status_code == 202
+    assert not any("reset code is" in m for m in messages), messages
+
+
+def test_forgot_password_skips_oauth_only_accounts(monkeypatch):
+    """OAuth-only accounts have no local credential to reset."""
+    from test_oauth_api import _configure_google, _google_round_trip
+
+    from app.api.dependencies import get_oauth_gateway
+    from app.core.security import create_state_token
+
+    _configure_google(monkeypatch)
+    gateway, oauth_email = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
+    try:
+        session = TestClient(app).get(
+            "/api/v1/auth/google/callback",
+            params={"code": "good-code", "state": create_state_token("google")},
+        )
+        assert session.status_code == 200
+
+        with collect_verification_codes() as messages:
+            asked = TestClient(app).post(
+                "/api/v1/auth/forgot-password", json={"email": oauth_email}
+            )
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+    assert asked.status_code == 202
+    assert not any("reset code is" in m for m in messages), messages
+
+
+def test_reset_rejects_a_wrong_code_but_keeps_trying():
+    email = _unique_email()
+    client, _ = _verified_session(email)
+    with collect_verification_codes() as messages:
+        client.post("/api/v1/auth/forgot-password", json={"email": email})
+    code = _reset_code(messages)
+
+    wrong = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": "000001", "new_password": "Fresh-Secret9"},
+    )
+    assert wrong.status_code == 400
+    assert wrong.json()["error"] == "RESET_ERROR"
+
+    # The live code still works after the failed guess.
+    ok = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": code, "new_password": "Fresh-Secret9"},
+    )
+    assert ok.status_code == 204
+
+
+def test_reset_exhausts_after_max_attempts():
+    email = _unique_email()
+    client, _ = _verified_session(email)
+    with collect_verification_codes() as messages:
+        client.post("/api/v1/auth/forgot-password", json={"email": email})
+    code = _reset_code(messages)
+
+    for _ in range(settings.otp_max_attempts):
+        wrong = client.post(
+            "/api/v1/auth/reset-password",
+            json={
+                "email": email,
+                "code": "000002",
+                "new_password": "Fresh-Secret9",
+            },
+        )
+        assert wrong.status_code == 400
+
+    # The right answer no longer helps once the guesses ran out.
+    spent = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": code, "new_password": "Fresh-Secret9"},
+    )
+    assert spent.status_code == 400
+
+
+def test_repeat_forgot_does_not_resend_while_the_code_is_alive():
+    """One code stays in flight; re-asking never mails again meanwhile."""
+    email = _unique_email()
+    client, _ = _verified_session(email)
+
+    with collect_verification_codes() as messages:
+        first = client.post("/api/v1/auth/forgot-password", json={"email": email})
+        second = client.post("/api/v1/auth/forgot-password", json={"email": email})
+    assert first.status_code == 202
+    assert second.status_code == 202
+    sent = [m for m in messages if "reset code is" in m]
+    assert len(sent) == 1, messages
+
+
+def test_reset_rejects_weak_passwords_without_burning_the_code():
+    email = _unique_email()
+    client, _ = _verified_session(email)
+    with collect_verification_codes() as messages:
+        client.post("/api/v1/auth/forgot-password", json={"email": email})
+    code = _reset_code(messages)
+
+    weak = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": code, "new_password": "alllowercase1"},
+    )
+    shaped = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": code, "new_password": f"x-{email}"},
+    )
+    assert weak.status_code == 422
+    assert shaped.status_code == 422
+
+    # Rejected payloads never reached the service: the code is intact.
+    ok = client.post(
+        "/api/v1/auth/reset-password",
+        json={"email": email, "code": code, "new_password": "Fresh-Secret9"},
+    )
+    assert ok.status_code == 204
+
+
 def test_verified_accounts_are_filed_into_the_mailing_list():
     """Activation pushes the rider into the Brevo list via the port."""
     from app.api.dependencies import get_mail_sender
