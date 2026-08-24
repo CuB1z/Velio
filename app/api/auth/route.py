@@ -2,10 +2,14 @@
 OAuth round trips."""
 
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 
-from app.api.dependencies import get_auth_service, get_current_user
+from app.api.dependencies import (
+    get_auth_service,
+    get_current_user,
+    get_session_sid,
+)
 from app.core.exceptions import (
     EmailAlreadyRegisteredError,
     InvalidCredentialsError,
@@ -24,6 +28,7 @@ from app.schemas.auth import (
     RegisterIn,
     ResendVerificationIn,
     ResetPasswordIn,
+    SessionOut,
     UserOut,
     VerifyIn,
 )
@@ -103,17 +108,27 @@ async def change_password(
 
 
 @router.post("/login", response_model=AuthSession)
-async def login(data: LoginIn, service: AuthService = Depends(get_auth_service)) -> AuthSession:
+async def login(
+    data: LoginIn, request: Request, service: AuthService = Depends(get_auth_service)
+) -> AuthSession:
     try:
-        return await service.login(email=data.email, password=data.password)
+        return await service.login(
+            email=data.email,
+            password=data.password,
+            user_agent=request.headers.get("user-agent"),
+        )
     except InvalidCredentialsError:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @router.post("/refresh", response_model=AuthSession)
-async def refresh_tokens(data: RefreshIn, service: AuthService = Depends(get_auth_service)) -> AuthSession:
+async def refresh_tokens(
+    data: RefreshIn, request: Request, service: AuthService = Depends(get_auth_service)
+) -> AuthSession:
     try:
-        return await service.refresh(data.refresh_token)
+        return await service.refresh(
+            data.refresh_token, user_agent=request.headers.get("user-agent")
+        )
     except InvalidRefreshTokenError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
@@ -152,14 +167,51 @@ async def oauth_callback(
     provider: str,
     code: str,
     state: str,
+    request: Request,
     service: AuthService = Depends(get_auth_service),
 ) -> AuthSession:
     """Exchange the authorization code for this app's session tokens."""
     try:
-        return await service.oauth_login(provider, code, state)
+        return await service.oauth_login(
+            provider, code, state, user_agent=request.headers.get("user-agent")
+        )
     except UnknownProviderError:
         raise HTTPException(status_code=404, detail="Unknown provider")
     except OAuthError:
         raise
     except ServiceUnavailableError as exc:
         raise HTTPException(status_code=503, detail=str(exc.detail or exc.message))
+
+
+# Session management ---------------------------------------------------------
+
+
+@router.get("/sessions", response_model=list[SessionOut])
+async def list_sessions(
+    current_user=Depends(get_current_user),
+    sid: str | None = Depends(get_session_sid),
+    service: AuthService = Depends(get_auth_service),
+) -> list[SessionOut]:
+    """Live sessions of the account; `current` marks the caller's own."""
+    return await service.list_sessions(current_user.id, sid)
+
+
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_session(
+    session_id: int,
+    current_user=Depends(get_current_user),
+    service: AuthService = Depends(get_auth_service),
+) -> None:
+    """Revoke one live session of the account."""
+    if not await service.revoke_session(current_user.id, session_id):
+        raise HTTPException(status_code=404, detail="Session not found")
+
+
+@router.delete("/sessions", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_other_sessions(
+    current_user=Depends(get_current_user),
+    sid: str | None = Depends(get_session_sid),
+    service: AuthService = Depends(get_auth_service),
+) -> None:
+    """Log out everywhere except the device making the call."""
+    await service.revoke_other_sessions(current_user.id, sid)

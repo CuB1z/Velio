@@ -1,6 +1,7 @@
 """HTTP schemas for the authentication endpoints."""
 
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
@@ -89,3 +90,12 @@ class AuthSession(BaseModel):
 
     user: UserOut
     tokens: TokenPair
+
+
+class SessionOut(BaseModel):
+    """One live session of the account, as listed for management."""
+
+    id: int
+    created_at: datetime
+    user_agent: str | None
+    current: bool

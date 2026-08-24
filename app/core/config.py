@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.14.0"
+    app_version: str = "0.15.0"
     debug: bool = False
     environment: str = Field(
         default="dev",

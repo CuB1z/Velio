@@ -125,6 +125,7 @@ def get_analysis_service(
 
 
 async def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     auth: AuthService = Depends(get_auth_service),
 ) -> User:
@@ -145,6 +146,9 @@ async def get_current_user(
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
+
+    # Session-management endpoints read this instead of re-decoding.
+    request.state.session_sid = payload.get("sid")
 
     try:
         return await auth.get_active_user(subject)
@@ -181,6 +185,13 @@ async def get_optional_user(
     ):
         # Any rejection means "no attributable caller" for budgets.
         return None
+
+
+def get_session_sid(request: Request) -> str | None:
+    """`sid` claim of the caller's access token, stashed by
+    get_current_user (declare it after in the signature); None for
+    anonymous callers or tokens predating the claim."""
+    return getattr(request.state, "session_sid", None)
 
 
 async def rate_limit_guard(
