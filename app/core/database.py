@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import (
@@ -11,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import settings
+from app.core.exceptions import AppError
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -21,9 +23,42 @@ SessionLocal = async_sessionmaker(
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Yield one session per request; always closed afterwards."""
+    """Yield one session per request; the request is the transaction.
+
+    Repositories never commit themselves, so multi-step use cases (verify
+    email = consume code + activate account) land atomically. Business
+    errors (AppError) still commit: some are answers that carry intended
+    side effects — e.g. a replayed refresh token revokes every session of
+    the account before the 401 is raised. Bearer resolution does not go
+    through here: it uses `lookup_session` so Valhalla-bound handlers
+    hold no connection at all.
+    """
     async with SessionLocal() as session:
-        yield session
+        try:
+            yield session
+            await session.commit()
+        except AppError:
+            await session.commit()
+            raise
+        except Exception:
+            await session.rollback()
+            raise
+
+
+@asynccontextmanager
+async def lookup_session() -> AsyncGenerator[AsyncSession, None]:
+    """Short-lived session for point reads (bearer resolution).
+
+    Opens, reads and commits in one go so nothing holds a pool
+    connection across the slow outbound calls a handler may make next.
+    """
+    async with SessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
 def _upgrade_head() -> None:

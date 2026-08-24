@@ -1,4 +1,8 @@
-"""User and identity persistence."""
+"""User and identity persistence.
+
+Repositories never commit: the request-scoped session in
+`app.core.database.get_db` commits (or rolls back) the whole use case.
+"""
 
 import uuid
 
@@ -6,7 +10,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import EmailAlreadyRegisteredError
-from app.core.security import hash_password
 from app.models import User, UserIdentity, UserStatus
 
 
@@ -35,20 +38,20 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def create_local(
-        self, *, email: str, password: str, full_name: str = ""
+        self, *, email: str, hashed_password: str, full_name: str = ""
     ) -> User:
         if await self.get_by_email(email):
             raise EmailAlreadyRegisteredError(email)
 
         user = User(
             email=email,
-            hashed_password=hash_password(password),
+            hashed_password=hashed_password,
             full_name=full_name,
             status=UserStatus.PENDING,
         )
         user.identities.append(UserIdentity(provider="local", provider_user_id=email))
         self.db.add(user)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(user)
         return user
 
@@ -71,8 +74,6 @@ class UserRepository:
             # Keep stale profiles fresh when the provider shares a name.
             if full_name and user and not user.full_name:
                 user.full_name = full_name
-                await self.db.commit()
-                await self.db.refresh(user)
             return user
 
         user = await self.get_by_email(email)
@@ -97,19 +98,14 @@ class UserRepository:
                     provider_user_id=provider_user_id,
                 )
             )
-        await self.db.commit()
-        await self.db.refresh(user)
+        await self.db.flush()
         return user
 
     async def mark_active(self, user: User) -> User:
         """Promote a pending account to active once its email is verified."""
         user.status = UserStatus.ACTIVE
-        await self.db.commit()
-        await self.db.refresh(user)
         return user
 
     async def set_password(self, user: User, *, hashed_password: str) -> None:
-        """Persist a new local credential hash."""
+        """Attach a new local credential hash (persisted with the request)."""
         user.hashed_password = hashed_password
-        await self.db.commit()
-        await self.db.refresh(user)

@@ -139,6 +139,27 @@ def test_verify_exhausts_after_max_attempts():
     assert spent.status_code == 400
 
 
+def test_failed_verification_rolls_back_the_whole_use_case(monkeypatch):
+    """consume + activate are atomic: a crash in between keeps the code."""
+    from app.repositories.user_repository import UserRepository
+
+    email = _unique_email()
+    code = _register(email)
+    client = TestClient(app, raise_server_exceptions=False)
+
+    def boom(self, user):
+        raise RuntimeError("activation exploded")
+
+    monkeypatch.setattr(UserRepository, "mark_active", boom)
+    broken = client.post("/api/v1/auth/verify", json={"email": email, "code": code})
+    assert broken.status_code == 500
+    monkeypatch.undo()
+
+    # Nothing leaked: the very same code still activates the account.
+    retry = client.post("/api/v1/auth/verify", json={"email": email, "code": code})
+    assert retry.status_code == 200, retry.text
+
+
 def test_resend_invalidates_the_old_code():
     email = _unique_email()
     old_code = _register(email)

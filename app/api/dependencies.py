@@ -11,7 +11,7 @@ from app.clients.mail import MailSender, build_mail_sender
 from app.clients.oauth import OAuthGateway
 from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import get_db, lookup_session
 from app.core.exceptions import (
     AccountSuspendedError,
     EmailNotVerifiedError,
@@ -28,7 +28,7 @@ from app.repositories.verification_code_repository import (
     VerificationCodeRepository,
 )
 from app.services.analysis_service import RouteAnalysisService
-from app.services.auth_service import AuthService
+from app.services.auth_service import AuthService, ensure_active
 from app.services.loop_service import LoopService
 from app.services.route_service import RouteService
 
@@ -132,8 +132,9 @@ async def get_current_user(
 ) -> User:
     """Resolve the user behind a valid Bearer access token.
 
-    Auth failures propagate as AppErrors: the central handler renders
-    the standard envelope (401 invalid, 403 unverified or suspended).
+    Runs on its own short-lived session: the read opens, lands and
+    releases the connection in milliseconds, so handlers spending
+    seconds inside Valhalla pin nothing.
     """
     if credentials is None:
         raise UnauthorizedError()
@@ -147,14 +148,20 @@ async def get_current_user(
     # Session-management endpoints read this instead of re-decoding.
     request.state.session_sid = payload.get("sid")
 
-    return await auth.get_active_user(subject)
+    async with lookup_session() as db:
+        user = await UserRepository(db).get_by_id(subject)
+        if user is None:
+            raise InvalidCredentialsError(str(subject))
+        return ensure_active(user)
 
 
 async def get_optional_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    auth: AuthService = Depends(get_auth_service),
 ) -> User | None:
-    """Best-effort identity for rate limiting; None when anonymous."""
+    """Best-effort identity for rate limiting; None when anonymous.
+
+    Same ephemeral-session discipline as get_current_user.
+    """
     if credentials is None:
         return None
     try:
@@ -162,15 +169,19 @@ async def get_optional_user(
         subject = uuid.UUID(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError, TypeError):
         return None
-    try:
-        return await auth.get_active_user(subject)
-    except (
-        InvalidCredentialsError,
-        EmailNotVerifiedError,
-        AccountSuspendedError,
-    ):
-        # Any rejection means "no attributable caller" for budgets.
-        return None
+
+    async with lookup_session() as db:
+        user = await UserRepository(db).get_by_id(subject)
+        if user is None:
+            return None
+        try:
+            return ensure_active(user)
+        except (
+            EmailNotVerifiedError,
+            AccountSuspendedError,
+        ):
+            # Any rejection means "no attributable caller" for budgets.
+            return None
 
 
 def get_session_sid(request: Request) -> str | None:

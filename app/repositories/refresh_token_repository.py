@@ -1,4 +1,8 @@
-"""Refresh token persistence for issuance, rotation and revocation."""
+"""Refresh token persistence for issuance, rotation and revocation.
+
+Like every repository it never commits: the request-scoped session owns
+the transaction (see `app.core.database.get_db`).
+"""
 
 import hashlib
 import uuid
@@ -31,7 +35,6 @@ class RefreshTokenRepository:
                 user_agent=user_agent,
             )
         )
-        await self.db.commit()
 
     async def find_active_by_jti(self, jti: str) -> RefreshToken | None:
         result = await self.db.execute(
@@ -60,7 +63,6 @@ class RefreshTokenRepository:
             .where(RefreshToken.user_id == user_id, RefreshToken.revoked.is_(False))
             .values(revoked=True)
         )
-        await self.db.commit()
 
     async def list_live_for_user(self, user_id: uuid.UUID) -> list[RefreshToken]:
         """Live sessions of the account, newest first."""
@@ -88,16 +90,14 @@ class RefreshTokenRepository:
 
     async def revoke_all_for_user_except(
         self, user_id: uuid.UUID, keep_id: int
-    ) -> int:
-        """Revoke every live session but `keep_id`; return how many died."""
+    ) -> None:
+        """Revoke every live session but `keep_id`."""
         live = await self.list_live_for_user(user_id)
         doomed = [t.id for t in live if t.id != keep_id]
         if not doomed:
-            return 0
+            return
         await self.db.execute(
             update(RefreshToken)
             .where(RefreshToken.id.in_(doomed))
             .values(revoked=True)
         )
-        await self.db.commit()
-        return len(doomed)

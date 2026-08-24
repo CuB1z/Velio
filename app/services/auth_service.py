@@ -62,6 +62,20 @@ EMAIL_VERIFY_PURPOSE = "email_verify"
 PASSWORD_RESET_PURPOSE = "password_reset"
 
 
+def ensure_active(user) -> User:
+    """ACTIVE-only gate shared by auth flows and bearer dependencies.
+
+    Raises the envelope errors: 401 for vanished accounts, 403 for
+    pending or suspended ones.
+    """
+    status = UserStatus(getattr(user.status, "value", user.status))
+    if status is UserStatus.PENDING:
+        raise EmailNotVerifiedError
+    if status is UserStatus.SUSPENDED:
+        raise AccountSuspendedError
+    return user
+
+
 class AuthService:
     """Issues and rotates JWT sessions on top of the user repositories."""
 
@@ -88,7 +102,9 @@ class AuthService:
         code is confirmed. Mail failures are logged, never raised.
         """
         user = await self._users.create_local(
-            email=email, password=password, full_name=full_name
+            email=email,
+            hashed_password=hash_password(password),
+            full_name=full_name,
         )
         await self._send_verification_code(user)
         return user
@@ -381,7 +397,10 @@ class AuthService:
             minutes=settings.otp_expire_minutes
         )
         await self._codes.issue(
-            user.id, purpose=purpose, code=code, expires_at=expires_at
+            user.id,
+            purpose=purpose,
+            code_hash=hash_password(code),
+            expires_at=expires_at,
         )
 
         try:
