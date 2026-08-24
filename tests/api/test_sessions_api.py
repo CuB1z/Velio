@@ -1,12 +1,11 @@
 """Session management and refresh-token theft detection tests."""
-
 import uuid
 
 from fastapi.testclient import TestClient
 
 from app.core.security import create_access_token
 from app.main import app
-from tests.api.test_auth_api import PASSWORD, _register, _unique_email
+from tests.conftest import PASSWORD, register_account, unique_email
 
 UA_A = {"User-Agent": "RiderApp/1.0"}
 UA_B = {"User-Agent": "RiderWeb/2.0"}
@@ -15,7 +14,7 @@ UA_B = {"User-Agent": "RiderWeb/2.0"}
 def _verified_client(email: str) -> TestClient:
     client = TestClient(app)
     verified = client.post(
-        "/api/v1/auth/verify", json={"email": email, "code": _register(email)}
+        "/api/v1/auth/verify", json={"email": email, "code": register_account(email)}
     )
     assert verified.status_code == 200, verified.text
     return client
@@ -41,7 +40,7 @@ def _list_sessions(client: TestClient, tokens: dict) -> list[dict]:
 
 
 def test_login_stamps_user_agent_and_marks_current():
-    email = _unique_email()
+    email = unique_email()
     client = _verified_client(email)
     tokens = _login(client, email, UA_A)
 
@@ -53,7 +52,7 @@ def test_login_stamps_user_agent_and_marks_current():
 
 
 def test_delete_one_session_and_foreign_rows_404():
-    email = _unique_email()
+    email = unique_email()
     client = _verified_client(email)
     tokens_a = _login(client, email, UA_A)
     tokens_b = _login(client, email, UA_B)
@@ -78,7 +77,7 @@ def test_delete_one_session_and_foreign_rows_404():
 
 
 def test_revoke_others_keeps_caller_session():
-    email = _unique_email()
+    email = unique_email()
     client = _verified_client(email)
     tokens_a = _login(client, email, UA_A)
     _login(client, email, UA_B)
@@ -97,7 +96,7 @@ def test_revoke_others_keeps_caller_session():
 
 
 def test_access_without_sid_revokes_everything():
-    email = _unique_email()
+    email = unique_email()
     client = _verified_client(email)
     tokens_a = _login(client, email, UA_A)
     _login(client, email, UA_B)
@@ -119,7 +118,7 @@ def test_access_without_sid_revokes_everything():
 
 
 def test_refresh_replay_kills_every_account_session():
-    email = _unique_email()
+    email = unique_email()
     client = _verified_client(email)
     pair_one = _login(client, email, UA_A)
     pair_two = _login(client, email, UA_B)
@@ -147,7 +146,7 @@ def test_refresh_replay_kills_every_account_session():
 
 
 def test_garbage_refresh_token_spares_live_sessions():
-    email = _unique_email()
+    email = unique_email()
     client = _verified_client(email)
     tokens = _login(client, email, UA_A)
 

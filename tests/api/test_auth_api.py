@@ -1,56 +1,18 @@
 """Offline unit tests for the authentication endpoints."""
 
-import logging
 import re
-import uuid
-from contextlib import contextmanager
 
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
 from app.main import app
-
-PASSWORD = "Secret-123"
-
-
-class _ListHandler(logging.Handler):
-    def __init__(self):
-        super().__init__()
-        self.messages: list[str] = []
-
-    def emit(self, record):
-        self.messages.append(record.getMessage())
-
-
-@contextmanager
-def collect_verification_codes():
-    """Capture OTPs logged by the console mail sender inside the block."""
-    collector = _ListHandler()
-    mail_logger = logging.getLogger("app.clients.mail")
-    previous_level = mail_logger.level
-    mail_logger.addHandler(collector)
-    mail_logger.setLevel("INFO")
-    try:
-        yield collector.messages
-    finally:
-        mail_logger.removeHandler(collector)
-        mail_logger.setLevel(previous_level)
-
-
-def latest_code(messages: list[str]) -> str:
-    found = re.findall(r"verification code is (\d{6})", "\n".join(messages))
-    assert found, f"no verification code logged: {messages}"
-    return found[-1]
-
-
-def _register(email: str) -> str:
-    """Register one fresh account; return its live OTP."""
-    with collect_verification_codes() as messages:
-        resp = TestClient(app).post(
-            "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
-        )
-    assert resp.status_code == 201, resp.text
-    return latest_code(messages)
+from tests.conftest import (
+    PASSWORD,
+    mail_capture as collect_verification_codes,
+    register_account as _register,
+    unique_email as _unique_email,
+    verification_code as latest_code,
+)
 
 
 def _verified_session(email: str) -> tuple[TestClient, dict]:
@@ -66,10 +28,6 @@ def _verified_session(email: str) -> tuple[TestClient, dict]:
     )
     assert logged.status_code == 200, logged.text
     return client, logged.json()["tokens"]
-
-
-def _unique_email() -> str:
-    return f"auth-{uuid.uuid4().hex}@rider.dev"
 
 
 def test_register_creates_pending_account_without_tokens():

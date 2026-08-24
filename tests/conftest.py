@@ -85,6 +85,8 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 
+PASSWORD = "Secret-123"
+
 
 def _require_hermetic_settings() -> None:
     """Fail loudly when a real external endpoint leaked into settings."""
@@ -109,7 +111,7 @@ class _ListHandler(logging.Handler):
 
 
 @contextmanager
-def _collect_mail():
+def mail_capture():
     """Capture what the console mail sender logs while the block runs."""
     collector = _ListHandler()
     mail_logger = logging.getLogger("app.clients.mail")
@@ -126,7 +128,7 @@ def _collect_mail():
 @pytest.fixture
 def collect_mail():
     """Fixture wrapper so any test directory can capture mail output."""
-    return _collect_mail
+    return mail_capture
 
 
 def verification_code(messages: list[str]) -> str:
@@ -136,18 +138,27 @@ def verification_code(messages: list[str]) -> str:
     return found[-1]
 
 
-def register_and_verify(client: TestClient, email: str) -> None:
-    """Drive an account from PENDING to ACTIVE through the real endpoints."""
-    with _collect_mail() as messages:
-        resp = client.post(
+def unique_email() -> str:
+    return f"user-{uuid.uuid4().hex}@test.dev"
+
+
+def register_account(email: str, *, full_name: str = "") -> str:
+    """Register one fresh account through the API; return its live OTP."""
+    with mail_capture() as messages:
+        resp = TestClient(app).post(
             "/api/v1/auth/register",
-            json={"email": email, "password": "Secret-123", "full_name": "Test"},
+            json={"email": email, "password": PASSWORD, "full_name": full_name},
         )
     assert resp.status_code == 201, resp.text
+    return verification_code(messages)
 
+
+def register_and_verify(client: TestClient, email: str) -> None:
+    """Drive an account from PENDING to ACTIVE through the real endpoints."""
+    code = register_account(email, full_name="Test")
     resp = client.post(
         "/api/v1/auth/verify",
-        json={"email": email, "code": verification_code(messages)},
+        json={"email": email, "code": code},
     )
     assert resp.status_code == 200, resp.text
 
