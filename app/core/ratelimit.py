@@ -42,6 +42,8 @@ RULES: dict[str, dict[Literal["ip", "user"], int | None]] = {
     "/api/v1/routes": {"ip": None, "user": 30},
     "/api/v1/routes/analyze": {"ip": None, "user": 30},
     "/api/v1/routes/elevation": {"ip": None, "user": 30},
+    "/api/v1/routes/saved": {"ip": None, "user": 30},
+    "/api/v1/routes/saved/{route_id}": {"ip": None, "user": 30},
     "/api/v1/loops": {"ip": None, "user": 30},
 }
 
