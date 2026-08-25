@@ -165,8 +165,11 @@ curl -s -X POST 'localhost:8000/api/v1/loops?format=gpx' \
   -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70}' -o loop.gpx
 
 # Or run everything containerised: API on :8000, Valhalla on :8002,
-# sharing the ./valhalla data directory
-docker compose up -d --build api
+# sharing the ./valhalla data directory. Compose files live in docker/.
+docker compose -f docker/docker-compose.yaml up -d --build api
+
+# Isolated test stack (dev conveniences on, same ports as main):
+docker compose -f docker/docker-compose.test.yaml up -d --build api
 ```
 
 Configuration comes from the environment (or a `.env`): `VALHALLA_URL`,

@@ -1,3 +1,10 @@
+# Main stack compose. Lives inside docker/ alongside the test variant;
+# relative paths point one level up at repo-root assets.
+#
+#   docker compose -f docker/docker-compose.yaml up -d --build api
+
+name: velio
+
 services:
   valhalla:
     image: ghcr.io/valhalla/valhalla:3.8.2
@@ -12,7 +19,7 @@ services:
       - "8002:8002"
 
     volumes:
-      - ./valhalla:/data
+      - ../valhalla:/data
 
     restart: unless-stopped
 
@@ -40,11 +47,13 @@ services:
     restart: unless-stopped
 
   api:
-    build: .
+    build:
+      context: ..
+      dockerfile: Dockerfile
     container_name: velio-api
 
     env_file:
-      - .env
+      - ../.env
 
     environment:
       ENV: dev
@@ -61,7 +70,7 @@ services:
       - "8000:8000"
 
     volumes:
-      - ./valhalla/elevation:/data/elevation:ro
+      - ../valhalla/elevation:/data/elevation:ro
 
     depends_on:
       db:

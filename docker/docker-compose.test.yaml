@@ -1,0 +1,94 @@
+# Complete TEST stack for automated flows: isolated project name, its own
+# ports (api 8000 / valhalla 8002 / db 5432) and its own database volume.
+# Run it INSTEAD of the main stack. Runs in dev mode: confirmation emails are not
+# sent and any six-digit code verifies an account (OTP_TEST_MODE).
+#
+# Launch from the repo root:
+#
+#   docker compose -f docker/docker-compose.test.yaml up -d --build api
+#
+# Relative paths resolve against THIS file's folder, hence the ../ prefixes
+# pointing at repo-root assets.
+#
+# Pass --env-file <file> when you need to feed extra variables; nothing is
+# read from .env automatically.
+
+name: velio-test
+
+services:
+  valhalla:
+    image: ghcr.io/valhalla/valhalla:3.8.2
+    container_name: valhalla-test
+
+    command:
+      - valhalla_service
+      - /data/config/valhalla.json
+      - "4"
+
+    ports:
+      - "8002:8002"
+
+    volumes:
+      # Shares the tiles directory with the main stack: avoid running both
+      # valhalla containers at the same time.
+      - ../valhalla:/data
+
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: velio-db-test
+
+    environment:
+      POSTGRES_USER: cycling
+      POSTGRES_PASSWORD: cycling
+      POSTGRES_DB: cycling_router
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cycling -d cycling_router"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: velio-api-test
+
+    depends_on:
+      db:
+        condition: service_healthy
+      valhalla:
+        condition: service_started
+
+    environment:
+      ENV: dev
+      OTP_TEST_MODE: "true"
+      VALHALLA_URL: http://valhalla-test:8002
+      VALHALLA_ELEVATION_DIR: /data/elevation
+      DB_DRIVER: postgresql+asyncpg
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: cycling
+      DB_PASSWORD: cycling
+      DB_NAME: cycling_router
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ../valhalla/elevation:/data/elevation:ro
+
+    restart: unless-stopped
+
+volumes:
+  pgdata:
