@@ -23,15 +23,15 @@ from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.dem import DemSource
 from app.models import User
 from app.repositories.refresh_token_repository import RefreshTokenRepository
+from app.repositories.saved_route_repository import SavedRouteRepository
 from app.repositories.user_repository import UserRepository
-from app.repositories.verification_code_repository import (
-    VerificationCodeRepository,
-)
+from app.repositories.verification_code_repository import VerificationCodeRepository
 from app.services.account_service import AccountService, ensure_active
 from app.services.analysis_service import RouteAnalysisService
 from app.services.loop_service import LoopService
 from app.services.oauth_service import OAuthService
 from app.services.route_service import RouteService
+from app.services.saved_route_service import SavedRouteService
 from app.services.session_service import SessionService
 
 _bearer = HTTPBearer(auto_error=False)
@@ -70,6 +70,13 @@ def get_verification_code_repository(
 ) -> VerificationCodeRepository:
     """Provide a VerificationCodeRepository bound to the request session."""
     return VerificationCodeRepository(db)
+
+
+def get_saved_route_repository(
+    db: AsyncSession = Depends(get_db),
+) -> SavedRouteRepository:
+    """Provide a SavedRouteRepository bound to the request session."""
+    return SavedRouteRepository(db)
 
 
 def get_mail_sender(request: Request) -> MailSender:
@@ -137,6 +144,13 @@ def get_analysis_service(
 ) -> RouteAnalysisService:
     """Compose the shared client and DEM source into the analysis service."""
     return RouteAnalysisService(valhalla=valhalla, dem=dem)
+
+
+def get_saved_route_service(
+    routes: SavedRouteRepository = Depends(get_saved_route_repository),
+) -> SavedRouteService:
+    """Compose the saved-route service over its repository."""
+    return SavedRouteService(routes=routes)
 
 
 # Authentication -------------------------------------------------------------
