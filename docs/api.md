@@ -56,6 +56,7 @@ Everything is environment-driven (or `.env`):
 | `BREVO_LIST_ID` | — | Brevo contacts list id; verified riders are filed into it |
 | `MAIL_FROM` | `no-reply@localhost` | Sender address; the display name comes from the sender verified in Brevo |
 | `OTP_EXPIRE_MINUTES` / `OTP_MAX_ATTEMPTS` | `15` / `5` | Verification code lifetime and wrong-guess budget |
+| `OTP_TEST_MODE` | `false` | Test convenience — requires `ENV=dev` too: confirmation emails are not sent and any 6-digit code verifies the account. Never enable outside local/test stacks |
 | `RATE_LIMIT_ENABLED` | `true` | Per-endpoint budgets (see `app/core/ratelimit.py`) and the global per-IP ceiling; `false` disables both |
 | `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
 

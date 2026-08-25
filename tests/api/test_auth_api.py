@@ -38,6 +38,52 @@ def _verified_session(email: str) -> tuple[TestClient, dict]:
     return client, logged.json()["tokens"]
 
 
+def test_otp_test_mode_skips_delivery_and_accepts_any_code(monkeypatch):
+    """OTP_TEST_MODE: no email goes out and any 6-digit value verifies."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "otp_test_mode", True)
+    email = _unique_email()
+    client = TestClient(app)
+
+    with collect_verification_codes() as messages:
+        registered = client.post(
+            "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
+        )
+    assert registered.status_code == 201
+    assert messages == []  # nothing delivered in test mode
+
+    verified = client.post(
+        "/api/v1/auth/verify",
+        json={"email": email, "code": "000000"},
+    )
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["status"] == "active"
+
+
+def test_otp_test_mode_requires_dev_environment(monkeypatch):
+    """The flag alone is not enough: ENV must be dev too."""
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "otp_test_mode", True)
+    monkeypatch.setattr(settings, "environment", "prod")
+    email = _unique_email()
+    client = TestClient(app)
+
+    with collect_verification_codes() as messages:
+        registered = client.post(
+            "/api/v1/auth/register", json={"email": email, "password": PASSWORD}
+        )
+    assert registered.status_code == 201
+    assert messages, "non-dev test mode must still deliver codes"
+
+    verified = client.post(
+        "/api/v1/auth/verify", json={"email": email, "code": "000000"}
+    )
+    assert verified.status_code == 400
+    assert verified.json()["error"] == "VERIFY_ERROR"
+
+
 def test_register_creates_pending_account_without_tokens():
     email = _unique_email()
     with collect_verification_codes():

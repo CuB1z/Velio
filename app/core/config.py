@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.17.0"
+    app_version: str = "0.18.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -25,9 +25,14 @@ class Settings(BaseSettings):
     )
 
     @property
+    def is_dev(self) -> bool:
+        """Developer environments where conveniences are allowed."""
+        return self.environment.lower() in ("dev", "development", "local")
+
+    @property
     def docs_enabled(self) -> bool:
         """Interactive docs exist only where developers actually work."""
-        return self.environment.lower() in ("dev", "development", "local")
+        return self.is_dev
 
     valhalla_url: str = Field(
         default="http://localhost:8002",
@@ -87,6 +92,12 @@ class Settings(BaseSettings):
 
     otp_expire_minutes: int = Field(default=15, alias="OTP_EXPIRE_MINUTES")
     otp_max_attempts: int = Field(default=5, alias="OTP_MAX_ATTEMPTS")
+    otp_test_mode: bool = Field(default=False, alias="OTP_TEST_MODE")
+
+    @property
+    def otp_test_mode_active(self) -> bool:
+        """Test mode requires BOTH the flag and a dev environment."""
+        return self.otp_test_mode and self.is_dev
 
     rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
 

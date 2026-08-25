@@ -111,7 +111,9 @@ class AccountService:
         stored = await self._codes.find_active(user.id, purpose=EMAIL_VERIFY_PURPOSE)
         if stored is None or stored.attempts >= settings.otp_max_attempts:
             raise EmailVerificationError
-        if not verify_password(code, stored.code_hash):
+        if not settings.otp_test_mode_active and not verify_password(
+            code, stored.code_hash
+        ):
             await self._codes.register_attempt(stored)
             raise EmailVerificationError
 
@@ -235,6 +237,11 @@ class AccountService:
             code_hash=hash_password(code),
             expires_at=expires_at,
         )
+
+        if settings.otp_test_mode_active:
+            # Codes exist but are never delivered; any value verifies.
+            logger.info(f"{purpose} test-mode code for {user.email}: {code}")
+            return
 
         try:
             if self._mail is not None:
