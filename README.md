@@ -27,7 +27,8 @@ Working today:
   generated tracks carry per-point elevation computed by the engine
 - FastAPI HTTP service (`app/main.py`): circular loops and point-to-point
   routes over REST, geometry as encoded polylines, DEM gain/loss and quality
-  score included — see [docs/api.md](docs/api.md)
+  score included — plus per-user saved routes for replaying past results —
+  see [docs/api.md](docs/api.md)
 
 ## Architecture
 

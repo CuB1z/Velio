@@ -35,6 +35,10 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints |
 | POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline |
 | POST | `/api/v1/routes/elevation` | Bearer | DEM elevation profile of an encoded polyline |
+| GET | `/api/v1/routes/saved` | Bearer | List the caller's saved routes, newest first |
+| POST | `/api/v1/routes/saved` | Bearer | Store a compute result under a name |
+| GET | `/api/v1/routes/saved/{route_id}` | Bearer | One owned saved route |
+| DELETE | `/api/v1/routes/saved/{route_id}` | Bearer | Delete one owned saved route |
 
 ## Configuration
 
@@ -242,6 +246,33 @@ All endpoints return JSON. Route geometry comes as an **encoded polyline**
 precision, 1e-6): a compact string that map libraries (Google Maps Geometry,
 Leaflet, Mapbox, `mapbox_polyline`/`polyline` packages) decode directly into
 lat/lon points.
+
+---
+
+## Saved routes
+
+Computed results can be stored under a name and replayed later without
+re-routing. The payload is the verbatim response of the compute endpoint that
+produced it (polyline6 plus metric blocks). Routes are private: foreign ids
+are indistinguishable from missing ones (both answer `404 NOT_FOUND`).
+
+```bash
+# Save one result (payload as returned by POST /routes or /loops)
+curl -s -X POST localhost:8000/api/v1/routes/saved \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Algete 70","payload":{"polyline":"u{~fF...","distance_km":70.1}}'
+
+# List, newest first (limit optional, default 50, max 200)
+curl -s "localhost:8000/api/v1/routes/saved?limit=10" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" | jq
+
+# Fetch / delete by id
+curl -s localhost:8000/api/v1/routes/saved/$ID \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -s -o /dev/null -w '%{http_code}\n' -X DELETE localhost:8000/api/v1/routes/saved/$ID \
+  -H "Authorization: Bearer $ACCESS_TOKEN"   # 204
+```
 
 ---
 
