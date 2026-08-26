@@ -485,11 +485,16 @@ answers `429 RATE_LIMITED` with a `Retry-After` header stating the seconds
 until the next request is accepted. Two layers apply:
 
 - **Per endpoint** (`RULES` in `app/core/ratelimit.py`): ruled paths carry
-  an IP budget and/or an authenticated-user budget (e.g. register 3/min/IP,
-  login 10/min/IP, `/auth/me` 60/min/user). Paths without a rule only face
-  the global layer.
+  an IP budget and/or an authenticated-user budget (e.g. register and login
+  50/min/IP, `/auth/me` 120/min/user, compute endpoints 60/min/user). Paths
+  without a rule only face the global layer.
 - **Global courtesy ceiling**: every route — ruled or not — shares
   120 requests/min/IP, enforced by middleware.
+
+Exhausted keys get a temporary ban with Redis-style TTL semantics: the
+deadline is fixed at creation, hammering during the ban never extends it,
+and overflowing again right after expiry doubles the next ban (60s
+doubling, capped at 1h). A quiet window restores the key.
 
 `RATE_LIMIT_ENABLED=false` disables both layers (local dev and tests).
 

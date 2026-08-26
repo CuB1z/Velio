@@ -73,6 +73,7 @@ services:
     environment:
       ENV: dev
       OTP_TEST_MODE: "true"
+      RATE_LIMIT_ENABLED: "false"
       VALHALLA_URL: http://valhalla-test:8002
       VALHALLA_ELEVATION_DIR: /data/elevation
       DB_DRIVER: postgresql+asyncpg

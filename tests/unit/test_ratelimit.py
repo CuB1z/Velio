@@ -92,6 +92,47 @@ def test_sliding_window_drops_only_expired_hits(monkeypatch):
     assert allowed == 0
 
 
+def test_ban_is_a_pure_ttl_that_never_extends(monkeypatch):
+    clock = _Clock()
+    limiter = InMemoryRateLimiter()
+    monkeypatch.setattr("app.core.ratelimit.time.monotonic", clock)
+
+    async def run():
+        for _ in range(2):
+            await limiter.hit("k", 2, 60)
+        first = await limiter.hit("k", 2, 60)   # strike 1: window remainder
+        hammer_1 = await limiter.hit("k", 2, 60)
+        clock.now += 15
+        hammer_2 = await limiter.hit("k", 2, 60)
+        clock.now += first - 15                 # ban fully expired
+        return first, hammer_1, hammer_2, await limiter.hit("k", 2, 60)
+
+    first, hammer_1, hammer_2, after = asyncio.run(run())
+    assert first == 60
+    assert hammer_1 == 60                       # inside the ban: same deadline
+    assert hammer_2 == 45                       # it only counts down
+    assert after == 0                           # expired -> accepted
+
+
+def test_re_overflow_right_after_expiry_doubles_the_ban(monkeypatch):
+    clock = _Clock()
+    limiter = InMemoryRateLimiter()
+    monkeypatch.setattr("app.core.ratelimit.time.monotonic", clock)
+
+    async def run():
+        for _ in range(2):
+            await limiter.hit("k", 2, 10)
+        first = await limiter.hit("k", 2, 10)       # strike 1: ~window
+        clock.now += first + 1                      # ban gone, old stamps too
+        for _ in range(2):
+            await limiter.hit("k", 2, 10)           # fresh traffic refills
+        return first, await limiter.hit("k", 2, 10)  # strike 2: doubled
+
+    first, second = asyncio.run(run())
+    assert first <= 10
+    assert second >= 60                             # penalty floor kicked in
+
+
 def test_keys_are_isolated(monkeypatch):
     limiter = _clocked_limiter(monkeypatch)
 
@@ -101,6 +142,33 @@ def test_keys_are_isolated(monkeypatch):
         return await limiter.hit("b", 3, 60)
 
     assert asyncio.run(run()) == 0
+
+
+def test_quiet_window_restores_forgiveness(monkeypatch):
+    clock = _Clock()
+    limiter = InMemoryRateLimiter()
+    monkeypatch.setattr("app.core.ratelimit.time.monotonic", clock)
+
+    async def run():
+        for _ in range(2):
+            await limiter.hit("k", 2, 60)
+        first = await limiter.hit("k", 2, 60)           # strike 1 -> banned 60s
+        clock.now += 1
+        during_ban = await limiter.hit("k", 2, 60)      # pure countdown
+        clock.now += 59                                 # ban just expired
+        for _ in range(2):
+            await limiter.hit("k", 2, 60)               # re-abuse fills fast
+        escalated = await limiter.hit("k", 2, 60)       # strike 2 -> doubled
+        clock.now += escalated + 61                     # real quiet period
+        await limiter.hit("k", 2, 60)                   # forgiven
+        return first, during_ban, escalated, await limiter.hit("k", 2, 60)
+
+    first, during_ban, escalated, after = asyncio.run(run())
+    assert first == 60
+    assert during_ban == 59
+    assert escalated >= 60                              # immediate re-abuse doubles
+    assert after == 0                                   # only real quiet forgives
+
 
 
 def test_reset_clears_every_bucket():
