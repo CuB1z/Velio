@@ -7,11 +7,13 @@ from datetime import datetime, timedelta, timezone
 
 from app.clients.mail import (
     MailSender,
+    account_delete_email,
     password_reset_email,
     verification_email,
 )
 from app.core.config import settings
 from app.core.exceptions import (
+    AccountDeletionError,
     AccountSuspendedError,
     EmailNotVerifiedError,
     EmailVerificationError,
@@ -38,6 +40,7 @@ __all__ = ["AccountService", "ensure_active", "register_brevo_contact", "status_
 
 EMAIL_VERIFY_PURPOSE = "email_verify"
 PASSWORD_RESET_PURPOSE = "password_reset"
+ACCOUNT_DELETE_PURPOSE = "account_delete"
 
 
 def ensure_active(user) -> User:
@@ -208,6 +211,50 @@ class AccountService:
         validate_password_strength(new_password, email=user.email)
         await self._users.set_password(user, hashed_password=hash_password(new_password))
         await self._tokens.revoke_all_for_user(user.id)
+
+    # GDPR deletion ------------------------------------------------------------
+
+    async def request_account_deletion(self, user) -> None:
+        """Issue a deletion code to provider-only accounts.
+
+        Accounts with a local password should use the password confirmation
+        path instead; they get 202 silently. Mail failures are swallowed.
+        """
+        if user.hashed_password:
+            return
+        await self._deliver_code(
+            user,
+            purpose=ACCOUNT_DELETE_PURPOSE,
+            compose=lambda code: account_delete_email(
+                user.email, code, settings.otp_expire_minutes
+            ),
+        )
+
+    async def confirm_account_deletion(self, user, *, code: str) -> None:
+        """Validate the deletion code and hard-delete the account.
+
+        Revokes all sessions, removes the Brevo contact, then deletes the
+        user row (cascades to identities, tokens, codes and saved routes).
+        """
+        stored = await self._codes.find_active(
+            user.id, purpose=ACCOUNT_DELETE_PURPOSE
+        )
+        if stored is None or stored.attempts >= settings.otp_max_attempts:
+            raise AccountDeletionError
+        if not settings.otp_test_mode_active and not verify_password(
+            code, stored.code_hash
+        ):
+            await self._codes.register_attempt(stored)
+            raise AccountDeletionError
+
+        await self._codes.consume(stored)
+        await self._tokens.revoke_all_for_user(user.id)
+        try:
+            if self._mail is not None:
+                await self._mail.delete_contact(user.email)
+        except Exception as exc:  # noqa: BLE001 - CRM failure must not block deletion
+            logger.warning(f"contact deletion for {user.email} failed: {exc}")
+        await self._users.delete(user)
 
     # Internals --------------------------------------------------------------
 

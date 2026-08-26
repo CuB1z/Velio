@@ -178,3 +178,11 @@ def password_reset_email(to: str, code: str, expire_minutes: int) -> Message:
     return Message(
         to=to, subject="Your Velio password reset code", text=text, html=html
     )
+
+
+def account_delete_email(to: str, code: str, expire_minutes: int) -> Message:
+    """Compose the account deletion email carrying the OTP."""
+    text, html = _render("account_delete", code=code, expire_minutes=expire_minutes)
+    return Message(
+        to=to, subject="Your Velio account deletion code", text=text, html=html
+    )

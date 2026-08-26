@@ -21,6 +21,8 @@ from app.mappers.user import UserMapper
 from app.schemas.auth import (
     AuthSession,
     ChangePasswordIn,
+    DeleteAccountIn,
+    DeleteRequestIn,
     ForgotPasswordIn,
     LoginIn,
     RefreshIn,
@@ -130,6 +132,26 @@ async def logout(
 @router.get("/me", response_model=UserOut)
 async def me(current_user=Depends(get_current_user)) -> UserOut:
     return UserMapper.out(current_user)
+
+
+@router.post("/me/delete-request", status_code=status.HTTP_202_ACCEPTED)
+async def request_account_deletion(
+    _body: DeleteRequestIn,
+    current_user=Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
+) -> None:
+    """Issue a deletion code for provider-only accounts; always 202."""
+    await service.request_account_deletion(current_user)
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_account(
+    data: DeleteAccountIn,
+    current_user=Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
+) -> None:
+    """Confirm the deletion code and permanently remove the account."""
+    await service.confirm_account_deletion(current_user, code=data.code)
 
 
 # OAuth round trips ----------------------------------------------------------

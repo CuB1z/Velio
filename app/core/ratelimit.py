@@ -44,6 +44,7 @@ RULES: dict[str, dict[Literal["ip", "user"], int | None]] = {
     "/api/v1/auth/refresh": {"ip": 60, "user": None},
     "/api/v1/auth/logout": {"ip": 60, "user": None},
     "/api/v1/auth/me": {"ip": None, "user": 120},
+    "/api/v1/auth/me/delete-request": {"ip": None, "user": 3},
     "/api/v1/auth/change-password": {"ip": None, "user": 60},
     "/api/v1/auth/sessions": {"ip": None, "user": 60},
     "/api/v1/auth/sessions/{session_id}": {"ip": None, "user": 60},

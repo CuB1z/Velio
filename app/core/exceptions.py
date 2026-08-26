@@ -258,6 +258,17 @@ class WeakPasswordError(ValueError):
 # Provider errors — raised by outbound clients, translated upstream.
 
 
+class AccountDeletionError(AppError):
+    """Account deletion code is wrong, expired or exhausted (400)."""
+
+    def __init__(self, message: str = "Invalid or expired deletion code"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            error_code="DELETE_ERROR",
+        )
+
+
 class OAuthRejectedError(Exception):
     """The provider refused the round trip (bad code, expired, denied)."""
 

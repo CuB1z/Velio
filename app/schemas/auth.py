@@ -89,3 +89,13 @@ class SessionOut(BaseModel):
     created_at: datetime
     user_agent: str | None
     current: bool
+
+
+class DeleteRequestIn(BaseModel):
+    """Empty body for the deletion-code request endpoint."""
+
+
+class DeleteAccountIn(BaseModel):
+    """Confirmation code for account deletion."""
+
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")

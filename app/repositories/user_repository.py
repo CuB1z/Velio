@@ -121,3 +121,7 @@ class UserRepository:
     async def set_password(self, user: User, *, hashed_password: str) -> None:
         """Attach a new local credential hash (persisted with the request)."""
         user.hashed_password = hashed_password
+
+    async def delete(self, user: User) -> None:
+        """Hard-delete the user; child rows cascade at the database level."""
+        await self.db.delete(user)

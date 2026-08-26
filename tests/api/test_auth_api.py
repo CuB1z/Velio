@@ -592,3 +592,217 @@ def test_verified_accounts_are_filed_into_the_mailing_list():
     assert verified.status_code == 200
     assert spy.contacts == [email]
 
+
+# ---------------------------------------------------------------------------
+# GDPR account deletion (T-005 + T-006)
+
+
+def _create_oauth_user(email: str) -> dict:
+    """Create a provider-only user (no local password) via the repository.
+
+    Returns the login tokens for the new account.
+    """
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.core.database import engine
+    from app.models import User, UserIdentity, UserStatus
+    from app.repositories.refresh_token_repository import RefreshTokenRepository
+    from app.repositories.user_repository import UserRepository
+    from app.services.session_service import SessionService
+
+    async def _create():
+        async with AsyncSession(engine) as db:
+            user = User(
+                email=email,
+                full_name="OAuth Rider",
+                status=UserStatus.ACTIVE,
+            )
+            user.identities.append(
+                UserIdentity(provider="google", provider_user_id=f"google-{email}")
+            )
+            db.add(user)
+            await db.flush()
+            await db.refresh(user)
+            uid = user.id
+            await db.commit()
+            return uid
+
+    user_id = asyncio.run(_create())
+
+    async def _open_session():
+        async with AsyncSession(engine) as db:
+            users = UserRepository(db)
+            tokens = RefreshTokenRepository(db)
+            svc = SessionService(users, tokens)
+            user = await users.get_by_id(user_id)
+            session = await svc.open_session(user, user_agent="test-agent")
+            return session.model_dump()
+
+    session_data = asyncio.run(_open_session())
+    return {"user_id": str(user_id), "email": email, "tokens": session_data["tokens"]}
+
+
+def _auth_header(tokens: dict) -> dict:
+    return {"Authorization": f"Bearer {tokens['access_token']}"}
+
+
+def test_deletion_request_provider_only_account():
+    """Provider-only account gets 202 and a code is issued."""
+    from app.api.dependencies import get_mail_sender
+    from app.clients.mail import MailSender
+
+    class DeletionSpy(MailSender):
+        def __init__(self):
+            self.codes = []
+
+        async def send(self, message):
+            found = re.search(r"deletion code is (\d{6})", message.text)
+            if found:
+                self.codes.append(found.group(1))
+
+    data = _create_oauth_user(_unique_email())
+    spy = DeletionSpy()
+    app.dependency_overrides[get_mail_sender] = lambda: spy
+    try:
+        client = TestClient(app)
+        resp = client.post(
+            "/api/v1/auth/me/delete-request",
+            json={},
+            headers=_auth_header(data["tokens"]),
+        )
+    finally:
+        app.dependency_overrides.pop(get_mail_sender, None)
+
+    assert resp.status_code == 202
+    assert len(spy.codes) == 1
+
+
+def test_deletion_request_password_account_no_code():
+    """Password-holding account gets 202 but no code is issued."""
+    from app.api.dependencies import get_mail_sender
+    from app.clients.mail import MailSender
+
+    class DeletionSpy(MailSender):
+        def __init__(self):
+            self.codes = []
+
+        async def send(self, message):
+            found = re.search(r"deletion code is (\d{6})", message.text)
+            if found:
+                self.codes.append(found.group(1))
+
+    email = _unique_email()
+    client, tokens = _verified_session(email)
+    spy = DeletionSpy()
+    app.dependency_overrides[get_mail_sender] = lambda: spy
+    try:
+        resp = client.post(
+            "/api/v1/auth/me/delete-request",
+            json={},
+            headers=_auth_header(tokens),
+        )
+    finally:
+        app.dependency_overrides.pop(get_mail_sender, None)
+
+    assert resp.status_code == 202
+    assert len(spy.codes) == 0
+
+
+def test_confirm_deletion_valid_code():
+    """Valid code deletes the account and all its data."""
+    from app.api.dependencies import get_mail_sender
+    from app.clients.mail import MailSender
+
+    class DeletionSpy(MailSender):
+        def __init__(self):
+            self.codes = []
+            self.deleted_contacts = []
+
+        async def send(self, message):
+            found = re.search(r"deletion code is (\d{6})", message.text)
+            if found:
+                self.codes.append(found.group(1))
+
+        async def delete_contact(self, email):
+            self.deleted_contacts.append(email)
+
+    data = _create_oauth_user(_unique_email())
+    spy = DeletionSpy()
+    app.dependency_overrides[get_mail_sender] = lambda: spy
+    try:
+        client = TestClient(app)
+        # Request the code
+        client.post(
+            "/api/v1/auth/me/delete-request",
+            json={},
+            headers=_auth_header(data["tokens"]),
+        )
+        code = spy.codes[-1]
+
+        # Confirm deletion
+        resp = client.request(
+            "DELETE",
+            "/api/v1/auth/me",
+            json={"code": code},
+            headers=_auth_header(data["tokens"]),
+        )
+    finally:
+        app.dependency_overrides.pop(get_mail_sender, None)
+
+    assert resp.status_code == 204
+    assert spy.deleted_contacts == [data["email"]]
+
+    # User is gone
+    import asyncio
+
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.core.database import engine
+    from app.models import User
+
+    async def _check_gone():
+        async with AsyncSession(engine) as db:
+            result = await db.execute(select(User).where(User.email == data["email"]))
+            return result.scalar_one_or_none()
+
+    assert asyncio.run(_check_gone()) is None
+
+
+def test_confirm_deletion_wrong_code():
+    """Wrong code returns 400 DELETE_ERROR."""
+    data = _create_oauth_user(_unique_email())
+    client = TestClient(app)
+
+    # Request the code (console logs it, but we don't need it)
+    client.post(
+        "/api/v1/auth/me/delete-request",
+        json={},
+        headers=_auth_header(data["tokens"]),
+    )
+
+    resp = client.request(
+        "DELETE",
+        "/api/v1/auth/me",
+        json={"code": "000000"},
+        headers=_auth_header(data["tokens"]),
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"] == "DELETE_ERROR"
+
+
+def test_deletion_request_requires_auth():
+    """Unauthenticated deletion request returns 401."""
+    client = TestClient(app)
+    resp = client.post("/api/v1/auth/me/delete-request", json={})
+    assert resp.status_code == 401
+
+
+def test_confirm_deletion_requires_auth():
+    """Unauthenticated deletion confirmation returns 401."""
+    client = TestClient(app)
+    resp = client.request("DELETE", "/api/v1/auth/me", json={"code": "123456"})
+    assert resp.status_code == 401
+

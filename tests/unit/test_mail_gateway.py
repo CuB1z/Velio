@@ -11,6 +11,7 @@ import pytest
 from app.clients.mail import (
     BrevoMailSender,
     ConsoleMailSender,
+    account_delete_email,
     build_mail_sender,
     password_reset_email,
     verification_email,
@@ -208,3 +209,26 @@ def test_console_delete_contact_logs(caplog):
     with caplog.at_level("INFO", logger=mail_logger.name):
         asyncio.run(ConsoleMailSender().delete_contact("rider@example.com"))
     assert any("contact delete rider@example.com" in m for m in caplog.messages)
+
+
+# ---------------------------------------------------------------------------
+# account_delete email template
+
+
+def test_account_delete_email_carries_the_code():
+    message = account_delete_email("rider@example.com", "654321", expire_minutes=15)
+    assert message.to == "rider@example.com"
+    assert "deletion" in message.subject.lower()
+    code_in_text = re.search(r"\b654321\b", message.text)
+    code_in_html = re.search(r"\b654321\b", message.html)
+    assert code_in_text and code_in_html
+
+
+# ---------------------------------------------------------------------------
+# Rate-rule completeness
+
+
+def test_all_rule_paths_are_importable():
+    from app.core.ratelimit import RULES
+
+    assert "/api/v1/auth/me/delete-request" in RULES
