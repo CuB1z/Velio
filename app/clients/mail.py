@@ -9,6 +9,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 from string import Template
+from urllib.parse import quote
 
 import httpx
 
@@ -43,6 +44,13 @@ class MailSender:
         """
         raise NotImplementedError
 
+    async def delete_contact(self, email: str) -> None:
+        """Best-effort CRM hook: remove the rider from the mailing list.
+
+        Adapters without a list configured may ignore it.
+        """
+        raise NotImplementedError
+
 
 class ConsoleMailSender(MailSender):
     """Logs the full message; the dev/test stand-in for a real provider."""
@@ -54,6 +62,9 @@ class ConsoleMailSender(MailSender):
 
     async def add_contact(self, email: str, full_name: str = "") -> None:
         logger.info(f"contact add {email} name={full_name!r}")
+
+    async def delete_contact(self, email: str) -> None:
+        logger.info(f"contact delete {email}")
 
 
 class BrevoMailSender(MailSender):
@@ -81,6 +92,17 @@ class BrevoMailSender(MailSender):
                 return await self._client.post(url, json=payload, headers=headers)
             async with httpx.AsyncClient(timeout=self.TIMEOUT_S) as client:
                 return await client.post(url, json=payload, headers=headers)
+        except httpx.HTTPError as exc:
+            raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
+
+    async def _delete(self, url: str) -> httpx.Response:
+        """DELETE once through the injected client or a fresh one."""
+        headers = {"api-key": self._api_key}
+        try:
+            if self._client is not None:
+                return await self._client.delete(url, headers=headers)
+            async with httpx.AsyncClient(timeout=self.TIMEOUT_S) as client:
+                return await client.delete(url, headers=headers)
         except httpx.HTTPError as exc:
             raise MailDeliveryError(f"brevo unreachable: {exc}") from exc
 
@@ -116,6 +138,18 @@ class BrevoMailSender(MailSender):
         }
         response = await self._post(self.BREVO_CONTACTS_URL, payload)
         self._require_ok(response, "contact")
+
+    async def delete_contact(self, email: str) -> None:
+        """Remove the rider from the configured Brevo contacts list."""
+        if not self._list_id:
+            logger.warning(
+                f"no BREVO_LIST_ID configured; skipping contact deletion for {email}"
+            )
+            return
+        encoded = quote(email, safe="")
+        url = f"{self.BREVO_CONTACTS_URL}/{encoded}"
+        response = await self._delete(url)
+        self._require_ok(response, "contact deletion")
 
 
 def build_mail_sender() -> MailSender:

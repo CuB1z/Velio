@@ -149,3 +149,62 @@ def test_password_reset_email_carries_the_code():
     code_in_text = re.search(r"\b654321\b", message.text)
     code_in_html = re.search(r"\b654321\b", message.html)
     assert code_in_text and code_in_html
+
+
+# ---------------------------------------------------------------------------
+# delete_contact
+
+
+def test_brevo_delete_contact_hits_correct_endpoint():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["url"] = str(request.url)
+        seen["method"] = request.method
+        seen["api_key"] = request.headers.get("api-key")
+        return httpx.Response(200, json={})
+
+    client = _capture_client(handler)
+    sender = BrevoMailSender("xkeysib-test", 7, client=client)
+
+    asyncio.run(sender.delete_contact("rider@example.com"))
+
+    assert seen["method"] == "DELETE"
+    assert seen["url"] == "https://api.brevo.com/v3/contacts/rider%40example.com"
+    assert seen["api_key"] == "xkeysib-test"
+    asyncio.run(client.aclose())
+
+
+def test_brevo_delete_contact_raises_on_provider_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, json={"message": "not found"})
+
+    client = _capture_client(handler)
+    sender = BrevoMailSender("xkeysib-test", 7, client=client)
+
+    with pytest.raises(MailDeliveryError):
+        asyncio.run(sender.delete_contact("rider@example.com"))
+    asyncio.run(client.aclose())
+
+
+def test_brevo_delete_contact_skips_without_list():
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url)
+        return httpx.Response(200, json={})
+
+    client = _capture_client(handler)
+    sender = BrevoMailSender("xkeysib-test", list_id=None, client=client)
+
+    asyncio.run(sender.delete_contact("rider@example.com"))
+    assert not calls
+    asyncio.run(client.aclose())
+
+
+def test_console_delete_contact_logs(caplog):
+    mail_logger = logging.getLogger("app.clients.mail")
+
+    with caplog.at_level("INFO", logger=mail_logger.name):
+        asyncio.run(ConsoleMailSender().delete_contact("rider@example.com"))
+    assert any("contact delete rider@example.com" in m for m in caplog.messages)
