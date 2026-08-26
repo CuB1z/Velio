@@ -31,6 +31,8 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | DELETE | `/api/v1/auth/sessions` | Bearer | Revoke every session except the caller's |
 | GET | `/api/v1/auth/{provider}/authorize` | — | Start the OAuth round trip (307) |
 | GET | `/api/v1/auth/{provider}/callback` | — | Finish the OAuth round trip, returns session |
+| POST | `/api/v1/auth/me/delete-request` | Bearer | Request account deletion (issues OTP) |
+| DELETE | `/api/v1/auth/me` | Bearer | Confirm deletion and hard-delete the account |
 | POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets |
 | POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints |
 | POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline |
@@ -58,6 +60,8 @@ Everything is environment-driven (or `.env`):
 | `OTP_EXPIRE_MINUTES` / `OTP_MAX_ATTEMPTS` | `15` / `5` | Verification code lifetime and wrong-guess budget |
 | `OTP_TEST_MODE` | `false` | Test convenience — requires `ENV=dev` too: confirmation emails are not sent and any 6-digit code verifies the account. Never enable outside local/test stacks |
 | `RATE_LIMIT_ENABLED` | `true` | Per-endpoint budgets (see `app/core/ratelimit.py`) and the global per-IP ceiling; `false` disables both |
+| `RATE_LIMIT_BACKEND` | `memory` | `memory` (in-process) or `redis` (ZSET sliding window with native TTL bans); `memory` is fine for single-process local dev |
+| `REDIS_URL` | — | Redis connection URL (e.g. `redis://redis:6379/0`); required when `RATE_LIMIT_BACKEND=redis` |
 | `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
 
 Migrations run through Alembic (`start.sh` executes
@@ -241,6 +245,55 @@ Environment additions:
 |---|---|
 | `OAUTH_GOOGLE_CLIENT_ID/SECRET` | Google OAuth app credentials |
 | `AUTH_REDIRECT_BASE` | Public base URL used to build the Google callback URI |
+
+### GDPR account deletion
+
+Two-step flow: request a code, then confirm the hard-delete. The action
+is **irreversible** — the user row, all refresh tokens, saved routes, email
+verification records, Brevo contact and linked OAuth identities are
+permanently removed via database cascade.
+
+Two account shapes exist:
+
+- **OAuth-only accounts** (no local password): a six digit code is emailed
+  via `POST /me/delete-request`; the code must be confirmed via
+  `DELETE /me`.
+- **Accounts with a local password**: `POST /me/delete-request` silently
+  returns `202` — the future password-gated deletion path handles them
+  (T-007 scope covers only the OAuth-only path).
+
+```bash
+# 1. Request the deletion code (OAuth-only account)
+curl -s -X POST localhost:8000/api/v1/auth/me/delete-request \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+# → 202 Accepted
+
+# 2. Confirm with the emailed code
+curl -s -X DELETE localhost:8000/api/v1/auth/me \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"code":"123456"}'
+# → 204 No Content (token is now invalid)
+```
+
+The request endpoint reuses the generic OTP engine with
+`purpose = account_delete` (same expiry and wrong-guess budget as
+verification and password-reset). Password-holding accounts receive an
+empty `202` regardless of their status — the endpoint cannot probe which
+accounts exist.
+
+The confirm endpoint:
+
+1. Validates the OTP (`400 DELETE_ERROR` on wrong / expired / exhausted code).
+2. Revokes every refresh token of the account.
+3. Deletes the Brevo contact when `BREVO_LIST_ID` is configured.
+4. Hard-deletes the user row; foreign keys cascade to tokens, saved routes,
+   identities and verification codes.
+
+Once confirmed, the access token is invalid and all active sessions die.
+
+Rate limit: `POST /me/delete-request` allows 3 requests/min/authenticated
+user to prevent OTP flooding.
 
 All endpoints return JSON. Route geometry comes as an **encoded polyline**
 (`polyline` field, [polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)
@@ -465,6 +518,7 @@ and rate-limit failures; no endpoint returns FastAPI's bare `detail` body:
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | A well-formed request carries an unusable value (e.g. a polyline that decodes to one point) |
 | 400 | `NO_LOCAL_PASSWORD` | An OAuth-only account attempted a local-credential operation |
+| 400 | `DELETE_ERROR` | Wrong, expired or exhausted account-deletion code |
 | 400 | `VERIFY_ERROR` / `RESET_ERROR` | Wrong, expired or exhausted emailed code |
 | 400 | `OAUTH_ERROR` | Forged or expired OAuth state, rejected code |
 | 401 | `UNAUTHORIZED` / `INVALID_CREDENTIALS` / `INVALID_REFRESH_TOKEN` | Missing/invalid Bearer token, wrong password, replayed refresh token |
