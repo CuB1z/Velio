@@ -1,11 +1,14 @@
 """Application configuration."""
 
 from pathlib import Path
+from typing import Literal
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+
+_PLACEHOLDER_SECRETS = frozenset({"", "changeme", "change-me", "dev-secret-change-in-production"})
 
 
 class Settings(BaseSettings):
@@ -17,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.19.0"
+    app_version: str = "0.21.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -34,8 +37,8 @@ class Settings(BaseSettings):
         """Interactive docs exist only where developers actually work."""
         return self.is_dev
 
+    # --- Valhalla (required) ---
     valhalla_url: str = Field(
-        default="http://localhost:8002",
         validation_alias=AliasChoices("valhalla_url", "VALHALLA_URL"),
     )
     valhalla_timeout_s: float = Field(
@@ -43,39 +46,41 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("valhalla_timeout_s", "VALHALLA_TIMEOUT_S"),
     )
     elevation_dir: Path = Field(
-        default=_REPO_ROOT / "valhalla" / "elevation",
         validation_alias=AliasChoices("elevation_dir", "VALHALLA_ELEVATION_DIR"),
     )
 
     cors_origins: list[str] = ["*"]
 
+    # --- Database (required) ---
     db_driver: str = Field(
         default="postgresql+asyncpg",
         validation_alias=AliasChoices("db_driver", "DB_DRIVER"),
     )
     db_host: str = Field(
-        default="localhost", validation_alias=AliasChoices("db_host", "DB_HOST")
+        validation_alias=AliasChoices("db_host", "DB_HOST"),
     )
-    db_port: int = Field(default=5432, validation_alias=AliasChoices("db_port", "DB_PORT"))
+    db_port: int = Field(
+        validation_alias=AliasChoices("db_port", "DB_PORT"),
+    )
     db_user: str = Field(
-        default="cycling", validation_alias=AliasChoices("db_user", "DB_USER")
+        validation_alias=AliasChoices("db_user", "DB_USER"),
     )
     db_password: str = Field(
-        default="cycling", validation_alias=AliasChoices("db_password", "DB_PASSWORD")
+        validation_alias=AliasChoices("db_password", "DB_PASSWORD"),
     )
     db_name: str = Field(
-        default="cycling_router",
         validation_alias=AliasChoices("db_name", "DB_NAME"),
     )
 
+    # --- JWT (required) ---
     jwt_secret_key: str = Field(
-        default="dev-secret-change-in-production",
         validation_alias=AliasChoices("jwt_secret_key", "JWT_SECRET_KEY"),
     )
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
+    # --- OAuth (optional) ---
     oauth_google_client_id: str | None = Field(
         default=None, alias="OAUTH_GOOGLE_CLIENT_ID"
     )
@@ -86,10 +91,12 @@ class Settings(BaseSettings):
         default="http://localhost:8000", alias="AUTH_REDIRECT_BASE"
     )
 
+    # --- Email (optional, can be None for local dev) ---
     brevo_api_key: str | None = Field(default=None, alias="BREVO_API_KEY")
     brevo_list_id: int | None = Field(default=None, alias="BREVO_LIST_ID")
     mail_from: str = Field(default="no-reply@localhost", alias="MAIL_FROM")
 
+    # --- OTP ---
     otp_expire_minutes: int = Field(default=15, alias="OTP_EXPIRE_MINUTES")
     otp_max_attempts: int = Field(default=5, alias="OTP_MAX_ATTEMPTS")
     otp_test_mode: bool = Field(default=False, alias="OTP_TEST_MODE")
@@ -99,7 +106,38 @@ class Settings(BaseSettings):
         """Test mode requires BOTH the flag and a dev environment."""
         return self.otp_test_mode and self.is_dev
 
+    # --- Rate limiting ---
     rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
+    rate_limit_backend: Literal["memory", "redis"] = Field(
+        default="memory", alias="RATE_LIMIT_BACKEND"
+    )
+    redis_url: str = Field(default="", alias="REDIS_URL")
+
+    @model_validator(mode="after")
+    def _validate_critical(self) -> "Settings":
+        errors: list[str] = []
+
+        if self.jwt_secret_key in _PLACEHOLDER_SECRETS and not self.is_dev:
+            errors.append(
+                "JWT_SECRET_KEY must be a real secret in non-dev environments"
+            )
+
+        if self.rate_limit_backend == "redis" and not self.redis_url:
+            errors.append(
+                "REDIS_URL is required when RATE_LIMIT_BACKEND=redis"
+            )
+
+        if self.rate_limit_backend == "redis" and not self.rate_limit_enabled:
+            errors.append(
+                "RATE_LIMIT_BACKEND=redis with RATE_LIMIT_ENABLED=false is misconfigured; "
+                "set RATE_LIMIT_BACKEND=memory or enable rate limiting"
+            )
+
+        if errors:
+            raise ValueError(
+                "Configuration errors:\n" + "\n".join(f"  - {e}" for e in errors)
+            )
+        return self
 
     @property
     def database_url(self) -> str:

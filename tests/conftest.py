@@ -16,9 +16,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # os.environ first and would otherwise fall back to the developer's local
 # .env file, leaking real credentials or databases into the suite.
 HERMETIC_ENV = {
+    "ENV": "dev",
     "DB_DRIVER": "sqlite+aiosqlite",
     "DB_NAME": os.path.join(ROOT, "test.db"),
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "DB_USER": "test",
+    "DB_PASSWORD": "test",
     "JWT_SECRET_KEY": "test-secret-key-for-testing-only",
+    "VALHALLA_URL": "http://localhost:8002",
+    "VALHALLA_ELEVATION_DIR": os.path.join(ROOT, "valhalla", "elevation"),
     "BREVO_API_KEY": "",
     "BREVO_LIST_ID": "0",
     "MAIL_FROM": "no-reply@test.dev",

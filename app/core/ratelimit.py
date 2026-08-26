@@ -7,14 +7,24 @@ rules; a global per-IP courtesy ceiling lives in middleware.
 """
 
 import asyncio
+import logging
 import math
 import time
 from collections import deque
 from typing import Literal
 
+import redis.asyncio as redis_asyncio
 from fastapi import Request
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 
+from app.core.config import settings
 from app.core.exceptions import RateLimitingError
+
+logger = logging.getLogger(__name__)
+
+PENALTY_BASE_S = 60
+PENALTY_MAX_S = 3600
 
 # ---------------------------------------------------------------------------
 # Budgets — requests per minute; the part you actually edit.
@@ -75,8 +85,6 @@ class InMemoryRateLimiter(RateLimiter):
     """
 
     SWEEP_INTERVAL_S = 60
-    PENALTY_BASE_S = 60
-    PENALTY_MAX_S = 3600
 
     def __init__(self) -> None:
         self._hits: dict[str, deque[float]] = {}
@@ -117,7 +125,7 @@ class InMemoryRateLimiter(RateLimiter):
                 self._last_strike[key] = now
                 window_wait = math.ceil(stamps[0] + window_s - now)
                 penalty = (
-                    min(self.PENALTY_BASE_S * 2 ** (strike - 2), self.PENALTY_MAX_S)
+                    min(PENALTY_BASE_S * 2 ** (strike - 2), PENALTY_MAX_S)
                     if strike >= 2
                     else 0
                 )
@@ -148,8 +156,91 @@ class InMemoryRateLimiter(RateLimiter):
         self._last_sweep = now
 
 
+class RedisRateLimiter(RateLimiter):
+    """Redis-backed counters with TTL'd ban keys, ready for scale-out.
+
+    Same semantics as the in-memory adapter: sliding window, per-key bans
+    with fixed expiries and escalating re-overflows. Fails OPEN: if Redis
+    is unreachable every request is allowed, because availability outranks
+    throttling.
+    """
+
+    def __init__(
+        self,
+        url: str | None = None,
+        *,
+        client: "redis_asyncio.Redis | None" = None,
+        penalty_base_s: int = PENALTY_BASE_S,
+        penalty_max_s: int = PENALTY_MAX_S,
+    ):
+        if client is not None:
+            self._client = client
+        elif url:
+            self._client = redis_asyncio.from_url(
+                url,
+                decode_responses=True,
+                socket_connect_timeout=0.05,
+                socket_timeout=0.05,
+            )
+        else:
+            raise ValueError("RedisRateLimiter needs a url or a client")
+        self._penalty_base_s = penalty_base_s
+        self._penalty_max_s = penalty_max_s
+
+    async def hit(self, key: str, limit: int, window_s: int) -> int:
+        now = time.time()
+        hit_key, ban_key, strike_key = (
+            f"rl:hit:{key}",
+            f"rl:ban:{key}",
+            f"rl:strike:{key}",
+        )
+        try:
+            # O(1) ban fast-path before touching the window.
+            if await self._client.exists(ban_key):
+                ttl = await self._client.ttl(ban_key)
+                if ttl > 0:
+                    return ttl
+
+            pipe = self._client.pipeline(transaction=True)
+            pipe.zadd(hit_key, {str(now): now})
+            pipe.zremrangebyscore(hit_key, 0, now - window_s)
+            pipe.zcard(hit_key)
+            pipe.expire(hit_key, window_s * 2)
+            _, _, count, _ = await pipe.execute()
+            # The ZADD above already counted THIS request: overflow is
+            # strictly greater than.
+            if count <= limit:
+                return 0
+
+            strike = await self._client.incr(strike_key)
+            await self._client.expire(strike_key, window_s)
+            oldest = await self._client.zrange(hit_key, 0, 0, withscores=True)
+            window_wait = math.ceil(oldest[0][1] + window_s - now) if oldest else 1
+            penalty = 0
+            if strike >= 2:
+                penalty = min(
+                    self._penalty_base_s * 2 ** (strike - 2), self._penalty_max_s
+                )
+            ban_for = max(window_wait, penalty, 1)
+            await self._client.setex(ban_key, ban_for, 1)
+            return ban_for
+        except (RedisConnectionError, RedisTimeoutError) as exc:
+            logger.warning(f"rate limiter fail-open: {exc}")
+            return 0
+
+    async def reset(self) -> None:
+        """Drop every rate-limit key; tests call this between cases."""
+        keys = [k async for k in self._client.scan_iter(match="rl:*")]
+        if keys:
+            await self._client.delete(*keys)
+
+
 def build_rate_limiter() -> RateLimiter:
-    """Pick the limiter backend."""
+    """Pick the limiter backend from settings."""
+    if settings.rate_limit_backend == "redis":
+        if not settings.redis_url:
+            raise RuntimeError("RATE_LIMIT_BACKEND=redis requires REDIS_URL")
+        return RedisRateLimiter(settings.redis_url)
     return InMemoryRateLimiter()
 
 

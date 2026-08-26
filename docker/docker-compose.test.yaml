@@ -1,21 +1,43 @@
 # Complete TEST stack for automated flows: isolated project name, its own
-# ports (api 8000 / valhalla 8002 / db 5432) and its own database volume.
-# Run it INSTEAD of the main stack. Runs in dev mode: confirmation emails are not
-# sent and any six-digit code verifies an account (OTP_TEST_MODE).
+# database volume, dev conveniences on (OTP_TEST_MODE) and rate limiting
+# backed by Redis. Run it INSTEAD of the main stack.
 #
-# Launch from the repo root:
-#
-#   docker compose -f docker/docker-compose.test.yaml up -d --build api
+#   docker compose --env-file <your-env-file> -f docker/docker-compose.test.yaml up -d --build api
 #
 # Relative paths resolve against THIS file's folder, hence the ../ prefixes
 # pointing at repo-root assets.
-#
-# Pass --env-file <file> when you need to feed extra variables; nothing is
-# read from .env automatically.
 
 name: velio-test
 
 services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: velio-db-test
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cycling -d cycling_router"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+    restart: unless-stopped
+
   valhalla:
     image: ghcr.io/valhalla/valhalla:3.8.2
     container_name: valhalla-test
@@ -35,29 +57,6 @@ services:
 
     restart: unless-stopped
 
-  db:
-    image: postgres:16-alpine
-    container_name: velio-db-test
-
-    environment:
-      POSTGRES_USER: cycling
-      POSTGRES_PASSWORD: cycling
-      POSTGRES_DB: cycling_router
-
-    ports:
-      - "5432:5432"
-
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cycling -d cycling_router"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-    restart: unless-stopped
-
   api:
     build:
       context: ..
@@ -67,21 +66,28 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       valhalla:
         condition: service_started
 
     environment:
-      ENV: dev
-      OTP_TEST_MODE: "true"
-      RATE_LIMIT_ENABLED: "false"
-      VALHALLA_URL: http://valhalla-test:8002
-      VALHALLA_ELEVATION_DIR: /data/elevation
-      DB_DRIVER: postgresql+asyncpg
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_USER: cycling
-      DB_PASSWORD: cycling
-      DB_NAME: cycling_router
+      ENV: ${ENV}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      OTP_TEST_MODE: ${OTP_TEST_MODE}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED}
+      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND}
+      REDIS_URL: ${REDIS_URL}
+      VALHALLA_URL: ${VALHALLA_URL}
+      VALHALLA_ELEVATION_DIR: ${VALHALLA_ELEVATION_DIR}
+      DB_DRIVER: ${DB_DRIVER}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      MAIL_FROM: ${MAIL_FROM}
 
     ports:
       - "8000:8000"

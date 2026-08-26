@@ -1,11 +1,21 @@
-# Main stack compose. Lives inside docker/ alongside the test variant;
-# relative paths point one level up at repo-root assets.
+# Main stack compose: services and wiring only. Application configuration
+# comes from your environment at launch time:
 #
-#   docker compose -f docker/docker-compose.yaml up -d --build api
+#   docker compose --env-file .env -f docker/docker-compose.yaml up -d --build api
 
 name: velio
 
 services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   valhalla:
     image: ghcr.io/valhalla/valhalla:3.8.2
     container_name: valhalla-router
@@ -27,11 +37,6 @@ services:
     image: postgres:16-alpine
     container_name: velio-db
 
-    environment:
-      POSTGRES_USER: cycling
-      POSTGRES_PASSWORD: cycling
-      POSTGRES_DB: cycling_router
-
     ports:
       - "5432:5432"
 
@@ -52,31 +57,41 @@ services:
       dockerfile: Dockerfile
     container_name: velio-api
 
-    env_file:
-      - ../.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      valhalla:
+        condition: service_started
 
     environment:
-      ENV: dev
-      VALHALLA_URL: http://valhalla-router:8002
-      VALHALLA_ELEVATION_DIR: /data/elevation
-      DB_DRIVER: postgresql+asyncpg
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_USER: cycling
-      DB_PASSWORD: cycling
-      DB_NAME: cycling_router
+      ENV: ${ENV}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED}
+      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND}
+      REDIS_URL: ${REDIS_URL}
+      VALHALLA_URL: ${VALHALLA_URL}
+      VALHALLA_ELEVATION_DIR: ${VALHALLA_ELEVATION_DIR}
+      DB_DRIVER: ${DB_DRIVER}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET}
+      AUTH_REDIRECT_BASE: ${AUTH_REDIRECT_BASE}
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_LIST_ID: ${BREVO_LIST_ID}
+      MAIL_FROM: ${MAIL_FROM}
 
     ports:
       - "8000:8000"
 
     volumes:
       - ../valhalla/elevation:/data/elevation:ro
-
-    depends_on:
-      db:
-        condition: service_healthy
-      valhalla:
-        condition: service_started
 
     restart: unless-stopped
 

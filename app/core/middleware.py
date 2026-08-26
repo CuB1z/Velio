@@ -56,7 +56,7 @@ class DbTransactionMiddleware:
 
             try:
                 await self.app(scope, receive, send_wrapper)
-            except Exception:  # noqa: BLE001 - poisoned tx fallback
+            except Exception:
                 await session.rollback()
                 raise
             else:
