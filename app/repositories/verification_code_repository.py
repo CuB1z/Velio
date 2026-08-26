@@ -1,7 +1,7 @@
 """Persistence for single-use verification codes.
 
 Like every repository it never commits: the request-scoped session owns
-the transaction (see `app.core.database.get_db`).
+the transaction (see `DbTransactionMiddleware`).
 """
 
 import uuid

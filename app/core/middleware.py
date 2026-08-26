@@ -15,12 +15,52 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
+from app.core.database import SessionLocal
 from app.core.ratelimit import GLOBAL_RPM, WINDOW_S, client_ip, limiter
 
 logger = logging.getLogger(__name__)
 
 HEALTH_PATH = "/api/health"
 RATE_LIMIT_SKIP_PREFIXES = ("/docs", "/redoc", "/openapi.json")
+
+
+class DbTransactionMiddleware:
+    """One database session + transaction per request, committed BEFORE
+    the final response byte reaches the client.
+
+    Committing anywhere after the response is delivered races clients that
+    fire their next request immediately (write-then-read over two HTTP
+    calls). Wrapping `send` closes that window: the last body chunk is only
+    forwarded once the transaction is durable. The session hangs off
+    scope["state"], where Request.state reads from; `get_db` hands it to
+    the dependency graph.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        async with SessionLocal() as session:
+            scope.setdefault("state", {})["db"] = session
+
+            async def send_wrapper(message):
+                if message["type"] == "http.response.body" and not message.get(
+                    "more_body", False
+                ):
+                    await session.commit()
+                await send(message)
+
+            try:
+                await self.app(scope, receive, send_wrapper)
+            except Exception:  # noqa: BLE001 - poisoned tx fallback
+                await session.rollback()
+                raise
+            else:
+                await session.commit()
 
 
 class AccessLogMiddleware(BaseHTTPMiddleware):
@@ -95,6 +135,7 @@ class GlobalRateLimitMiddleware(BaseHTTPMiddleware):
 
 def setup_middlewares(app: FastAPI) -> None:
     """Install every cross-cutting middleware in one place."""
+    app.add_middleware(DbTransactionMiddleware)
     app.add_middleware(GlobalRateLimitMiddleware)
     app.add_middleware(
         CORSMiddleware,

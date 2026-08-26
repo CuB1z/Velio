@@ -11,7 +11,7 @@ from app.clients.mail import MailSender, build_mail_sender
 from app.clients.oauth import OAuthGateway
 from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
-from app.core.database import get_db, lookup_session
+from app.core.database import lookup_session
 from app.core.exceptions import (
     AccountSuspendedError,
     EmailNotVerifiedError,
@@ -51,6 +51,11 @@ def get_dem_source(request: Request) -> DemSource:
 
 
 # Repositories ---------------------------------------------------------------
+
+
+def get_db(request: Request) -> AsyncSession:
+    """Request-scoped session opened by DbTransactionMiddleware."""
+    return request.state.db
 
 
 def get_user_repository(db: AsyncSession = Depends(get_db)) -> UserRepository:

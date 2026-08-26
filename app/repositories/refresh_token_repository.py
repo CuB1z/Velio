@@ -1,7 +1,7 @@
 """Refresh token persistence for issuance, rotation and revocation.
 
 Like every repository it never commits: the request-scoped session owns
-the transaction (see `app.core.database.get_db`).
+the transaction (see `DbTransactionMiddleware`).
 """
 
 import hashlib

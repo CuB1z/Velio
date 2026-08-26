@@ -1,4 +1,11 @@
-"""Async SQLAlchemy engine and request-scoped sessions."""
+"""Async SQLAlchemy engine and request-scoped sessions.
+
+The request transaction is owned by `DbTransactionMiddleware`
+(core/middleware.py): it opens one session per HTTP request and commits
+before the response leaves the server. Dependencies receive that session
+through `get_db` in app.api.dependencies. Point reads that must not pin
+a pool connection across slow outbound calls use `lookup_session`.
+"""
 
 import asyncio
 from collections.abc import AsyncGenerator
@@ -12,7 +19,6 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.config import settings
-from app.core.exceptions import AppError
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -20,32 +26,6 @@ engine = create_async_engine(settings.database_url, echo=False)
 SessionLocal = async_sessionmaker(
     engine, class_=AsyncSession, autocommit=False, expire_on_commit=False
 )
-
-
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Yield one session per request; the request is the transaction.
-
-    Repositories never commit themselves, so multi-step use cases (verify
-    email = consume code + activate account) land atomically. Business
-    errors (AppError) still commit: some are answers that carry intended
-    side effects — e.g. a replayed refresh token revokes every session of
-    the account before the 401 is raised. Bearer resolution does not go
-    through here: it uses `lookup_session` so Valhalla-bound handlers
-    hold no connection at all.
-    """
-    async with SessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except AppError:
-            try:
-                await session.commit()
-            except Exception:  # noqa: BLE001 - poisoned tx, best effort
-                await session.rollback()
-            raise
-        except Exception:
-            await session.rollback()
-            raise
 
 
 @asynccontextmanager
