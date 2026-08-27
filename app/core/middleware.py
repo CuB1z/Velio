@@ -1,8 +1,8 @@
 """Cross-cutting HTTP middleware for the API layer.
 
-Authentication will join later as a router-level dependency (the seam is
-`api_router` in `app/api/router.py`); these middlewares stay neutral to it
-and guarantee exactly one structured log line per request.
+Authentication is handled as a router-level dependency (`get_current_user` in
+`app/api/dependencies.py`); these middlewares stay neutral to it and guarantee
+exactly one structured log line per request.
 """
 
 import logging
