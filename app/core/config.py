@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        env_ignore_empty=True,
     )
 
     app_name: str = "velio"
@@ -49,7 +50,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("elevation_dir", "VALHALLA_ELEVATION_DIR"),
     )
 
-    cors_origins: list[str] = ["*"]
+    cors_origins: list[str] = Field(default=["*"])
 
     # --- Database (required) ---
     db_driver: str = Field(

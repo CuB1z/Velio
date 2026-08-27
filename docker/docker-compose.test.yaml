@@ -1,11 +1,10 @@
-# Complete TEST stack for automated flows: isolated project name, its own
-# database volume, dev conveniences on (OTP_TEST_MODE) and rate limiting
-# backed by Redis. Run it INSTEAD of the main stack.
+# Complete TEST stack: isolated project name, its own database volume,
+# dev conveniences on (OTP_TEST_MODE) and rate limiting backed by Redis.
+# Run it INSTEAD of the main stack.
 #
-#   docker compose --env-file <your-env-file> -f docker/docker-compose.test.yaml up -d --build api
+#   docker compose -f docker/docker-compose.test.yaml up -d --build api
 #
-# Relative paths resolve against THIS file's folder, hence the ../ prefixes
-# pointing at repo-root assets.
+# Relative paths resolve against THIS file's folder, hence the ../ prefixes.
 
 name: velio-test
 
@@ -23,38 +22,32 @@ services:
   db:
     image: postgres:16-alpine
     container_name: velio-db-test
-
+    environment:
+      POSTGRES_DB: cycling_router
+      POSTGRES_USER: cycling
+      POSTGRES_PASSWORD: cycling
     ports:
       - "5432:5432"
-
     volumes:
       - pgdata:/var/lib/postgresql/data
-
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U cycling -d cycling_router"]
       interval: 5s
       timeout: 3s
       retries: 10
-
     restart: unless-stopped
 
   valhalla:
     image: ghcr.io/valhalla/valhalla:3.8.2
     container_name: valhalla-test
-
     command:
       - valhalla_service
       - /data/config/valhalla.json
       - "4"
-
     ports:
       - "8002:8002"
-
     volumes:
-      # Shares the tiles directory with the main stack: avoid running both
-      # valhalla containers at the same time.
       - ../valhalla:/data
-
     restart: unless-stopped
 
   api:
@@ -62,7 +55,6 @@ services:
       context: ..
       dockerfile: Dockerfile
     container_name: velio-api-test
-
     depends_on:
       db:
         condition: service_healthy
@@ -70,31 +62,27 @@ services:
         condition: service_healthy
       valhalla:
         condition: service_started
-
     environment:
-      ENV: ${ENV}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      OTP_TEST_MODE: ${OTP_TEST_MODE}
-      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED}
-      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND}
-      REDIS_URL: ${REDIS_URL}
-      VALHALLA_URL: ${VALHALLA_URL}
-      VALHALLA_ELEVATION_DIR: ${VALHALLA_ELEVATION_DIR}
-      DB_DRIVER: ${DB_DRIVER}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_NAME: ${DB_NAME}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      MAIL_FROM: ${MAIL_FROM}
-
+      ENV: dev
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-in-production}
+      OTP_TEST_MODE: "true"
+      RATE_LIMIT_ENABLED: "false"
+      RATE_LIMIT_BACKEND: memory
+      REDIS_URL: redis://redis:6379/0
+      VALHALLA_URL: http://valhalla:8002
+      VALHALLA_ELEVATION_DIR: /data/elevation
+      DB_DRIVER: postgresql+asyncpg
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: cycling
+      DB_PASSWORD: cycling
+      DB_NAME: cycling_router
+      CORS_ORIGINS: '["*"]'
+      MAIL_FROM: no-reply@localhost
     ports:
       - "8000:8000"
-
     volumes:
       - ../valhalla/elevation:/data/elevation:ro
-
     restart: unless-stopped
 
 volumes:

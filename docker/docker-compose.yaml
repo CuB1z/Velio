@@ -1,5 +1,5 @@
-# Main stack compose: services and wiring only. Application configuration
-# comes from your environment at launch time:
+# Main stack compose. All infra wiring and defaults are self-contained;
+# only secrets and overrides come from a .env file:
 #
 #   docker compose --env-file .env -f docker/docker-compose.yaml up -d --build api
 
@@ -19,36 +19,32 @@ services:
   valhalla:
     image: ghcr.io/valhalla/valhalla:3.8.2
     container_name: valhalla-router
-
     command:
       - valhalla_service
       - /data/config/valhalla.json
       - "4"
-
     ports:
       - "8002:8002"
-
     volumes:
       - ../valhalla:/data
-
     restart: unless-stopped
 
   db:
     image: postgres:16-alpine
     container_name: velio-db
-
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5432:5432"
-
     volumes:
       - pgdata:/var/lib/postgresql/data
-
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cycling -d cycling_router"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 3s
       retries: 10
-
     restart: unless-stopped
 
   api:
@@ -56,7 +52,6 @@ services:
       context: ..
       dockerfile: Dockerfile
     container_name: velio-api
-
     depends_on:
       db:
         condition: service_healthy
@@ -64,35 +59,31 @@ services:
         condition: service_healthy
       valhalla:
         condition: service_started
-
     environment:
-      ENV: ${ENV}
+      ENV: ${ENV:-dev}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED}
-      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND}
-      REDIS_URL: ${REDIS_URL}
-      VALHALLA_URL: ${VALHALLA_URL}
-      VALHALLA_ELEVATION_DIR: ${VALHALLA_ELEVATION_DIR}
-      DB_DRIVER: ${DB_DRIVER}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND:-redis}
+      REDIS_URL: redis://redis:6379/0
+      VALHALLA_URL: http://valhalla:8002
+      VALHALLA_ELEVATION_DIR: /data/elevation
+      DB_DRIVER: ${DB_DRIVER:-postgresql+asyncpg}
+      DB_HOST: db
+      DB_PORT: 5432
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
-      CORS_ORIGINS: ${CORS_ORIGINS}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["*"]}
       OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID}
       OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET}
       AUTH_REDIRECT_BASE: ${AUTH_REDIRECT_BASE}
       BREVO_API_KEY: ${BREVO_API_KEY}
       BREVO_LIST_ID: ${BREVO_LIST_ID}
       MAIL_FROM: ${MAIL_FROM}
-
     ports:
       - "8000:8000"
-
     volumes:
       - ../valhalla/elevation:/data/elevation:ro
-
     restart: unless-stopped
 
 volumes:
