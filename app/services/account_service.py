@@ -215,13 +215,12 @@ class AccountService:
     # GDPR deletion ------------------------------------------------------------
 
     async def request_account_deletion(self, user) -> None:
-        """Issue a deletion code to provider-only accounts.
+        """Issue a deletion code via email.
 
-        Accounts with a local password should use the password confirmation
-        path instead; they get 202 silently. Mail failures are swallowed.
+        Always sends an OTP regardless of login method (password or OAuth).
+        This ensures account deletion always requires email access, protecting
+        against credential theft. Mail failures are swallowed.
         """
-        if user.hashed_password:
-            return
         await self._deliver_code(
             user,
             purpose=ACCOUNT_DELETE_PURPOSE,

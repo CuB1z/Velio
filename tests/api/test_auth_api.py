@@ -679,8 +679,8 @@ def test_deletion_request_provider_only_account():
     assert len(spy.codes) == 1
 
 
-def test_deletion_request_password_account_no_code():
-    """Password-holding account gets 202 but no code is issued."""
+def test_deletion_request_password_account_sends_code():
+    """Password-holding account gets 202 and receives a deletion code via email."""
     from app.api.dependencies import get_mail_sender
     from app.clients.mail import MailSender
 
@@ -707,7 +707,7 @@ def test_deletion_request_password_account_no_code():
         app.dependency_overrides.pop(get_mail_sender, None)
 
     assert resp.status_code == 202
-    assert len(spy.codes) == 0
+    assert len(spy.codes) == 1
 
 
 def test_confirm_deletion_valid_code():

@@ -140,7 +140,7 @@ async def request_account_deletion(
     current_user=Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ) -> None:
-    """Issue a deletion code for provider-only accounts; always 202."""
+    """Issue a deletion code via email; always 202."""
     await service.request_account_deletion(current_user)
 
 
