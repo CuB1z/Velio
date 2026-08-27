@@ -17,6 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # .env file, leaking real credentials or databases into the suite.
 HERMETIC_ENV = {
     "ENV": "dev",
+    "OTP_TEST_MODE": "false",
     "DB_DRIVER": "sqlite+aiosqlite",
     "DB_NAME": os.path.join(ROOT, "test.db"),
     "DB_HOST": "localhost",
