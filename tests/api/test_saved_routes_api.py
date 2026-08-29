@@ -1,5 +1,6 @@
 """API tests for the saved-route endpoints: CRUD, ownership, budgets."""
 
+import uuid
 
 from fastapi.testclient import TestClient
 
@@ -203,6 +204,83 @@ def test_exact_multiple_pages_cleanly():
     assert page1["meta"]["total_pages"] == 2
     assert [r["name"] for r in page2["data"]] == ["x1", "x0"]
     assert page2["meta"]["is_last"] is True
+
+
+def test_saved_route_bulk_delete(auth_headers):
+    client = _fresh_client()
+    created = [
+        client.post("/api/v1/routes/saved", json={"name": f"r{i}", "payload": {}})
+        for i in range(3)
+    ]
+    assert all(r.status_code == 201 for r in created)
+    route_ids = [r.json()["id"] for r in created]
+
+    deleted = client.delete(
+        f"/api/v1/routes/saved?ids={route_ids[0]},{route_ids[1]}"
+    )
+    assert deleted.status_code == 204, deleted.text
+
+    remaining = client.get("/api/v1/routes/saved").json()
+    assert [r["id"] for r in remaining["data"]] == [route_ids[2]]
+
+    # Idempotent: re-running the same deletion is still a 204 no-op.
+    again = client.delete(
+        f"/api/v1/routes/saved?ids={route_ids[0]},{route_ids[1]}"
+    )
+    assert again.status_code == 204
+
+
+def test_saved_route_bulk_delete_ignores_foreign_and_missing(auth_headers):
+    client = _fresh_client()
+    own = client.post(
+        "/api/v1/routes/saved", json={"name": "mine", "payload": {}}
+    ).json()["id"]
+
+    mixed = client.delete(
+        f"/api/v1/routes/saved?ids={own},{uuid.uuid4()},{uuid.uuid4()}"
+    )
+    assert mixed.status_code == 204
+
+    remaining = client.get("/api/v1/routes/saved").json()
+    assert remaining["meta"]["total"] == 0
+
+    # Unknown ids alone are a silent success too.
+    unknown = client.delete(
+        f"/api/v1/routes/saved?ids={uuid.uuid4()},{uuid.uuid4()}"
+    )
+    assert unknown.status_code == 204
+
+
+def test_saved_route_bulk_delete_caps_at_fifty(auth_headers):
+    client = _fresh_client()
+
+    over = client.delete(
+        "/api/v1/routes/saved?ids="
+        + ",".join(str(uuid.uuid4()) for _ in range(51))
+    )
+    assert over.status_code == 400
+    assert over.json()["error"] == "VALIDATION_ERROR"
+
+    # Exactly 50 unique ids pass (they just match nothing here).
+    at_cap = client.delete(
+        "/api/v1/routes/saved?ids="
+        + ",".join(str(uuid.uuid4()) for _ in range(50))
+    )
+    assert at_cap.status_code == 204
+
+    # Duplicates do not push past the cap.
+    dup = str(uuid.uuid4())
+    dup_ids = client.delete(
+        "/api/v1/routes/saved?ids=" + ",".join([dup] * 51)
+    )
+    assert dup_ids.status_code == 204
+
+
+def test_saved_route_bulk_delete_rejects_malformed_ids(auth_headers):
+    client = _fresh_client()
+    resp = client.delete("/api/v1/routes/saved?ids=not-a-uuid")
+    assert resp.status_code == 400
+    assert resp.json()["error"] == "VALIDATION_ERROR"
 
 
 def test_saved_routes_require_authentication():
