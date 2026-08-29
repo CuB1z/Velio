@@ -20,7 +20,7 @@ def export_response(
     *,
     kind: Literal["loop", "route"],
 ) -> Response:
-    """Render a routed result (LoopOut/RouteOut) as GPX or GeoJSON."""
+    """Render a routed result (LoopResponse/RouteResponse) as GPX or GeoJSON."""
     coords = decode(result.polyline)
     samples = build_profile(dem, coords).samples
     name = f"{kind}-{result.distance_km:.1f}km"

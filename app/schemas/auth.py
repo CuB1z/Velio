@@ -8,7 +8,7 @@ from pydantic import BaseModel, EmailStr, Field, model_validator
 from app.core.security import validate_password_strength
 
 
-class RegisterIn(BaseModel):
+class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(default="", max_length=255)
@@ -19,29 +19,29 @@ class RegisterIn(BaseModel):
         return self
 
 
-class LoginIn(BaseModel):
+class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
 
-class RefreshIn(BaseModel):
+class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-class VerifyIn(BaseModel):
+class VerifyRequest(BaseModel):
     email: EmailStr
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
 
-class ResendVerificationIn(BaseModel):
+class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
 
-class ForgotPasswordIn(BaseModel):
+class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 
-class ResetPasswordIn(BaseModel):
+class ResetPasswordRequest(BaseModel):
     email: EmailStr
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
     new_password: str = Field(min_length=8, max_length=128)
@@ -52,7 +52,7 @@ class ResetPasswordIn(BaseModel):
         return self
 
 
-class ChangePasswordIn(BaseModel):
+class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8, max_length=128)
 
@@ -62,7 +62,7 @@ class ChangePasswordIn(BaseModel):
         return self
 
 
-class UserOut(BaseModel):
+class UserResponse(BaseModel):
     id: uuid.UUID
     email: str
     full_name: str
@@ -78,11 +78,11 @@ class TokenPair(BaseModel):
 class AuthSession(BaseModel):
     """Everything a client needs after a successful login."""
 
-    user: UserOut
+    user: UserResponse
     tokens: TokenPair
 
 
-class SessionOut(BaseModel):
+class SessionResponse(BaseModel):
     """One live session of the account, as listed for management."""
 
     id: int
@@ -91,11 +91,11 @@ class SessionOut(BaseModel):
     current: bool
 
 
-class DeleteRequestIn(BaseModel):
+class DeleteRequest(BaseModel):
     """Empty body for the deletion-code request endpoint."""
 
 
-class DeleteAccountIn(BaseModel):
+class DeleteAccountRequest(BaseModel):
     """Confirmation code for account deletion."""
 
     code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")

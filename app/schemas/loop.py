@@ -10,7 +10,7 @@ class Waypoint(BaseModel):
     lon: float = Field(ge=-180.0, le=180.0)
 
 
-class CostingOptionsIn(BaseModel):
+class CostingOptions(BaseModel):
     """Raw Valhalla bicycle costing overrides (win over `profile`)."""
 
     bicycle_type: Literal["Road", "Hybrid", "Cross", "Mountain"] | None = None
@@ -19,7 +19,7 @@ class CostingOptionsIn(BaseModel):
     avoid_bad_surfaces: float | None = Field(default=None, ge=0, le=1)
 
 
-class LoopRequestIn(BaseModel):
+class LoopCreateRequest(BaseModel):
     origin: Waypoint
     distance_km: float = Field(gt=0, le=500)
     gain_m: float | None = Field(default=None, gt=0)
@@ -30,7 +30,7 @@ class LoopRequestIn(BaseModel):
     max_iterations: int = Field(default=8, ge=1, le=50)
     profile: Literal["fast", "safe", "fitness", "relaxed"] | None = None
     routes: int = Field(default=1, ge=1, le=5)
-    costing: CostingOptionsIn | None = None
+    costing: CostingOptions | None = None
     include_profile: bool = False
 
 
@@ -42,7 +42,7 @@ class Quality(BaseModel):
     max_grade_pct: float
 
 
-class CyclingScoreOut(BaseModel):
+class CyclingScore(BaseModel):
     distance: float
     safety: float
     elevation: float
@@ -50,7 +50,7 @@ class CyclingScoreOut(BaseModel):
     total: float
 
 
-class ProfilePointOut(BaseModel):
+class ProfilePoint(BaseModel):
     """One resampled point of the DEM elevation profile."""
 
     lat: float
@@ -60,7 +60,7 @@ class ProfilePointOut(BaseModel):
     grade_pct: float | None = None
 
 
-class LoopOut(BaseModel):
+class LoopResponse(BaseModel):
     distance_km: float
     gain_m: float
     loss_m: float
@@ -70,9 +70,9 @@ class LoopOut(BaseModel):
     duration_min: float
     overlap_ratio: float | None = None
     score: Quality | None = None
-    cycling_score: CyclingScoreOut | None = None
-    profile: list[ProfilePointOut] | None = None
-    alternatives: list["LoopOut"] | None = None
+    cycling_score: CyclingScore | None = None
+    profile: list[ProfilePoint] | None = None
+    alternatives: list["LoopResponse"] | None = None
 
 
-LoopOut.model_rebuild()
+LoopResponse.model_rebuild()

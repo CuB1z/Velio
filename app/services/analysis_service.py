@@ -7,7 +7,7 @@ from app.engine.dem import DemSource
 from app.engine.elevation import build_profile, cumulative_distances
 from app.engine.polyline import decode
 from app.mappers.analysis import AnalysisMapper
-from app.schemas.analysis import AnalysisOut, ElevationOut, PolylineIn
+from app.schemas.analysis import AnalysisResponse, ElevationResponse, PolylineRequest
 
 
 class RouteAnalysisService:
@@ -17,7 +17,7 @@ class RouteAnalysisService:
         self.valhalla = valhalla
         self.dem = dem
 
-    async def analyze(self, data: PolylineIn) -> AnalysisOut:
+    async def analyze(self, data: PolylineRequest) -> AnalysisResponse:
         coords = self._coords(data.polyline)
         distance_km = self._distance_km(coords)
         profile = self._profile(coords)
@@ -36,7 +36,7 @@ class RouteAnalysisService:
                 f"Valhalla unavailable: {exc}"
             ) from exc
 
-        return AnalysisOut(
+        return AnalysisResponse(
             distance_km=distance_km,
             gain_m=profile.gain_m,
             loss_m=profile.loss_m,
@@ -45,10 +45,10 @@ class RouteAnalysisService:
             cycling_score=AnalysisMapper.cycling_score(analysis),
         )
 
-    def elevation(self, data: PolylineIn) -> ElevationOut:
+    def elevation(self, data: PolylineRequest) -> ElevationResponse:
         coords = self._coords(data.polyline)
         profile = self._profile(coords)
-        return ElevationOut(
+        return ElevationResponse(
             distance_km=profile.distance_km,
             gain_m=profile.gain_m,
             loss_m=profile.loss_m,

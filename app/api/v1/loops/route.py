@@ -8,15 +8,15 @@ from app.api.dependencies import get_current_user, get_dem_source, get_loop_serv
 from app.api.v1.exports import export_response
 from app.engine.dem import DemSource
 from app.models import User
-from app.schemas.loop import LoopOut, LoopRequestIn
+from app.schemas.loop import LoopCreateRequest, LoopResponse
 from app.services.loop_service import LoopService
 
 router = APIRouter(prefix="/loops", tags=["loops"])
 
 
-@router.post("", response_model=LoopOut)
+@router.post("", response_model=LoopResponse)
 async def create_loop(
-    data: LoopRequestIn,
+    data: LoopCreateRequest,
     service: LoopService = Depends(get_loop_service),
     dem: DemSource = Depends(get_dem_source),
     _: User = Depends(get_current_user),

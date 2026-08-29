@@ -20,18 +20,18 @@ from app.core.exceptions import NotFoundError
 from app.mappers.user import UserMapper
 from app.schemas.auth import (
     AuthSession,
-    ChangePasswordIn,
-    DeleteAccountIn,
-    DeleteRequestIn,
-    ForgotPasswordIn,
-    LoginIn,
-    RefreshIn,
-    RegisterIn,
-    ResendVerificationIn,
-    ResetPasswordIn,
-    SessionOut,
-    UserOut,
-    VerifyIn,
+    ChangePasswordRequest,
+    DeleteAccountRequest,
+    DeleteRequest,
+    ForgotPasswordRequest,
+    LoginRequest,
+    RefreshRequest,
+    RegisterRequest,
+    ResendVerificationRequest,
+    ResetPasswordRequest,
+    SessionResponse,
+    UserResponse,
+    VerifyRequest,
 )
 from app.services.account_service import AccountService
 from app.services.oauth_service import OAuthService
@@ -41,9 +41,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post(
-    "/register", response_model=UserOut, status_code=status.HTTP_201_CREATED
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
-async def register(data: RegisterIn, service: AccountService = Depends(get_account_service)) -> UserOut:
+async def register(data: RegisterRequest, service: AccountService = Depends(get_account_service)) -> UserResponse:
     """Create a pending account; the verification code arrives by email."""
     user = await service.register(
         email=data.email, password=data.password, full_name=data.full_name
@@ -51,10 +51,10 @@ async def register(data: RegisterIn, service: AccountService = Depends(get_accou
     return UserMapper.out(user)
 
 
-@router.post("/verify", response_model=UserOut)
+@router.post("/verify", response_model=UserResponse)
 async def verify_email(
-    data: VerifyIn, service: AccountService = Depends(get_account_service)
-) -> UserOut:
+    data: VerifyRequest, service: AccountService = Depends(get_account_service)
+) -> UserResponse:
     """Confirm the emailed code and activate the account."""
     user = await service.verify_email(email=data.email, code=data.code)
     return UserMapper.out(user)
@@ -62,7 +62,7 @@ async def verify_email(
 
 @router.post("/resend-verification", status_code=status.HTTP_202_ACCEPTED)
 async def resend_verification(
-    data: ResendVerificationIn, service: AccountService = Depends(get_account_service)
+    data: ResendVerificationRequest, service: AccountService = Depends(get_account_service)
 ) -> dict:
     """Always 202 so the endpoint cannot probe registered emails."""
     await service.resend_verification(email=data.email)
@@ -71,7 +71,7 @@ async def resend_verification(
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
 async def forgot_password(
-    data: ForgotPasswordIn, service: AccountService = Depends(get_account_service)
+    data: ForgotPasswordRequest, service: AccountService = Depends(get_account_service)
 ) -> dict:
     """Always 202 so the endpoint cannot probe registered emails."""
     await service.forgot_password(email=data.email)
@@ -80,7 +80,7 @@ async def forgot_password(
 
 @router.post("/reset-password", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_password(
-    data: ResetPasswordIn, service: AccountService = Depends(get_account_service)
+    data: ResetPasswordRequest, service: AccountService = Depends(get_account_service)
 ) -> None:
     """Swap the credential for a new one; every live session is revoked."""
     await service.reset_password(
@@ -90,7 +90,7 @@ async def reset_password(
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(
-    data: ChangePasswordIn,
+    data: ChangePasswordRequest,
     current_user=Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ) -> None:
@@ -104,7 +104,7 @@ async def change_password(
 
 @router.post("/login", response_model=AuthSession)
 async def login(
-    data: LoginIn, request: Request, service: SessionService = Depends(get_session_service)
+    data: LoginRequest, request: Request, service: SessionService = Depends(get_session_service)
 ) -> AuthSession:
     return await service.login(
         email=data.email,
@@ -115,7 +115,7 @@ async def login(
 
 @router.post("/refresh", response_model=AuthSession)
 async def refresh_tokens(
-    data: RefreshIn, request: Request, service: SessionService = Depends(get_session_service)
+    data: RefreshRequest, request: Request, service: SessionService = Depends(get_session_service)
 ) -> AuthSession:
     return await service.refresh(
         data.refresh_token, user_agent=request.headers.get("user-agent")
@@ -124,19 +124,19 @@ async def refresh_tokens(
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
 async def logout(
-    data: RefreshIn, service: SessionService = Depends(get_session_service)
+    data: RefreshRequest, service: SessionService = Depends(get_session_service)
 ) -> None:
     await service.logout(data.refresh_token)
 
 
-@router.get("/me", response_model=UserOut)
-async def me(current_user=Depends(get_current_user)) -> UserOut:
+@router.get("/me", response_model=UserResponse)
+async def me(current_user=Depends(get_current_user)) -> UserResponse:
     return UserMapper.out(current_user)
 
 
 @router.post("/me/delete-request", status_code=status.HTTP_202_ACCEPTED)
 async def request_account_deletion(
-    _body: DeleteRequestIn,
+    _body: DeleteRequest,
     current_user=Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ) -> None:
@@ -146,7 +146,7 @@ async def request_account_deletion(
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(
-    data: DeleteAccountIn,
+    data: DeleteAccountRequest,
     current_user=Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ) -> None:
@@ -184,12 +184,12 @@ async def oauth_callback(
 # Session management ---------------------------------------------------------
 
 
-@router.get("/sessions", response_model=list[SessionOut])
+@router.get("/sessions", response_model=list[SessionResponse])
 async def list_sessions(
     current_user=Depends(get_current_user),
     sid: str | None = Depends(get_session_sid),
     service: SessionService = Depends(get_session_service),
-) -> list[SessionOut]:
+) -> list[SessionResponse]:
     """Live sessions of the account; `current` marks the caller's own."""
     return await service.list_sessions(current_user.id, sid)
 

@@ -7,7 +7,7 @@ from app.engine.dem import DemSource
 from app.engine.elevation import build_profile
 from app.engine.polyline import encode
 from app.mappers.analysis import AnalysisMapper
-from app.schemas.route import RouteOut, RouteRequestIn
+from app.schemas.route import RouteCreateRequest, RouteResponse
 
 
 class RouteService:
@@ -17,7 +17,7 @@ class RouteService:
         self.valhalla = valhalla
         self.dem = dem
 
-    async def generate(self, data: RouteRequestIn) -> RouteOut:
+    async def generate(self, data: RouteCreateRequest) -> RouteResponse:
         locations = [(w.lat, w.lon) for w in data.waypoints]
         try:
             if data.alternatives:
@@ -40,11 +40,11 @@ class RouteService:
 
     async def _finalize(
         self, result, include_profile: bool
-    ) -> RouteOut:
+    ) -> RouteResponse:
         profile = build_profile(self.dem, result.coords)
         analysis = await self._analyze(result.coords, result.distance_km)
 
-        response = RouteOut(
+        response = RouteResponse(
             distance_km=result.distance_km,
             gain_m=profile.gain_m,
             loss_m=profile.loss_m,

@@ -18,7 +18,7 @@ from app.engine.loop import (
 from app.engine.polyline import encode
 from app.engine.profiles import RIDING_PROFILES
 from app.mappers.analysis import AnalysisMapper
-from app.schemas.loop import LoopOut, LoopRequestIn
+from app.schemas.loop import LoopCreateRequest, LoopResponse
 
 
 class LoopService:
@@ -30,7 +30,7 @@ class LoopService:
         self.valhalla = valhalla
         self.dem = dem
 
-    async def generate(self, data: LoopRequestIn) -> LoopOut:
+    async def generate(self, data: LoopCreateRequest) -> LoopResponse:
         costing_options = self._costing_options(data)
         weights = (
             RIDING_PROFILES[data.profile].weights if data.profile else BALANCED_WEIGHTS
@@ -157,7 +157,7 @@ class LoopService:
         loop: GeneratedLoop,
         analysis: Analysis,
         include_profile: bool,
-    ) -> LoopOut:
+    ) -> LoopResponse:
         response = self._to_response(loop, analysis)
         if include_profile and loop.coords:
             profile = build_profile(self.dem, loop.coords)
@@ -165,7 +165,7 @@ class LoopService:
         return response
 
     @staticmethod
-    def _costing_options(data: LoopRequestIn) -> dict | None:
+    def _costing_options(data: LoopCreateRequest) -> dict | None:
         """Named riding profile as base, explicit costing options on top."""
         options: dict = {}
         if data.profile:
@@ -182,7 +182,7 @@ class LoopService:
 
     @staticmethod
     def _to_engine_request(
-        data: LoopRequestIn, seed_offset: float = 0.0
+        data: LoopCreateRequest, seed_offset: float = 0.0
     ) -> LoopRequest:
         return LoopRequest(
             origin=(data.origin.lat, data.origin.lon),
@@ -197,8 +197,8 @@ class LoopService:
         )
 
     @staticmethod
-    def _to_response(loop: GeneratedLoop, analysis: Analysis) -> LoopOut:
-        return LoopOut(
+    def _to_response(loop: GeneratedLoop, analysis: Analysis) -> LoopResponse:
+        return LoopResponse(
             distance_km=loop.distance_km,
             gain_m=loop.gain_m,
             loss_m=loop.loss_m,

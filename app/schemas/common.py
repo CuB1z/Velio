@@ -17,7 +17,7 @@ class PageMeta(BaseModel):
     is_last: bool
 
 
-class PaginatedOut(BaseModel, Generic[T]):
+class PaginatedResponse(BaseModel, Generic[T]):
     """Envelope for offset-paginated lists: `data` plus page metadata."""
 
     data: list[T]

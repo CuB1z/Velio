@@ -2,10 +2,10 @@
 
 from pydantic import BaseModel, Field
 
-from app.schemas.loop import CyclingScoreOut, ProfilePointOut, Quality
+from app.schemas.loop import CyclingScore, ProfilePoint, Quality
 
 
-class PolylineIn(BaseModel):
+class PolylineRequest(BaseModel):
     """An encoded polyline6 shape to analyse offline."""
 
     polyline: str = Field(min_length=1)
@@ -13,19 +13,19 @@ class PolylineIn(BaseModel):
     target_gain_m: float | None = Field(default=None, gt=0)
 
 
-class AnalysisOut(BaseModel):
+class AnalysisResponse(BaseModel):
     distance_km: float
     gain_m: float
     loss_m: float
     score: Quality | None = None
     overlap_ratio: float | None = None
-    cycling_score: CyclingScoreOut | None = None
+    cycling_score: CyclingScore | None = None
 
 
-class ElevationOut(BaseModel):
+class ElevationResponse(BaseModel):
     distance_km: float
     gain_m: float
     loss_m: float
     max_uphill_grade_pct: float
     max_downhill_grade_pct: float
-    profile: list[ProfilePointOut]
+    profile: list[ProfilePoint]

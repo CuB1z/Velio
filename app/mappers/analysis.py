@@ -1,7 +1,7 @@
 """Engine analysis results -> route/loop HTTP schemas."""
 
 from app.engine.analysis import Analysis
-from app.schemas.loop import CyclingScoreOut, ProfilePointOut, Quality
+from app.schemas.loop import CyclingScore, ProfilePoint, Quality
 
 
 class AnalysisMapper:
@@ -21,11 +21,11 @@ class AnalysisMapper:
         )
 
     @staticmethod
-    def cycling_score(analysis: Analysis) -> CyclingScoreOut | None:
+    def cycling_score(analysis: Analysis) -> CyclingScore | None:
         rating = analysis.rating
         if rating is None:
             return None
-        return CyclingScoreOut(
+        return CyclingScore(
             distance=rating.distance,
             safety=rating.safety,
             elevation=rating.elevation,
@@ -38,5 +38,5 @@ class AnalysisMapper:
         return round(analysis.overlap, 4) if analysis.overlap is not None else None
 
     @staticmethod
-    def profile_points(profile) -> list[ProfilePointOut]:
-        return [ProfilePointOut(**sample.to_dict()) for sample in profile.samples]
+    def profile_points(profile) -> list[ProfilePoint]:
+        return [ProfilePoint(**sample.to_dict()) for sample in profile.samples]
