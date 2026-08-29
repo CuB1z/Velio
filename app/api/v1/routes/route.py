@@ -15,10 +15,14 @@ from app.api.dependencies import (
 from app.api.v1.exports import export_response
 from app.engine.dem import DemSource
 from app.models import User
-from app.schemas.analysis import AnalysisOut, ElevationOut, PolylineIn
-from app.schemas.common import PaginatedOut
-from app.schemas.route import RouteOut, RouteRequestIn
-from app.schemas.saved_route import SavedRouteIn, SavedRouteOut
+from app.schemas.analysis import AnalysisResponse, ElevationResponse, PolylineRequest
+from app.schemas.common import PaginatedResponse
+from app.schemas.route import RouteCreateRequest, RouteResponse
+from app.schemas.saved_route import (
+    SavedRouteCreateRequest,
+    SavedRouteResponse,
+    SavedRouteUpdateRequest,
+)
 from app.services.analysis_service import RouteAnalysisService
 from app.services.route_service import RouteService
 from app.services.saved_route_service import SavedRouteService
@@ -26,9 +30,9 @@ from app.services.saved_route_service import SavedRouteService
 router = APIRouter(prefix="/routes", tags=["routes"])
 
 
-@router.post("", response_model=RouteOut)
+@router.post("", response_model=RouteResponse)
 async def create_route(
-    data: RouteRequestIn,
+    data: RouteCreateRequest,
     service: RouteService = Depends(get_route_service),
     _: User = Depends(get_current_user),
     dem: DemSource = Depends(get_dem_source),
@@ -42,9 +46,9 @@ async def create_route(
     return export_response(route_out, dem, response_format, kind="route")
 
 
-@router.post("/analyze", response_model=AnalysisOut)
+@router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_route(
-    data: PolylineIn,
+    data: PolylineRequest,
     _: User = Depends(get_current_user),
     service: RouteAnalysisService = Depends(get_analysis_service),
 ):
@@ -52,9 +56,9 @@ async def analyze_route(
     return await service.analyze(data)
 
 
-@router.post("/elevation", response_model=ElevationOut)
+@router.post("/elevation", response_model=ElevationResponse)
 async def route_elevation(
-    data: PolylineIn,
+    data: PolylineRequest,
     _: User = Depends(get_current_user),
     service: RouteAnalysisService = Depends(get_analysis_service),
 ):
@@ -65,33 +69,33 @@ async def route_elevation(
 # Saved routes ----------------------------------------------------------------
 
 
-@router.get("/saved", response_model=PaginatedOut[SavedRouteOut])
+@router.get("/saved", response_model=PaginatedResponse[SavedRouteResponse])
 async def list_saved_routes(
     limit: int | None = Query(default=None, ge=1, le=200),
     page: int = Query(default=1, ge=1),
     current_user: User = Depends(get_current_user),
     service: SavedRouteService = Depends(get_saved_route_service),
-) -> PaginatedOut[SavedRouteOut]:
+) -> PaginatedResponse[SavedRouteResponse]:
     """The caller's saved routes, newest first (offset pagination)."""
     return await service.list(current_user.id, limit, page)
 
 
-@router.post("/saved", response_model=SavedRouteOut, status_code=status.HTTP_201_CREATED)
+@router.post("/saved", response_model=SavedRouteResponse, status_code=status.HTTP_201_CREATED)
 async def save_route(
-    data: SavedRouteIn,
+    data: SavedRouteCreateRequest,
     current_user: User = Depends(get_current_user),
     service: SavedRouteService = Depends(get_saved_route_service),
-) -> SavedRouteOut:
+) -> SavedRouteResponse:
     """Store one compute result under a name."""
     return await service.create(current_user.id, name=data.name, payload=data.payload)
 
 
-@router.get("/saved/{route_id}", response_model=SavedRouteOut)
+@router.get("/saved/{route_id}", response_model=SavedRouteResponse)
 async def get_saved_route(
     route_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     service: SavedRouteService = Depends(get_saved_route_service),
-) -> SavedRouteOut:
+) -> SavedRouteResponse:
     """One owned saved route; foreign ids are indistinguishable from missing."""
     return await service.get(current_user.id, route_id)
 
@@ -104,3 +108,14 @@ async def delete_saved_route(
 ) -> None:
     """Remove one owned saved route."""
     await service.delete(current_user.id, route_id)
+
+
+@router.patch("/saved/{route_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def update_saved_route(
+    route_id: uuid.UUID,
+    data: SavedRouteUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    service: SavedRouteService = Depends(get_saved_route_service),
+) -> None:
+    """Partially edit one owned saved route (name today, more later)."""
+    await service.update(current_user.id, route_id, name=data.name)

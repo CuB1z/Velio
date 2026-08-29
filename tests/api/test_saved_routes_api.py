@@ -67,6 +67,58 @@ def test_saved_route_crud_roundtrip(auth_headers):
     assert gone.json()["error"] == "NOT_FOUND"
 
 
+def test_saved_route_update_roundtrip(auth_headers):
+    client = _fresh_client()
+    created = client.post(
+        "/api/v1/routes/saved",
+        json={"name": "before", "payload": {}},
+    )
+    assert created.status_code == 201
+    route_id = created.json()["id"]
+
+    renamed = client.patch(
+        f"/api/v1/routes/saved/{route_id}",
+        json={"name": "after"},
+    )
+    assert renamed.status_code == 204, renamed.text
+
+    got = client.get(f"/api/v1/routes/saved/{route_id}")
+    assert got.status_code == 200
+    body = got.json()
+    assert body["name"] == "after"
+    assert body["created_at"] and body["updated_at"]
+
+    # A partial body with nothing to change is a harmless 204 no-op.
+    noop = client.patch(f"/api/v1/routes/saved/{route_id}", json={})
+    assert noop.status_code == 204
+    assert client.get(f"/api/v1/routes/saved/{route_id}").json()["name"] == "after"
+
+    # Foreign users cannot edit what they do not own.
+    stranger = _second_user_client()
+    foreign = stranger.patch(
+        f"/api/v1/routes/saved/{route_id}", json={"name": "sneaky"}
+    )
+    assert foreign.status_code == 404
+    assert foreign.json()["error"] == "NOT_FOUND"
+
+
+def test_saved_route_update_name_validation(auth_headers):
+    client = _fresh_client()
+    created = client.post(
+        "/api/v1/routes/saved",
+        json={"name": "keep me", "payload": {}},
+    )
+    route_id = created.json()["id"]
+
+    empty = client.patch(f"/api/v1/routes/saved/{route_id}", json={"name": ""})
+    assert empty.status_code == 422
+
+    too_long = client.patch(
+        f"/api/v1/routes/saved/{route_id}", json={"name": "x" * 101}
+    )
+    assert too_long.status_code == 422
+
+
 def test_saved_routes_are_invisible_to_other_users(auth_headers):
     mine = TestClient(app).post(
         "/api/v1/routes/saved",

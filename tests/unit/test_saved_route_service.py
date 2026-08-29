@@ -45,6 +45,13 @@ def test_saved_route_service_behaviours():
                 await service.get(stranger.id, created.id)
             with pytest.raises(NotFoundError):
                 await service.delete(stranger.id, created.id)
+            with pytest.raises(NotFoundError):
+                await service.update(stranger.id, created.id, name="nope")
+
+            await service.update(owner.id, created.id, name="Lozoya 90")
+            renamed = await service.get(owner.id, created.id)
+            assert renamed.name == "Lozoya 90"
+            assert renamed.updated_at >= renamed.created_at
 
             for i in range(5):
                 await service.create(owner.id, name=f"r{i}", payload={})
@@ -57,7 +64,7 @@ def test_saved_route_service_behaviours():
                 "r2",
                 "r1",
                 "r0",
-                "Navacerrada",
+                "Lozoya 90",
             ]
 
             # Upper bound: even a huge limit caps at MAX_LIST_LIMIT.

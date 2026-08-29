@@ -40,6 +40,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | GET | `/api/v1/routes/saved` | Bearer | List the caller's saved routes, newest first |
 | POST | `/api/v1/routes/saved` | Bearer | Store a compute result under a name |
 | GET | `/api/v1/routes/saved/{route_id}` | Bearer | One owned saved route |
+| PATCH | `/api/v1/routes/saved/{route_id}` | Bearer | Partially edit one owned saved route (name today) |
 | DELETE | `/api/v1/routes/saved/{route_id}` | Bearer | Delete one owned saved route |
 
 ## Configuration
@@ -315,25 +316,30 @@ curl -s -X POST localhost:8000/api/v1/routes/saved \
 curl -s "localhost:8000/api/v1/routes/saved?page=1&limit=10" \
   -H "Authorization: Bearer $ACCESS_TOKEN" | jq
 
-# Fetch / delete by id
+# Fetch / edit / delete by id (PATCH is partial; body fields are optional)
 curl -s localhost:8000/api/v1/routes/saved/$ID \
   -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -s -o /dev/null -w '%{http_code}\n' -X PATCH localhost:8000/api/v1/routes/saved/$ID \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Algete 75"}'   # 204
 curl -s -o /dev/null -w '%{http_code}\n' -X DELETE localhost:8000/api/v1/routes/saved/$ID \
   -H "Authorization: Bearer $ACCESS_TOKEN"   # 204
 ```
 
 The list answers a paginated envelope (`data` plus page metadata, shared
-as `PaginatedOut[SavedRoute]`):
+as `PaginatedResponse[SavedRouteResponse]`):
 
 ```json
 {
-  "data": [{"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "name": "Algete 70", "payload": {}, "created_at": "2026-08-27T10:00:00Z"}],
+  "data": [{"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "name": "Algete 70", "payload": {}, "created_at": "2026-08-27T10:00:00Z", "updated_at": "2026-08-27T10:00:00Z"}],
   "meta": {"page": 1, "limit": 10, "total": 42, "total_pages": 5, "is_last": false}
 }
 ```
 
 `meta.limit` echoes the effective page size (capped at 200), `meta.total`
 the caller's saved routes, and `meta.is_last` whether more pages exist.
+`updated_at` starts equal to `created_at` and moves forward on every edit.
 
 ---
 

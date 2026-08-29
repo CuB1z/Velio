@@ -5,8 +5,8 @@ import uuid
 from app.core.exceptions import NotFoundError
 from app.mappers.saved_route import SavedRouteMapper
 from app.repositories.saved_route_repository import SavedRouteRepository
-from app.schemas.common import PageMeta, PaginatedOut
-from app.schemas.saved_route import SavedRouteOut
+from app.schemas.common import PageMeta, PaginatedResponse
+from app.schemas.saved_route import SavedRouteResponse
 
 __all__ = ["SavedRouteService"]
 
@@ -22,11 +22,11 @@ class SavedRouteService:
 
     async def create(
         self, user_id: uuid.UUID, *, name: str, payload: dict
-    ) -> SavedRouteOut:
+    ) -> SavedRouteResponse:
         route = await self._routes.create(user_id, name=name, payload=payload)
         return SavedRouteMapper.out(route)
 
-    async def get(self, user_id: uuid.UUID, route_id: uuid.UUID) -> SavedRouteOut:
+    async def get(self, user_id: uuid.UUID, route_id: uuid.UUID) -> SavedRouteResponse:
         """Owned route or NotFoundError — foreign ids are indistinguishable."""
         route = await self._routes.get_for_user(user_id, route_id)
         if route is None:
@@ -37,12 +37,25 @@ class SavedRouteService:
         if not await self._routes.delete_for_user(user_id, route_id):
             raise NotFoundError("Saved route not found")
 
+    async def update(
+        self,
+        user_id: uuid.UUID,
+        route_id: uuid.UUID,
+        *,
+        name: str | None = None,
+    ) -> None:
+        """Apply partial edits to one owned route; foreign ids are
+        indistinguishable from missing."""
+        route = await self._routes.update_for_user(user_id, route_id, name=name)
+        if route is None:
+            raise NotFoundError("Saved route not found")
+
     async def list(
         self,
         user_id: uuid.UUID,
         limit: int | None = None,
         page: int = 1,
-    ) -> PaginatedOut[SavedRouteOut]:
+    ) -> PaginatedResponse[SavedRouteResponse]:
         """One page (1-based) of the caller's routes, newest first; a page
         past the last one returns empty data."""
         capped = min(limit if limit is not None else DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
@@ -51,7 +64,7 @@ class SavedRouteService:
             user_id, limit=capped, offset=offset
         )
         total_pages = -(-total // capped)
-        return PaginatedOut[SavedRouteOut](
+        return PaginatedResponse[SavedRouteResponse](
             data=[SavedRouteMapper.out(route) for route in routes],
             meta=PageMeta(
                 page=page,

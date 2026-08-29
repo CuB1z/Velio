@@ -46,6 +46,25 @@ class SavedRouteRepository:
         await self.db.delete(route)
         return True
 
+    async def update_for_user(
+        self,
+        user_id: uuid.UUID,
+        route_id: uuid.UUID,
+        *,
+        name: str | None = None,
+    ) -> SavedRoute | None:
+        """Apply partial edits to one owned route, touching updated_at.
+
+        No-op when nothing to change; None when absent or foreign.
+        """
+        route = await self.get_for_user(user_id, route_id)
+        if route is None:
+            return None
+        if name is not None:
+            route.name = name
+            await self.db.flush()
+        return route
+
     async def page_for_user(
         self, user_id: uuid.UUID, *, limit: int, offset: int = 0
     ) -> tuple[list[SavedRoute], int]:
