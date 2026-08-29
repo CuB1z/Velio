@@ -253,17 +253,12 @@ is **irreversible** — the user row, all refresh tokens, saved routes, email
 verification records, Brevo contact and linked OAuth identities are
 permanently removed via database cascade.
 
-Two account shapes exist:
-
-- **OAuth-only accounts** (no local password): a six digit code is emailed
-  via `POST /me/delete-request`; the code must be confirmed via
-  `DELETE /me`.
-- **Accounts with a local password**: `POST /me/delete-request` silently
-  returns `202` — the future password-gated deletion path handles them
-  (T-007 scope covers only the OAuth-only path).
+Every account receives the code, regardless of the login method (local
+or OAuth-only): deletion always requires email access, guarding against
+a stolen credential deleting the account on its own.
 
 ```bash
-# 1. Request the deletion code (OAuth-only account)
+# 1. Request the deletion code (any account)
 curl -s -X POST localhost:8000/api/v1/auth/me/delete-request \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 # → 202 Accepted
@@ -278,9 +273,8 @@ curl -s -X DELETE localhost:8000/api/v1/auth/me \
 
 The request endpoint reuses the generic OTP engine with
 `purpose = account_delete` (same expiry and wrong-guess budget as
-verification and password-reset). Password-holding accounts receive an
-empty `202` regardless of their status — the endpoint cannot probe which
-accounts exist.
+verification and password-reset). It always answers `202` — the endpoint
+cannot probe which accounts exist.
 
 The confirm endpoint:
 
@@ -317,8 +311,8 @@ curl -s -X POST localhost:8000/api/v1/routes/saved \
   -H 'Content-Type: application/json' \
   -d '{"name":"Algete 70","payload":{"polyline":"u{~fF...","distance_km":70.1}}'
 
-# List, newest first (limit optional, default 50, max 200)
-curl -s "localhost:8000/api/v1/routes/saved?limit=10" \
+# List, newest first (limit optional, default 50, max 200; page 1-based)
+curl -s "localhost:8000/api/v1/routes/saved?page=1&limit=10" \
   -H "Authorization: Bearer $ACCESS_TOKEN" | jq
 
 # Fetch / delete by id
@@ -327,6 +321,19 @@ curl -s localhost:8000/api/v1/routes/saved/$ID \
 curl -s -o /dev/null -w '%{http_code}\n' -X DELETE localhost:8000/api/v1/routes/saved/$ID \
   -H "Authorization: Bearer $ACCESS_TOKEN"   # 204
 ```
+
+The list answers a paginated envelope (`data` plus page metadata, shared
+as `PaginatedOut[SavedRoute]`):
+
+```json
+{
+  "data": [{"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "name": "Algete 70", "payload": {}, "created_at": "2026-08-27T10:00:00Z"}],
+  "meta": {"page": 1, "limit": 10, "total": 42, "total_pages": 5, "is_last": false}
+}
+```
+
+`meta.limit` echoes the effective page size (capped at 200), `meta.total`
+the caller's saved routes, and `meta.is_last` whether more pages exist.
 
 ---
 
