@@ -43,12 +43,17 @@ def test_saved_route_repository_roundtrip_and_ownership():
             assert await repo.get_for_user(stranger.id, created.id) is None
             assert await repo.delete_for_user(stranger.id, created.id) is False
 
-            # Listing is newest-first and honours the limit.
+            # Listing is newest-first and honours the limit, page + total in one call.
             for i in range(3):
                 await repo.create(owner.id, name=f"loop-{i}", payload={})
-            listed = await repo.list_for_user(owner.id, limit=2)
+            listed, total = await repo.page_for_user(owner.id, limit=2)
+            assert total == 4
             assert len(listed) == 2
             assert [r.name for r in listed] == ["loop-2", "loop-1"]
+
+            # A page past the end is empty and still reports the total.
+            empty, empty_total = await repo.page_for_user(owner.id, limit=2, offset=10)
+            assert empty == [] and empty_total == 4
 
             assert await repo.delete_for_user(owner.id, created.id) is True
             assert await repo.get_for_user(owner.id, created.id) is None

@@ -50,7 +50,8 @@ def test_saved_route_service_behaviours():
                 await service.create(owner.id, name=f"r{i}", payload={})
 
             default_list = await service.list(owner.id)
-            assert [r.name for r in default_list] == [
+            assert default_list.meta.total == 6 and default_list.meta.is_last is True
+            assert [r.name for r in default_list.data] == [
                 "r4",
                 "r3",
                 "r2",
@@ -63,8 +64,8 @@ def test_saved_route_service_behaviours():
             for i in range(MAX_LIST_LIMIT + 3):
                 await service.create(owner.id, name=f"c{i}", payload={})
             capped = await service.list(owner.id, limit=10_000)
-            assert len(capped) == MAX_LIST_LIMIT
-            assert capped[0].name.startswith("c")
+            assert len(capped.data) == MAX_LIST_LIMIT
+            assert capped.data[0].name.startswith("c")
 
             await service.delete(owner.id, created.id)
             with pytest.raises(NotFoundError):
