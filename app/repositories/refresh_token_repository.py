@@ -53,7 +53,7 @@ class RefreshTokenRepository:
 
     async def revoke(self, token: RefreshToken) -> None:
         token.revoked = True
-        await self.db.commit()
+        await self.db.flush()
 
     async def revoke_all_for_user(self, user_id: uuid.UUID) -> None:
         """Kill every live session of the account (e.g. after a password
