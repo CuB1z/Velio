@@ -43,6 +43,8 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | PATCH | `/api/v1/routes/saved/{route_id}` | Bearer | Partially edit one owned saved route (name today) |
 | DELETE | `/api/v1/routes/saved/{route_id}` | Bearer | Delete one owned saved route |
 
+| DELETE | `/api/v1/routes/saved?ids=` | Bearer | Bulk delete owned saved routes (≤50 comma-separated ids, idempotent) |
+
 ## Configuration
 
 Everything is environment-driven (or `.env`):
@@ -325,6 +327,11 @@ curl -s -o /dev/null -w '%{http_code}\n' -X PATCH localhost:8000/api/v1/routes/s
   -d '{"name":"Algete 75"}'   # 204
 curl -s -o /dev/null -w '%{http_code}\n' -X DELETE localhost:8000/api/v1/routes/saved/$ID \
   -H "Authorization: Bearer $ACCESS_TOKEN"   # 204
+
+# Bulk delete by comma-separated ids (max 50; absent/foreign ids are ignored)
+curl -s -o /dev/null -w '%{http_code}\n' -X DELETE \
+  "localhost:8000/api/v1/routes/saved?ids=$ID,$ID2" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"   # 204, or 400 beyond 50 ids
 ```
 
 The list answers a paginated envelope (`data` plus page metadata, shared
