@@ -1,8 +1,8 @@
-"""Saved-route use cases: create, owned fetch/delete and clamped listing."""
+"""Saved-route use cases: create, owned fetch/update/delete and listing."""
 
 import uuid
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, ValidationError
 from app.mappers.saved_route import SavedRouteMapper
 from app.repositories.saved_route_repository import SavedRouteRepository
 from app.schemas.common import PageMeta, PaginatedResponse
@@ -12,6 +12,7 @@ __all__ = ["SavedRouteService"]
 
 DEFAULT_LIST_LIMIT = 50
 MAX_LIST_LIMIT = 200
+MAX_BULK_DELETE = 50
 
 
 class SavedRouteService:
@@ -36,6 +37,22 @@ class SavedRouteService:
     async def delete(self, user_id: uuid.UUID, route_id: uuid.UUID) -> None:
         if not await self._routes.delete_for_user(user_id, route_id):
             raise NotFoundError("Saved route not found")
+
+    async def delete_many(self, user_id: uuid.UUID, ids: str) -> None:
+        """Bulk-delete owned routes from a comma-separated id list.
+
+        Parses and deduplicates, caps at MAX_BULK_DELETE unique ids, and
+        ignores absent/foreign ids (idempotent).
+        """
+        try:
+            parsed = [uuid.UUID(token.strip()) for token in ids.split(",")]
+        except ValueError as exc:
+            raise ValidationError("ids must be comma-separated uuids") from exc
+
+        unique = list(dict.fromkeys(parsed))
+        if len(unique) > MAX_BULK_DELETE:
+            raise ValidationError(f"At most {MAX_BULK_DELETE} ids per request")
+        await self._routes.delete_many_for_user(user_id, unique)
 
     async def update(
         self,

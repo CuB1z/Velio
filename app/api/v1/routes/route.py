@@ -80,6 +80,16 @@ async def list_saved_routes(
     return await service.list(current_user.id, limit, page)
 
 
+@router.delete("/saved", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_saved_routes(
+    ids: str = Query(...),
+    current_user: User = Depends(get_current_user),
+    service: SavedRouteService = Depends(get_saved_route_service),
+) -> None:
+    """Bulk-delete owned saved routes (comma-separated ids, max 50)."""
+    await service.delete_many(current_user.id, ids)
+
+
 @router.post("/saved", response_model=SavedRouteResponse, status_code=status.HTTP_201_CREATED)
 async def save_route(
     data: SavedRouteCreateRequest,

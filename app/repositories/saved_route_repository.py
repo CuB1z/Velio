@@ -6,7 +6,7 @@ the transaction (see `DbTransactionMiddleware`).
 
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import SavedRoute
@@ -45,6 +45,18 @@ class SavedRouteRepository:
             return False
         await self.db.delete(route)
         return True
+
+    async def delete_many_for_user(
+        self, user_id: uuid.UUID, ids: list[uuid.UUID]
+    ) -> int:
+        """Delete every owned id in one statement; absent/foreign ids are
+        simply not matched (idempotent). Returns the deleted count."""
+        result = await self.db.execute(
+            delete(SavedRoute)
+            .where(SavedRoute.user_id == user_id, SavedRoute.id.in_(ids))
+            .execution_options(synchronize_session=False)
+        )
+        return result.rowcount or 0
 
     async def update_for_user(
         self,
