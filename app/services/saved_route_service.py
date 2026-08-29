@@ -5,6 +5,7 @@ import uuid
 from app.core.exceptions import NotFoundError
 from app.mappers.saved_route import SavedRouteMapper
 from app.repositories.saved_route_repository import SavedRouteRepository
+from app.schemas.common import PageMeta, PaginatedOut
 from app.schemas.saved_route import SavedRouteOut
 
 __all__ = ["SavedRouteService"]
@@ -37,8 +38,26 @@ class SavedRouteService:
             raise NotFoundError("Saved route not found")
 
     async def list(
-        self, user_id: uuid.UUID, limit: int | None = None
-    ) -> list[SavedRouteOut]:
+        self,
+        user_id: uuid.UUID,
+        limit: int | None = None,
+        page: int = 1,
+    ) -> PaginatedOut[SavedRouteOut]:
+        """One page (1-based) of the caller's routes, newest first; a page
+        past the last one returns empty data."""
         capped = min(limit if limit is not None else DEFAULT_LIST_LIMIT, MAX_LIST_LIMIT)
-        routes = await self._routes.list_for_user(user_id, capped)
-        return [SavedRouteMapper.out(route) for route in routes]
+        offset = (page - 1) * capped
+        routes, total = await self._routes.page_for_user(
+            user_id, limit=capped, offset=offset
+        )
+        total_pages = -(-total // capped)
+        return PaginatedOut[SavedRouteOut](
+            data=[SavedRouteMapper.out(route) for route in routes],
+            meta=PageMeta(
+                page=page,
+                limit=capped,
+                total=total,
+                total_pages=total_pages,
+                is_last=page >= total_pages,
+            ),
+        )

@@ -6,7 +6,7 @@ the transaction (see `DbTransactionMiddleware`).
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import SavedRoute
@@ -46,14 +46,31 @@ class SavedRouteRepository:
         await self.db.delete(route)
         return True
 
-    async def list_for_user(
-        self, user_id: uuid.UUID, limit: int
-    ) -> list[SavedRoute]:
-        """Newest-first listing capped by SQL-level limit."""
+    async def page_for_user(
+        self, user_id: uuid.UUID, *, limit: int, offset: int = 0
+    ) -> tuple[list[SavedRoute], int]:
+        """One page of newest-first routes plus the caller's total, in one query.
+
+        `count(*) OVER ()` sees the whole match set before OFFSET/LIMIT so the
+        total stays correct even on early pages; an empty page (past the end)
+        falls back to a count-only query.
+        """
         result = await self.db.execute(
-            select(SavedRoute)
+            select(SavedRoute, func.count().over().label("total"))
             .where(SavedRoute.user_id == user_id)
-            .order_by(SavedRoute.created_at.desc())
+            .order_by(SavedRoute.created_at.desc(), SavedRoute.id.desc())
+            .offset(offset)
             .limit(limit)
         )
-        return list(result.scalars())
+        rows = result.all()
+        if not rows:
+            return [], await self._count_for_user(user_id)
+        return [row[0] for row in rows], rows[0][1]
+
+    async def _count_for_user(self, user_id: uuid.UUID) -> int:
+        result = await self.db.execute(
+            select(func.count()).select_from(SavedRoute).where(
+                SavedRoute.user_id == user_id
+            )
+        )
+        return result.scalar_one()

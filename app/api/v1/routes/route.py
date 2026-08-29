@@ -16,6 +16,7 @@ from app.api.v1.exports import export_response
 from app.engine.dem import DemSource
 from app.models import User
 from app.schemas.analysis import AnalysisOut, ElevationOut, PolylineIn
+from app.schemas.common import PaginatedOut
 from app.schemas.route import RouteOut, RouteRequestIn
 from app.schemas.saved_route import SavedRouteIn, SavedRouteOut
 from app.services.analysis_service import RouteAnalysisService
@@ -64,14 +65,15 @@ async def route_elevation(
 # Saved routes ----------------------------------------------------------------
 
 
-@router.get("/saved", response_model=list[SavedRouteOut])
+@router.get("/saved", response_model=PaginatedOut[SavedRouteOut])
 async def list_saved_routes(
     limit: int | None = Query(default=None, ge=1, le=200),
+    page: int = Query(default=1, ge=1),
     current_user: User = Depends(get_current_user),
     service: SavedRouteService = Depends(get_saved_route_service),
-) -> list[SavedRouteOut]:
-    """The caller's saved routes, newest first."""
-    return await service.list(current_user.id, limit)
+) -> PaginatedOut[SavedRouteOut]:
+    """The caller's saved routes, newest first (offset pagination)."""
+    return await service.list(current_user.id, limit, page)
 
 
 @router.post("/saved", response_model=SavedRouteOut, status_code=status.HTTP_201_CREATED)
