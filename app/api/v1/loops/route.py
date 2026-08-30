@@ -4,7 +4,12 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.dependencies import get_current_user, get_dem_source, get_loop_service
+from app.api.dependencies import (
+    allow_public_caching,
+    get_current_user,
+    get_dem_source,
+    get_loop_service,
+)
 from app.api.v1.exports import export_response
 from app.engine.dem import DemSource
 from app.models import User
@@ -20,6 +25,7 @@ async def create_loop(
     service: LoopService = Depends(get_loop_service),
     dem: DemSource = Depends(get_dem_source),
     _: User = Depends(get_current_user),
+    _cache: None = Depends(allow_public_caching),
     response_format: Literal["json", "gpx", "geojson"] = Query(
         default="json", alias="format"
     ),

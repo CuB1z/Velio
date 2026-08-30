@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.25.2"
+    app_version: str = "0.26.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     )
 
     cors_origins: list[str] = Field(default=["*"])
+    cache_control_max_age: int = Field(default=3600, alias="CACHE_CONTROL_MAX_AGE")
 
     # --- Database (required) ---
     db_driver: str = Field(

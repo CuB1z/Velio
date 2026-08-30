@@ -6,6 +6,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import (
+    allow_public_caching,
     get_analysis_service,
     get_current_user,
     get_dem_source,
@@ -36,6 +37,7 @@ async def create_route(
     service: RouteService = Depends(get_route_service),
     _: User = Depends(get_current_user),
     dem: DemSource = Depends(get_dem_source),
+    _cache: None = Depends(allow_public_caching),
     response_format: Literal["json", "gpx", "geojson"] = Query(
         default="json", alias="format"
     ),
@@ -47,9 +49,10 @@ async def create_route(
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
-async def analyze_route(
+async def route_analyze(
     data: PolylineRequest,
     _: User = Depends(get_current_user),
+    _cache: None = Depends(allow_public_caching),
     service: RouteAnalysisService = Depends(get_analysis_service),
 ):
     """Score an existing encoded polyline without re-routing it."""
@@ -60,6 +63,7 @@ async def analyze_route(
 async def route_elevation(
     data: PolylineRequest,
     _: User = Depends(get_current_user),
+    _cache: None = Depends(allow_public_caching),
     service: RouteAnalysisService = Depends(get_analysis_service),
 ):
     """DEM elevation profile for an existing encoded polyline."""

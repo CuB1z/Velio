@@ -3,7 +3,7 @@
 import uuid
 
 import jwt
-from fastapi import Depends, Request
+from fastapi import Depends, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -217,6 +217,15 @@ async def get_optional_user(
         ):
             # Any rejection means "no attributable caller" for budgets.
             return None
+
+
+def allow_public_caching(response: Response) -> None:
+    """Mark deterministic public responses as CDN/proxy-cacheable.
+
+    Only safe for endpoints whose bodies carry no caller-specific data."""
+    response.headers["Cache-Control"] = (
+        f"public, max-age={settings.cache_control_max_age}"
+    )
 
 
 def get_session_sid(request: Request) -> str | None:
