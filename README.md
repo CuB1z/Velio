@@ -193,7 +193,9 @@ service events carry their fields, uvicorn's own records flow through the
 same pipeline, and every HTTP request emits one access event with
 `request_id`, `method`, `path`, `status`, `duration_ms` and the
 proxy-aware `client_ip` (`X-Forwarded-For`). The container entry point is
-`start.sh`, where pre-start steps (e.g. future migrations) belong.
+`start.sh`, where pre-start steps (e.g. future migrations) belong; uvicorn
+workers are set with `UVICORN_WORKERS` (default 1, e.g. `UVICORN_WORKERS=2 start.sh`
+behind a reverse proxy) and the port with `PORT` (default 8000).
 
 Both endpoints return the geometry as an encoded polyline (`polyline`,
 [polyline6](https://developers.google.com/maps/documentation/utilities/polylineutility)

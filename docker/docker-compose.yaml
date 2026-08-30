@@ -64,6 +64,7 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       RATE_LIMIT_BACKEND: ${RATE_LIMIT_BACKEND:-redis}
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
       REDIS_URL: redis://redis:6379/0
       VALHALLA_URL: http://valhalla:8002
       VALHALLA_ELEVATION_DIR: /data/elevation
