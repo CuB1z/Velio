@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_dem_source, get_valhalla_client
 from app.clients.valhalla import RouteResult
+from app.core.config import settings
 from app.core.exceptions import RouteError, ValhallaError
 from app.engine.dem import DemSource
 from app.engine.edges import RouteEdge
@@ -100,6 +101,18 @@ def test_create_route_returns_scored_path(auth_headers):
     assert body["score"]["comfort"] > 0
     assert body["alternatives"] is None
     assert body["duration_min"] == pytest.approx(60.0)
+
+
+def test_create_route_sends_cache_control(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
+    resp = client.post("/api/v1/routes", json=ROUTE_BODY)
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert (
+        resp.headers["cache-control"]
+        == f"public, max-age={settings.cache_control_max_age}"
+    )
 
 
 def test_alternatives_return_scored_variants(auth_headers):

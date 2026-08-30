@@ -103,6 +103,17 @@ def test_create_loop_returns_scored_route(auth_headers):
     assert rating["total"] == pytest.approx(0.4 * 10 + 0.6 * 8)
 
 
+def test_create_loop_sends_cache_control(auth_headers):
+    client = make_client(FakeValhalla(distance_km=50.0), auth_headers)
+    resp = client.post("/api/v1/loops", json={**LOOP_BODY, "max_iterations": 4})
+
+    assert resp.status_code == 200
+    assert (
+        resp.headers["cache-control"]
+        == f"public, max-age={settings.cache_control_max_age}"
+    )
+
+
 def test_unachievable_target_returns_best_effort_infeasible(auth_headers):
     client = make_client(FakeValhalla(distance_km=75.0), auth_headers)
     resp = client.post("/api/v1/loops", json={**LOOP_BODY, "max_iterations": 3})

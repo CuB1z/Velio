@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_analysis_service
+from app.core.config import settings
 from app.engine.dem import DemSource
 from app.engine.edges import RouteEdge
 from app.engine.geo import haversine_m
@@ -96,6 +97,18 @@ def test_analyze_scores_a_polyline(auth_headers):
     assert body["gain_m"] == pytest.approx(0.0, abs=0.5)
 
 
+def test_analyze_sends_cache_control(auth_headers):
+    client = make_client(auth_headers)
+    resp = client.post("/api/v1/routes/analyze", json=BODY)
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert (
+        resp.headers["cache-control"]
+        == f"public, max-age={settings.cache_control_max_age}"
+    )
+
+
 def test_analyze_with_targets_drives_the_rating(auth_headers):
     client = make_client(auth_headers)
     far_off = client.post(
@@ -123,6 +136,18 @@ def test_elevation_profiles_a_polyline(auth_headers):
     assert body["gain_m"] == pytest.approx(0.0, abs=0.5)
     assert len(body["profile"]) > 2
     assert body["profile"][0]["elevation_m"] == pytest.approx(100.0)
+
+
+def test_elevation_sends_cache_control(auth_headers):
+    client = make_client(auth_headers)
+    resp = client.post("/api/v1/routes/elevation", json=BODY)
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert (
+        resp.headers["cache-control"]
+        == f"public, max-age={settings.cache_control_max_age}"
+    )
 
 
 def test_single_point_polyline_is_rejected(auth_headers):
