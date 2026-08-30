@@ -165,3 +165,29 @@ def test_valhalla_outage_maps_to_503(auth_headers):
 
     assert resp.status_code == 503
     assert resp.json()["error"] == "SERVICE_UNAVAILABLE"
+
+
+def test_gpx_format_returns_xml_document(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
+    resp = client.post("/api/v1/routes?format=gpx", json=ROUTE_BODY)
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/gpx+xml")
+    assert resp.text.startswith("<?xml")
+    assert "<trk>" in resp.text
+    assert "<ele>" in resp.text
+
+
+def test_geojson_format_returns_feature_collection(auth_headers):
+    client = make_client(FakeValhalla(), auth_headers)
+    resp = client.post("/api/v1/routes?format=geojson", json=ROUTE_BODY)
+    app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("application/geo+json")
+    doc = resp.json()
+    assert doc["type"] == "FeatureCollection"
+    props = doc["features"][0]["properties"]
+    assert props["distance_km"] == pytest.approx(74.0)
+    assert props["duration_min"] > 0.0
