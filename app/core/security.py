@@ -2,7 +2,7 @@
 
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from typing import Any
 
 import bcrypt
@@ -33,7 +33,9 @@ def validate_password_strength(
     """
     problems: list[str] = []
     if not PASSWORD_MIN_LENGTH <= len(password) <= PASSWORD_MAX_LENGTH:
-        problems.append(f"must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long")
+        problems.append(
+            f"must be {PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} characters long"
+        )
     if not any(c.islower() for c in password):
         problems.append("must contain a lowercase letter")
     if not any(c.isupper() for c in password):
@@ -58,7 +60,7 @@ def generate_otp(digits: int = 6) -> str:
 
 def create_state_token(provider: str) -> str:
     """Signed CSRF guard binding an OAuth round trip to one provider."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload = {
         "sub": provider,
         "type": STATE_TYPE,
@@ -96,7 +98,7 @@ def _create_token(
     extra_claims: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
     """Return (token, jti) for the given subject and lifetime."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     jti = uuid.uuid4().hex
     payload: dict[str, Any] = {
         "sub": subject,
@@ -130,7 +132,9 @@ def create_access_token(
 def create_refresh_token(user_id: uuid.UUID) -> tuple[str, str]:
     """Return (token, jti) so callers can persist and revoke refreshes."""
     return _create_token(
-        str(user_id), REFRESH_TYPE, timedelta(days=settings.jwt_refresh_token_expire_days)
+        str(user_id),
+        REFRESH_TYPE,
+        timedelta(days=settings.jwt_refresh_token_expire_days),
     )
 
 

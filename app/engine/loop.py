@@ -85,7 +85,7 @@ def climb_anchors(
     candidates: list[tuple[float, float]] = []
     graded = [s for s in profile.samples if s.grade_pct is not None]
     if graded:
-        steepest = max(graded, key=lambda s: s.grade_pct)
+        steepest = max(graded, key=lambda s: s.grade_pct or 0.0)
         candidates.append((steepest.lat, steepest.lon))
     if profile.samples:
         highest = max(profile.samples, key=lambda s: s.elevation_m)
@@ -109,7 +109,9 @@ def ring_waypoints(
     if count < 3:
         raise ValueError("a loop needs at least three waypoints")
     return [
-        destination_point(lat, lon, math.radians(offset_deg + 360.0 * i / count), radius_m)
+        destination_point(
+            lat, lon, math.radians(offset_deg + 360.0 * i / count), radius_m
+        )
         for i in range(count)
     ]
 
@@ -276,7 +278,10 @@ async def generate_loop(
         coords, distance_km = result.coords, result.distance_km
         profile = build_profile(dem, coords)
 
-        distance_ok = abs(distance_km - request.target_km) <= request.target_km * request.tolerance
+        distance_ok = (
+            abs(distance_km - request.target_km)
+            <= request.target_km * request.tolerance
+        )
         gain_ok = request.target_gain_m is None or (
             abs(profile.gain_m - request.target_gain_m)
             <= request.target_gain_m * request.gain_tolerance
@@ -311,6 +316,7 @@ async def generate_loop(
         if state == previous_state:
             # Knob space exhausted without meeting the targets: the request
             # is not achievable from this origin (or with this distance).
+            assert best is not None
             best = replace(best, infeasible=True)
             return best
         previous_state = state
@@ -328,6 +334,7 @@ async def generate_loop(
                 use_summit = True
             elif step > 0:
                 # Every knob is maxed out and the gain is still short.
+                assert best is not None
                 return replace(best, infeasible=True)
             elif use_summit:
                 use_summit = False
@@ -336,4 +343,5 @@ async def generate_loop(
             else:
                 hilliness = max(0.0, hilliness - max(abs(step), HILLINESS_STEP))
 
+    assert best is not None
     return best

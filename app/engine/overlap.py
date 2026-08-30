@@ -34,7 +34,7 @@ def overlap_ratio(
 
     intervals: dict[int, list[tuple[float, float]]] = {}
     offset = 0.0
-    for edge, length_m in zip(edges, lengths_m):
+    for edge, length_m in zip(edges, lengths_m, strict=True):
         start, end = offset, offset + length_m
         offset = end
         inside_lo = max(start, lo)

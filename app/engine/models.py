@@ -19,7 +19,9 @@ class ProfileSample:
             "lon": round(self.lon, 6),
             "distance_m": round(self.distance_m, 1),
             "elevation_m": round(self.elevation_m, 1),
-            "grade_pct": round(self.grade_pct, 2) if self.grade_pct is not None else None,
+            "grade_pct": (
+                round(self.grade_pct, 2) if self.grade_pct is not None else None
+            ),
         }
 
 

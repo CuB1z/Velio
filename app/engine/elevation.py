@@ -34,7 +34,10 @@ def build_profile(
     raw = np.array(
         [
             math.nan if h is None else h
-            for h in (dem.elevation(la, lo) for la, lo in zip(lats, lons))
+            for h in (
+                dem.elevation(la, lo)
+                for la, lo in zip(lats, lons, strict=True)
+            )
         ],
         dtype=np.float64,
     )
@@ -55,7 +58,9 @@ def build_profile(
             elevation_m=float(e),
             grade_pct=(None if math.isnan(g) else float(g)),
         )
-        for la, lo, d, e, g in zip(lats, lons, sample_dist, smoothed, local_grades)
+        for la, lo, d, e, g in zip(
+            lats, lons, sample_dist, smoothed, local_grades, strict=True
+        )
     ]
 
     return ElevationProfile(

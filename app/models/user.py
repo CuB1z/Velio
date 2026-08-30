@@ -24,7 +24,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 
-class UserStatus(str, enum.Enum):
+class UserStatus(enum.StrEnum):
     """Lifecycle of an account.
 
     PENDING accounts exist but their email is unverified; ACTIVE accounts

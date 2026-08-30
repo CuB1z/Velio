@@ -182,7 +182,7 @@ class ValhallaClient:
         self,
         encoded_polyline: str,
         costing_options: dict | None = None,
-    ) -> list[dict]:
+    ) -> list[RouteEdge]:
         """Per-edge attributes for a route shape, via /trace_attributes."""
         attrs = (
             BASE_TRACE_ATTRIBUTES + EXTRA_TRACE_ATTRIBUTES
@@ -223,7 +223,7 @@ class ValhallaClient:
                 {
                     "shape": [
                         {"lat": la, "lon": lo}
-                        for la, lo in zip(chunk_lats, chunk_lons)
+                        for la, lo in zip(chunk_lats, chunk_lons, strict=True)
                     ]
                 },
             )

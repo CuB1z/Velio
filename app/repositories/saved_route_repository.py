@@ -54,9 +54,10 @@ class SavedRouteRepository:
         result = await self.db.execute(
             delete(SavedRoute)
             .where(SavedRoute.user_id == user_id, SavedRoute.id.in_(ids))
+            .returning(SavedRoute.id)
             .execution_options(synchronize_session=False)
         )
-        return result.rowcount or 0
+        return len(result.all())
 
     async def update_for_user(
         self,

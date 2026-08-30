@@ -5,9 +5,12 @@ import time
 
 import pytest
 
+from redis.exceptions import ConnectionError as RedisConnectionError
+
 from app.core.ratelimit import (
     InMemoryRateLimiter,
     RateLimiter,
+    RedisRateLimiter,
     match_rule,
 )
 
@@ -188,11 +191,6 @@ def test_reset_clears_every_bucket():
 # Contract parity: both adapters must satisfy the same behaviour.
 
 
-from redis.exceptions import ConnectionError as RedisConnectionError
-
-from app.core.ratelimit import RedisRateLimiter
-
-
 class _FakeAsyncRedis:
     """Minimal async stand-in for the handful of commands the adapter uses."""
 
@@ -216,7 +214,11 @@ class _FakeAsyncRedis:
 
     async def ttl(self, key):
         self._check()
-        return max(0, int(self.expiry[key] - time.time())) if self._alive(key, self.expiry) else -2
+        return (
+            max(0, int(self.expiry[key] - time.time()))
+            if self._alive(key, self.expiry)
+            else -2
+        )
 
     async def incr(self, key):
         self._check()
@@ -249,7 +251,11 @@ class _FakeAsyncRedis:
 
             def zadd(self, key, mapping):
                 for member, score in mapping.items():
-                    self.ops.append(lambda k=key, m=member, s=score: outer.zsets.setdefault(k, []).append((m, s)))
+                    self.ops.append(
+                        lambda k=key, m=member, s=score: outer.zsets.setdefault(
+                            k, []
+                        ).append((m, s))
+                    )
                 return self
 
             def zremrangebyscore(self, key, low, high):
@@ -280,7 +286,9 @@ class _FakeAsyncRedis:
 
     async def zrange(self, key, start, end, withscores=False):
         self._check()
-        entries = sorted(self.zsets.get(key, []), key=lambda x: x[1])[start : end + 1 or None]
+        entries = sorted(
+            self.zsets.get(key, []), key=lambda x: x[1]
+        )[start : end + 1 or None]
         return entries if withscores else [m for m, s in entries]
 
     async def scan_iter(self, match="*"):

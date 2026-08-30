@@ -1,0 +1,16 @@
+# ruff — linter configuration for Velio.
+# Docs: https://docs.astral.sh/ruff/settings/
+
+target-version = "py312"
+line-length = 88
+
+[lint]
+select = ["E", "F", "UP", "B"]
+
+[lint.flake8-bugbear]
+# `Depends` / `Query` evaluate their default as FastAPI wiring, not here.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
+[lint.per-file-ignores]
+# Test env vars must be set before the app module is imported.
+"tests/conftest.py" = ["E402"]

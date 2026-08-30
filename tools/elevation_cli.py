@@ -21,7 +21,9 @@ def compare_heights(
 ) -> dict:
     """Deviation stats between engine elevations and /height ground truth."""
     diffs = [
-        s.elevation_m - h for s, h in zip(samples, heights) if h is not None
+        s.elevation_m - h
+        for s, h in zip(samples, heights, strict=False)
+        if h is not None
     ]
     if not diffs:
         return {"count": 0}

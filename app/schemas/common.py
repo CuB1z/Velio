@@ -1,6 +1,6 @@
 """Shared HTTP schemas reused across endpoints."""
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -17,7 +17,7 @@ class PageMeta(BaseModel):
     is_last: bool
 
 
-class PaginatedResponse(BaseModel, Generic[T]):
+class PaginatedResponse[T](BaseModel):
     """Envelope for offset-paginated lists: `data` plus page metadata."""
 
     data: list[T]

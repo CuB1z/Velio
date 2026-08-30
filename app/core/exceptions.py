@@ -308,7 +308,11 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     )
     return JSONResponse(
         status_code=exc.status_code,
-        content={"error": exc.error_code, "message": exc.message, "details": exc.details},
+        content={
+            "error": exc.error_code,
+            "message": exc.message,
+            "details": exc.details,
+        },
         headers=exc.headers,
     )
 

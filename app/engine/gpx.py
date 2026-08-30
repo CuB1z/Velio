@@ -4,7 +4,7 @@ The track points come straight from the elevation profile samples, so the
 file carries the same DEM elevations the engine reported as gain/loss.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from xml.etree.ElementTree import Element, SubElement, tostring
 
 from .models import ProfileSample
@@ -26,7 +26,7 @@ def build_gpx(
     gpx = Element("gpx", {"version": "1.1", "creator": creator, "xmlns": GPX_NS})
     metadata = SubElement(gpx, "metadata")
     SubElement(metadata, "time").text = (
-        datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        datetime.now(UTC).isoformat().replace("+00:00", "Z")
     )
 
     trk = SubElement(gpx, "trk")

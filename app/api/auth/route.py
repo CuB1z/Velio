@@ -43,7 +43,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 @router.post(
     "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
 )
-async def register(data: RegisterRequest, service: AccountService = Depends(get_account_service)) -> UserResponse:
+async def register(
+    data: RegisterRequest,
+    service: AccountService = Depends(get_account_service),
+) -> UserResponse:
     """Create a pending account; the verification code arrives by email."""
     user = await service.register(
         email=data.email, password=data.password, full_name=data.full_name
@@ -62,7 +65,8 @@ async def verify_email(
 
 @router.post("/resend-verification", status_code=status.HTTP_202_ACCEPTED)
 async def resend_verification(
-    data: ResendVerificationRequest, service: AccountService = Depends(get_account_service)
+    data: ResendVerificationRequest,
+    service: AccountService = Depends(get_account_service),
 ) -> dict:
     """Always 202 so the endpoint cannot probe registered emails."""
     await service.resend_verification(email=data.email)
@@ -104,7 +108,9 @@ async def change_password(
 
 @router.post("/login", response_model=AuthSession)
 async def login(
-    data: LoginRequest, request: Request, service: SessionService = Depends(get_session_service)
+    data: LoginRequest,
+    request: Request,
+    service: SessionService = Depends(get_session_service),
 ) -> AuthSession:
     return await service.login(
         email=data.email,
@@ -115,7 +121,9 @@ async def login(
 
 @router.post("/refresh", response_model=AuthSession)
 async def refresh_tokens(
-    data: RefreshRequest, request: Request, service: SessionService = Depends(get_session_service)
+    data: RefreshRequest,
+    request: Request,
+    service: SessionService = Depends(get_session_service),
 ) -> AuthSession:
     return await service.refresh(
         data.refresh_token, user_agent=request.headers.get("user-agent")

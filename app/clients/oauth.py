@@ -134,6 +134,10 @@ class OAuthGateway:
                 raise OAuthRejectedError(f"{provider} returned no access token")
 
             try:
+                if config.profile_url is None:
+                    raise RuntimeError(
+                        f"{provider} has no profile_url configured"
+                    )
                 profile_resp = await client.get(
                     config.profile_url,
                     headers={"Authorization": f"Bearer {access_token}"},

@@ -185,7 +185,9 @@ def test_verify_exhausts_after_max_attempts():
     client = TestClient(app)
 
     for _ in range(settings.otp_max_attempts):
-        wrong = client.post("/api/v1/auth/verify", json={"email": email, "code": "000002"})
+        wrong = client.post(
+            "/api/v1/auth/verify", json={"email": email, "code": "000002"}
+        )
         assert wrong.status_code == 400
 
     # The right answer no longer helps once the guesses ran out.

@@ -90,7 +90,9 @@ async def delete_saved_routes(
     await service.delete_many(current_user.id, ids)
 
 
-@router.post("/saved", response_model=SavedRouteResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/saved", response_model=SavedRouteResponse, status_code=status.HTTP_201_CREATED
+)
 async def save_route(
     data: SavedRouteCreateRequest,
     current_user: User = Depends(get_current_user),

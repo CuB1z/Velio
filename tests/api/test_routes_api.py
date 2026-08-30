@@ -127,7 +127,9 @@ def test_too_many_alternatives_is_rejected(auth_headers):
 
 def test_single_waypoint_is_rejected(auth_headers):
     client = make_client(FakeValhalla(), auth_headers)
-    resp = client.post("/api/v1/routes", json={"waypoints": [ROUTE_BODY["waypoints"][0]]})
+    resp = client.post(
+        "/api/v1/routes", json={"waypoints": [ROUTE_BODY["waypoints"][0]]}
+    )
     app.dependency_overrides.clear()
 
     assert resp.status_code == 422

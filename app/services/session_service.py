@@ -3,7 +3,7 @@ logout and per-device session management."""
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 import jwt
 
@@ -24,7 +24,7 @@ from app.repositories.refresh_token_repository import (
     jti_digest,
 )
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import AuthSession, TokenPair
+from app.schemas.auth import AuthSession, SessionResponse, TokenPair
 
 from .account_service import ensure_active
 
@@ -96,16 +96,16 @@ class SessionService:
 
     async def list_sessions(
         self, user_id: uuid.UUID, sid: str | None = None
-    ) -> list[dict]:
+    ) -> list[SessionResponse]:
         """Live sessions of the account, flagging the caller's own (`sid`)."""
         current_hash = jti_digest(sid) if sid else None
         return [
-            {
-                "id": token.id,
-                "created_at": token.created_at,
-                "user_agent": token.user_agent,
-                "current": bool(current_hash) and token.jti_hash == current_hash,
-            }
+            SessionResponse(
+                id=token.id,
+                created_at=token.created_at,
+                user_agent=token.user_agent,
+                current=bool(current_hash) and token.jti_hash == current_hash,
+            )
             for token in await self._tokens.list_live_for_user(user_id)
         ]
 
@@ -141,7 +141,7 @@ class SessionService:
         access = create_access_token(user.id, user.email, sid=jti)
 
         payload = decode_token(refresh, REFRESH_TYPE)
-        expires_at = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
         await self._tokens.store(
             user.id,
             jti,

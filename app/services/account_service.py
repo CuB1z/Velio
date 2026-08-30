@@ -3,7 +3,7 @@ credential management (change / forgot / reset)."""
 
 import logging
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 
 from app.clients.mail import (
     MailSender,
@@ -209,7 +209,9 @@ class AccountService:
             raise InvalidCredentialsError(user.email)
 
         validate_password_strength(new_password, email=user.email)
-        await self._users.set_password(user, hashed_password=hash_password(new_password))
+        await self._users.set_password(
+            user, hashed_password=hash_password(new_password)
+        )
         await self._tokens.revoke_all_for_user(user.id)
 
     # GDPR deletion ------------------------------------------------------------
@@ -274,7 +276,7 @@ class AccountService:
         and the client can always ask for a resend.
         """
         code = generate_otp()
-        expires_at = datetime.now(timezone.utc) + timedelta(
+        expires_at = datetime.now(UTC) + timedelta(
             minutes=settings.otp_expire_minutes
         )
         await self._codes.issue(

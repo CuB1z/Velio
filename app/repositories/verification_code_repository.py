@@ -5,7 +5,7 @@ the transaction (see `DbTransactionMiddleware`).
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +47,7 @@ class VerificationCodeRepository:
             select(VerificationCode).where(
                 VerificationCode.user_id == user_id,
                 VerificationCode.purpose == purpose,
-                VerificationCode.expires_at > datetime.now(timezone.utc),
+                VerificationCode.expires_at > datetime.now(UTC),
             )
         )
         return result.scalar_one_or_none()

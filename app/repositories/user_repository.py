@@ -79,8 +79,10 @@ class UserRepository:
         user_id = await self.find_identity_user_id(provider, provider_user_id)
         if user_id is not None:
             user = await self.get_by_id(user_id)
+            if user is None:
+                raise RuntimeError("User identity points at a missing user")
             # Keep stale profiles fresh when the provider shares a name.
-            if full_name and user and not user.full_name:
+            if full_name and not user.full_name:
                 user.full_name = full_name
             return user
 

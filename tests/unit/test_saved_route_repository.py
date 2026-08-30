@@ -54,7 +54,10 @@ def test_saved_route_repository_roundtrip_and_ownership():
             updated = first.updated_at.replace(tzinfo=None)
             assert updated >= first.created_at
             assert updated > before
-            assert await repo.update_for_user(stranger.id, created.id, name="nope") is None
+            assert (
+                await repo.update_for_user(stranger.id, created.id, name="nope")
+                is None
+            )
 
             # A no-op update returns the route without touching the stamp.
             unchanged = await repo.update_for_user(owner.id, created.id)

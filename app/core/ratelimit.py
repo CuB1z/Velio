@@ -275,7 +275,7 @@ def match_rule(path: str) -> str | None:
             continue
         if all(
             t == p or (t.startswith("{") and t.endswith("}"))
-            for t, p in zip(parts_template, parts_path)
+            for t, p in zip(parts_template, parts_path, strict=True)
         ):
             return template
     return None
@@ -287,8 +287,11 @@ def match_rule(path: str) -> str | None:
 
 async def enforce(path: str, side: Literal["ip", "user"], identity: str) -> None:
     """Charge one hit against RULES[path][side]; 429 when exhausted."""
+    limit = RULES[path][side]
+    if limit is None:
+        return
     retry_after = await limiter.hit(
-        f"{path}:{side}:{identity}", RULES[path][side], WINDOW_S
+        f"{path}:{side}:{identity}", limit, WINDOW_S
     )
     if retry_after:
         raise RateLimitingError(retry_after)

@@ -7,7 +7,9 @@ Google's polyline5, only the coordinate multiplier differs.
 DEFAULT_PRECISION = 1_000_000
 
 
-def decode(encoded: str, precision: int = DEFAULT_PRECISION) -> list[tuple[float, float]]:
+def decode(
+    encoded: str, precision: int = DEFAULT_PRECISION
+) -> list[tuple[float, float]]:
     """Decode an encoded polyline into (lat, lon) tuples."""
     coords: list[tuple[float, float]] = []
     index = 0

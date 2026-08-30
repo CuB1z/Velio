@@ -8,7 +8,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
-_PLACEHOLDER_SECRETS = frozenset({"", "changeme", "change-me", "dev-secret-change-in-production"})
+_PLACEHOLDER_SECRETS = frozenset(
+    {"", "changeme", "change-me", "dev-secret-change-in-production"}
+)
 
 
 class Settings(BaseSettings):
@@ -21,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.25.0"
+    app_version: str = "0.25.1"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -130,8 +132,9 @@ class Settings(BaseSettings):
 
         if self.rate_limit_backend == "redis" and not self.rate_limit_enabled:
             errors.append(
-                "RATE_LIMIT_BACKEND=redis with RATE_LIMIT_ENABLED=false is misconfigured; "
-                "set RATE_LIMIT_BACKEND=memory or enable rate limiting"
+                "RATE_LIMIT_BACKEND=redis with RATE_LIMIT_ENABLED=false is "
+                "misconfigured; set RATE_LIMIT_BACKEND=memory or enable "
+                "rate limiting"
             )
 
         if errors:
