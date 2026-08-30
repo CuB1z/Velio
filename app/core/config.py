@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.25.1"
+    app_version: str = "0.25.2"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -135,6 +135,12 @@ class Settings(BaseSettings):
                 "RATE_LIMIT_BACKEND=redis with RATE_LIMIT_ENABLED=false is "
                 "misconfigured; set RATE_LIMIT_BACKEND=memory or enable "
                 "rate limiting"
+            )
+
+        if "*" in self.cors_origins and not self.is_dev:
+            errors.append(
+                'CORS_ORIGINS must not contain "*" outside dev; '
+                "list the front-end origins explicitly"
             )
 
         if errors:
