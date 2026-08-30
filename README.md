@@ -222,6 +222,18 @@ answer `429` with a `Retry-After` header.
 
 Shared helpers live in `scripts/lib/common.sh`.
 
+## Code hygiene
+
+Before opening a PR run both checks; they must exit clean:
+
+```bash
+ruff check .        # lint (rules in ruff.toml)
+mypy app/           # static types (config in mypy.ini)
+```
+
+Install the dev extras (`pip install -r requirements-dev.txt`) to get `mypy`;
+`ruff` is in the same file. As with tests, use the project `.venv`.
+
 ## Documentation
 
 | Document | Contents |
