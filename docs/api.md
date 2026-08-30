@@ -33,10 +33,10 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | GET | `/api/v1/auth/{provider}/callback` | — | Finish the OAuth round trip, returns session |
 | POST | `/api/v1/auth/me/delete-request` | Bearer | Request account deletion (issues OTP) |
 | DELETE | `/api/v1/auth/me` | Bearer | Confirm deletion and hard-delete the account |
-| POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets |
-| POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints |
-| POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline |
-| POST | `/api/v1/routes/elevation` | Bearer | DEM elevation profile of an encoded polyline |
+| POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets — `Cache-Control: public, max-age=<n>` |
+| POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints — `Cache-Control: public, max-age=<n>` (`CACHE_CONTROL_MAX_AGE`, default 3600) |
+| POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline — `Cache-Control: public, max-age=<n>` |
+| POST | `/api/v1/routes/elevation` | Bearer | DEM elevation profile of an encoded polyline — `Cache-Control: public, max-age=<n>` |
 | GET | `/api/v1/routes/saved` | Bearer | List the caller's saved routes, newest first |
 | POST | `/api/v1/routes/saved` | Bearer | Store a compute result under a name |
 | GET | `/api/v1/routes/saved/{route_id}` | Bearer | One owned saved route |
