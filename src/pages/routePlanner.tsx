@@ -11,6 +11,7 @@ import type { MapMarker, RouteLayer } from '@/components/map/mapView'
 import { BikePicker } from '@/components/planner/bikePicker'
 import { SliderField } from '@/components/planner/sliderField'
 import { WaypointEditor } from '@/components/planner/waypointEditor'
+import { InsetGroup, InsetRow } from '@/components/common/insetGroup'
 import { RouteResultPanel } from '@/components/route/routeResultPanel'
 import { useInitialPosition } from '@/hooks/useInitialPosition'
 import { mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
@@ -119,7 +120,7 @@ export function RoutePlannerPage() {
       onResultCollapsedChange={setResultCollapsed}
       form={
         <form
-          className="flex flex-col gap-6"
+          className="flex flex-col gap-5"
           onSubmit={(event) => {
             event.preventDefault()
             mutation.mutate()
@@ -134,40 +135,45 @@ export function RoutePlannerPage() {
 
           <BikePicker bike={bike} hills={hills} onBikeChange={setBike} onHillsChange={setHills} />
 
-          <SliderField
-            label={t('planner.alternatives')}
-            value={alternatives}
-            onChange={setAlternatives}
-            min={0}
-            max={2}
-            display={String(alternatives)}
-          />
-
-          <Switch
-            isSelected={includeProfile}
-            onChange={setIncludeProfile}
-            className="flex min-h-11 items-center"
-          >
-            <Switch.Content className="flex w-full items-center justify-between gap-3">
-              <span className="text-sm">{t('planner.includeProfile')}</span>
-              <Switch.Control>
-                <Switch.Thumb />
-              </Switch.Control>
-            </Switch.Content>
-          </Switch>
+          <InsetGroup>
+            <InsetRow stacked>
+              <SliderField
+                label={t('planner.alternatives')}
+                value={alternatives}
+                onChange={setAlternatives}
+                min={0}
+                max={2}
+                display={String(alternatives)}
+              />
+            </InsetRow>
+            <InsetRow>
+              <Switch
+                isSelected={includeProfile}
+                onChange={setIncludeProfile}
+                className="flex min-h-11 w-full items-center"
+              >
+                <Switch.Content className="flex w-full items-center justify-between gap-3">
+                  <span className="text-[15px]">{t('planner.includeProfile')}</span>
+                  <Switch.Control>
+                    <Switch.Thumb />
+                  </Switch.Control>
+                </Switch.Content>
+              </Switch>
+            </InsetRow>
+          </InsetGroup>
 
           <div className="flex gap-2">
             <Button
               type="submit"
               variant="primary"
               fullWidth
-              className="min-h-12"
+              className="min-h-11 text-[15px] font-semibold"
               isDisabled={waypoints.length < 2 || mutation.isPending}
             >
               {mutation.isPending ? t('planner.generating') : t('planner.generateRoute')}
             </Button>
             {mutation.isPending ? (
-              <Button variant="ghost" className="min-h-12" onPress={() => abort.current?.abort()}>
+              <Button variant="ghost" className="min-h-11" onPress={() => abort.current?.abort()}>
                 {t('common.cancel')}
               </Button>
             ) : null}

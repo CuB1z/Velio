@@ -32,14 +32,12 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] text-muted">
-          {t('planner.stops')}
-        </span>
+      <div className="flex items-center justify-between ps-4">
+        <h3 className="text-[13px] font-normal text-muted">{t('planner.stops')}</h3>
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-11"
+          className="min-h-9 text-[13px] text-accent"
           onPress={() => onChange([...value].reverse())}
           isDisabled={value.length < 2}
         >
@@ -47,15 +45,11 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
         </Button>
       </div>
 
-      <ol className="flex flex-col gap-2">
-        {value.map((point, index) => (
-          /* Dos filas: las cuatro acciones son objetivos táctiles de 44 px y
-             en una sola no dejan ancho legible a la coordenada. */
-          <li
-            key={index}
-            className="flex flex-col gap-1 rounded-xl border border-border bg-surface p-2"
-          >
-            <div className="flex items-center gap-2">
+      <ol className="flex flex-col divide-y divide-separator rounded-xl bg-surface shadow-card">
+        {value.map((point, index) => {
+          const [lat, lon] = formatCoordinates(point.lat, point.lon).split(' · ')
+          return (
+            <li key={index} className="flex min-h-14 items-center gap-2 ps-4 pe-2">
               <span
                 aria-hidden="true"
                 className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
@@ -64,75 +58,72 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
               </span>
               <span className="min-w-0 flex-1">
                 <span className="sr-only">{t('planner.stopLetter', { letter: LETTERS[index] })}</span>
-                <span className="tnum block truncate text-[13px] text-foreground">
-                  {formatCoordinates(point.lat, point.lon)}
-                </span>
+                <span className="tnum block text-[13px] leading-tight text-foreground">{lat}</span>
+                <span className="tnum block text-[13px] leading-tight text-foreground">{lon}</span>
               </span>
-            </div>
-
-            <div className="flex items-center justify-end gap-1">
-            <Button
-              variant={pickTarget === index ? 'primary' : 'ghost'}
-              isIconOnly
-              size="sm"
-              className="size-11 shrink-0"
-              aria-label={t('map.pickOnMap')}
-              onPress={() => onPick(pickTarget === index ? null : index)}
-            >
-              <PinIcon />
-            </Button>
-            <Button
-              variant="ghost"
-              isIconOnly
-              size="sm"
-              className="size-11 shrink-0"
-              aria-label={`${t('planner.stops')} ${index} ↑`}
-              isDisabled={index === 0}
-              onPress={() => move(index, index - 1)}
-            >
-              <ArrowIcon up />
-            </Button>
-            <Button
-              variant="ghost"
-              isIconOnly
-              size="sm"
-              className="size-11 shrink-0"
-              aria-label={`${t('planner.stops')} ${index + 2} ↓`}
-              isDisabled={index === value.length - 1}
-              onPress={() => move(index, index + 1)}
-            >
-              <ArrowIcon />
-            </Button>
-            <Button
-              variant="ghost"
-              isIconOnly
-              size="sm"
-              className="size-11 shrink-0"
-              aria-label={t('common.remove')}
-              isDisabled={value.length <= 2}
-              onPress={() => onChange(value.filter((_, i) => i !== index))}
-            >
-              <CloseIcon />
-            </Button>
-            </div>
-          </li>
-        ))}
+              <Button
+                variant={pickTarget === index ? 'primary' : 'ghost'}
+                isIconOnly
+                size="sm"
+                className="size-11 shrink-0"
+                aria-label={t('map.pickOnMap')}
+                onPress={() => onPick(pickTarget === index ? null : index)}
+              >
+                <PinIcon />
+              </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                size="sm"
+                className="size-11 shrink-0"
+                aria-label={`${t('planner.stops')} ${index} ↑`}
+                isDisabled={index === 0}
+                onPress={() => move(index, index - 1)}
+              >
+                <ArrowIcon up />
+              </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                size="sm"
+                className="size-11 shrink-0"
+                aria-label={`${t('planner.stops')} ${index + 2} ↓`}
+                isDisabled={index === value.length - 1}
+                onPress={() => move(index, index + 1)}
+              >
+                <ArrowIcon />
+              </Button>
+              <Button
+                variant="ghost"
+                isIconOnly
+                size="sm"
+                className="size-11 shrink-0"
+                aria-label={t('common.remove')}
+                isDisabled={value.length <= 2}
+                onPress={() => onChange(value.filter((_, i) => i !== index))}
+              >
+                <CloseIcon />
+              </Button>
+            </li>
+          )
+        })}
+        <li className="px-2">
+          <Button
+            variant="ghost"
+            className="min-h-11 w-full justify-start gap-2 px-2 text-[15px] text-accent"
+            isDisabled={value.length >= MAX_WAYPOINTS}
+            onPress={() => {
+              const last = value[value.length - 1]
+              onChange([...value, { lat: last.lat + 0.05, lon: last.lon + 0.05 }])
+              onPick(value.length)
+            }}
+          >
+            <PlusIcon />
+            {t('planner.addStop')}
+          </Button>
+        </li>
       </ol>
-
-      <Button
-        variant="ghost"
-        className="min-h-11 justify-start border border-dashed border-border"
-        isDisabled={value.length >= MAX_WAYPOINTS}
-        onPress={() => {
-          const last = value[value.length - 1]
-          onChange([...value, { lat: last.lat + 0.05, lon: last.lon + 0.05 }])
-          onPick(value.length)
-        }}
-      >
-        <PlusIcon />
-        {t('planner.addStop')}
-      </Button>
-      <p className="text-[11px] text-muted">{t('planner.stopsHint')}</p>
+      <p className="px-4 text-[12px] text-muted">{t('planner.stopsHint')}</p>
     </div>
   )
 }
