@@ -148,21 +148,28 @@ point-to-point routes. Full endpoint reference in [docs/api.md](docs/api.md).
 # and ./valhalla/elevation)
 uvicorn app.main:app --reload --port 8000
 
-# Generate a 70 km / 900 m D+ loop from Algete, tuned for safe roads
-curl -s -X POST localhost:8000/api/v1/loops -H 'Content-Type: application/json' \
-  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900,"profile":"safe"}' | jq
+# Generate a 70 km / 900 m D+ road loop from Algete (Bearer token from /api/v1/auth/login)
+curl -s -X POST localhost:8000/api/v1/loops -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70,"gain_m":900,"bike":"road"}' | jq
+
+# The same as Server-Sent Events: progress, each loop as found, then the result
+curl -N -X POST localhost:8000/api/v1/loops/stream -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":60,"routes":3}'
 
 # Point-to-point route with up to two scored alternatives
-curl -s -X POST localhost:8000/api/v1/routes -H 'Content-Type: application/json' \
+curl -s -X POST localhost:8000/api/v1/routes -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.14.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.29.0"}
 open localhost:8000/docs
 
 # Export any route as GPX (DEM elevation included) or GeoJSON
 curl -s -X POST 'localhost:8000/api/v1/loops?format=gpx' \
-  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70}' -o loop.gpx
 
 # Or run everything containerised: API on :8000, Valhalla on :8002,

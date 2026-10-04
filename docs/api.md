@@ -34,6 +34,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/auth/me/delete-request` | Bearer | Request account deletion (issues OTP) |
 | DELETE | `/api/v1/auth/me` | Bearer | Confirm deletion and hard-delete the account |
 | POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets — `Cache-Control: public, max-age=<n>` |
+| POST | `/api/v1/loops/stream` | Bearer | The same request as Server-Sent Events: progress, each loop as it is found, then the ranked result |
 | POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints — `Cache-Control: public, max-age=<n>` (`CACHE_CONTROL_MAX_AGE`, default 3600) |
 | POST | `/api/v1/routes/analyze` | Bearer | Score an existing encoded polyline — `Cache-Control: public, max-age=<n>` |
 | POST | `/api/v1/routes/elevation` | Bearer | DEM elevation profile of an encoded polyline — `Cache-Control: public, max-age=<n>` |
@@ -660,6 +661,51 @@ Response:
 - `alternatives`: the extra loops from `routes > 1`, each avoiding the
   climbs of the previous ones; `null` when only one loop was requested.
 
+Closing the connection before the answer is ready stops the generation (the
+server checks for a disconnected client while it works and abandons it).
+
+---
+
+## POST /api/v1/loops/stream
+
+The same request body as `POST /api/v1/loops`, answered as
+`text/event-stream` so a client can show progress and the first loop while
+the rest are still being generated (a loop takes ~4–15 s depending on
+distance and how many are requested). Authentication, validation and rate
+limiting fail before the stream opens, as normal JSON errors.
+
+| Event | `data` | When |
+|---|---|---|
+| `progress` | `{"seed", "seeds", "iteration", "distance_km"}` | When a seed starts (`iteration` 0, `distance_km` null) and after every routed attempt |
+| `loop` | A loop, same shape as the `/loops` response with `alternatives: null` | Each accepted loop, in the order found (provisional) |
+| `result` | Exactly the `/loops` response | Once, at the end: loops ranked by score, best first |
+| `error` | `{"status", "error", "message", "details"}` | Instead of `result` when the generation fails |
+
+```
+event: progress
+data: {"seed":1,"seeds":9,"iteration":0,"distance_km":null}
+
+event: progress
+data: {"seed":1,"seeds":9,"iteration":1,"distance_km":63.2}
+
+event: loop
+data: {"distance_km":59.6,"gain_m":884.1,"feasible":true,...,"alternatives":null}
+
+event: result
+data: {"distance_km":59.6,...,"alternatives":[{...},{...}]}
+```
+
+`loop` events arrive in discovery order; the final `result` may rank them
+differently. Closing the stream cancels the generation immediately. The
+response carries `Cache-Control: no-cache` and `X-Accel-Buffering: no` so
+reverse proxies forward events as they are written.
+
+```bash
+curl -N -X POST localhost:8000/api/v1/loops/stream \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":60,"routes":3}'
+```
+
 ---
 
 ## POST /api/v1/routes
@@ -724,6 +770,7 @@ and rate-limit failures; no endpoint returns FastAPI's bare `detail` body:
 | 422 | `VALIDATION_ERROR` | Request body fails schema validation |
 | 422 | `ROUTING_ERROR` | Valhalla cannot route through the given points |
 | 429 | `RATE_LIMITED` | Too many requests: the per-endpoint budget (see `RATE_LIMIT_ENABLED`) or the global per-IP ceiling tripped; retry after the seconds stated in the `Retry-After` header |
+| 499 | `CLIENT_CLOSED_REQUEST` | The client disconnected before a loop was ready; nobody reads it, it only appears in logs |
 | 503 | `SERVICE_UNAVAILABLE` | Valhalla unreachable |
 
 ---
