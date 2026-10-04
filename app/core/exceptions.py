@@ -61,6 +61,15 @@ class ServiceUnavailableError(AppError):
         )
 
 
+class ClientDisconnectedError(AppError):
+    """The client went away before the answer was ready (499)."""
+
+    def __init__(self, message: str = "Client closed the request"):
+        super().__init__(
+            message=message, status_code=499, error_code="CLIENT_CLOSED_REQUEST"
+        )
+
+
 class RoutingError(AppError):
     """Valhalla answered but no route exists through the points (422)."""
 
@@ -293,6 +302,17 @@ class RouteError(ValhallaError):
     """Valhalla answered but no route exists through the points."""
 
 
+INTERNAL_ERROR_BODY: dict[str, Any] = {
+    "error": "INTERNAL_ERROR",
+    "message": "An unexpected error occurred",
+    "details": {},
+}
+
+
+def error_body(exc: AppError) -> dict[str, Any]:
+    return {"error": exc.error_code, "message": exc.message, "details": exc.details}
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     context = getattr(exc, "context", None)
     logger.warning(
@@ -307,13 +327,7 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
         },
     )
     return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": exc.error_code,
-            "message": exc.message,
-            "details": exc.details,
-        },
-        headers=exc.headers,
+        status_code=exc.status_code, content=error_body(exc), headers=exc.headers
     )
 
 
@@ -353,12 +367,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         extra={"extra_data": {"path": str(request.url)}},
     )
     return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": "INTERNAL_ERROR",
-            "message": "An unexpected error occurred",
-            "details": {},
-        },
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=INTERNAL_ERROR_BODY
     )
 
 

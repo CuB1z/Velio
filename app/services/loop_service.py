@@ -1,7 +1,9 @@
 """Loop generation use case bridging the HTTP layer and the engine."""
 
 import logging
+from collections.abc import Callable
 from dataclasses import replace
+from typing import Any
 
 from app.clients.valhalla import (
     TRACE_COSTING,
@@ -51,6 +53,8 @@ HILLS_CANDIDATES = 3
 # Absorbs polygon edge noise and roads along a boundary.
 RESTRICTED_TOLERANCE_M = 50.0
 
+EventSink = Callable[[str, dict[str, Any]], None]
+
 
 class LoopService:
     """Generates and scores loops; the only entry point used by routes."""
@@ -67,7 +71,9 @@ class LoopService:
         self.dem = dem
         self.restricted = restricted or RestrictedAreas()
 
-    async def generate(self, data: LoopCreateRequest) -> LoopResponse:
+    async def generate(
+        self, data: LoopCreateRequest, emit: EventSink | None = None
+    ) -> LoopResponse:
         costing_options = costing_options_for(data.bike, data.hills, data.costing)
         self.logger.info(
             "generating loops",
@@ -90,20 +96,22 @@ class LoopService:
         )
         if data.bike == "city" and not explicit_type:
             urban = {**(costing_options or {}), **CITY_URBAN_COSTING}
-            collected, _ = await self._collect(data, urban)
+            collected, _ = await self._collect(data, urban, emit, announce=False)
             firm = [
                 pair
                 for pair in collected
                 if self._loose_share(pair[1]) <= CITY_MAX_LOOSE_SHARE
             ]
             if firm:
+                for loop, analysis in firm:
+                    self._announce(emit, data, loop, analysis)
                 return self._respond(data, firm, None)
             self.logger.info(
                 "urban pass went onto loose ground; answering with asphalt only",
                 extra={"extra_data": {"candidates": len(collected)}},
             )
 
-        collected, fallback = await self._collect(data, costing_options)
+        collected, fallback = await self._collect(data, costing_options, emit)
 
         # The strict surface constraint can make every seed unroutable; relax
         # it only where that happens.
@@ -114,7 +122,7 @@ class LoopService:
                     "no paved loop from this origin; relaxing the surface",
                     extra={"extra_data": {"bike": data.bike}},
                 )
-                collected, fallback = await self._collect(data, relaxed)
+                collected, fallback = await self._collect(data, relaxed, emit)
                 costing_options = relaxed
 
         return self._respond(data, collected, fallback)
@@ -123,6 +131,8 @@ class LoopService:
         self,
         data: LoopCreateRequest,
         costing_options: dict | None,
+        emit: EventSink | None = None,
+        announce: bool = True,
     ) -> tuple[
         list[tuple[GeneratedLoop, Analysis]],
         tuple[GeneratedLoop, Analysis] | None,
@@ -141,6 +151,13 @@ class LoopService:
             request = self._to_engine_request(
                 data, seed_offset=GOLDEN_ANGLE_DEG * attempt
             )
+            progress = None
+            if emit is not None:
+                emit("progress", self._progress(attempt, max_attempts))
+
+                def progress(attempt_loop, seed=attempt, sink=emit):
+                    sink("progress", self._progress(seed, max_attempts, attempt_loop))
+
             try:
                 loop = await generate_loop(
                     self.valhalla,
@@ -148,6 +165,7 @@ class LoopService:
                     request,
                     costing_options=costing_options,
                     avoid_locations=avoided or None,
+                    progress=progress,
                     restricted=self.restricted,
                 )
             except RouteError:
@@ -181,6 +199,8 @@ class LoopService:
                 continue
             avoided.extend(climb_anchors(self.dem, loop.coords))
             collected.append((loop, analysis))
+            if announce:
+                self._announce(emit, data, loop, analysis)
 
         return collected, fallback
 
@@ -403,6 +423,28 @@ class LoopService:
             bike=bike,
             hills=hills,
         )
+
+    @staticmethod
+    def _progress(
+        attempt: int, seeds: int, loop: GeneratedLoop | None = None
+    ) -> dict[str, Any]:
+        return {
+            "seed": attempt + 1,
+            "seeds": seeds,
+            "iteration": loop.iterations if loop else 0,
+            "distance_km": round(loop.distance_km, 1) if loop else None,
+        }
+
+    def _announce(
+        self,
+        emit: EventSink | None,
+        data: LoopCreateRequest,
+        loop: GeneratedLoop,
+        analysis: Analysis,
+    ) -> None:
+        if emit is not None:
+            response = self._finalize(loop, analysis, data.include_profile)
+            emit("loop", response.model_dump(mode="json"))
 
     def _finalize(
         self,
