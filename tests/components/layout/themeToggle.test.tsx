@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { beforeAll, describe, expect, it } from 'vitest'
 
 import i18n from '@/i18n'
-import { ThemeToggle } from './themeToggle'
+import { ThemeToggle } from '@/components/layout/themeToggle'
 
 beforeAll(async () => {
   await i18n.changeLanguage('es')

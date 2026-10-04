@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { errorFromResponse, isRetryable } from './errors'
+import { errorFromResponse, isRetryable } from '@/api/errors'
 
 function response(status: number, body?: unknown, headers: Record<string, string> = {}): Response {
   return new Response(body === undefined ? null : JSON.stringify(body), { status, headers })

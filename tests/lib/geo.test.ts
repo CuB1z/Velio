@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { haversineKm, minimumLoopKm } from './geo'
+import { haversineKm, minimumLoopKm } from '@/lib/geo'
 
 const ALGETE = { lat: 40.5964, lon: -3.6318 }
 const VELLON = { lat: 40.7917, lon: -3.9635 }

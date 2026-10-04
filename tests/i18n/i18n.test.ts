@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import en from './en'
-import es from './es'
+import en from '@/i18n/en'
+import es from '@/i18n/es'
 
 /** Sorted paths of every leaf in the object. */
 function leafPaths(value: unknown, prefix = ''): string[] {

@@ -10,7 +10,7 @@ import {
   formatRatio,
   formatRelative,
   formatSigned,
-} from './format'
+} from '@/lib/format'
 
 /** Formatters insert narrow spaces; normalise them for comparison. */
 const norm = (value: string) => value.replace(/[  ]/g, ' ')

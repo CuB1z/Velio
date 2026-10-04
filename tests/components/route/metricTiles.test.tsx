@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import i18n from '@/i18n'
 import type { LoopResult } from '@/types/api'
-import { MetricTiles } from './metricTiles'
+import { MetricTiles } from '@/components/route/metricTiles'
 
 beforeAll(async () => {
   await i18n.changeLanguage('es')

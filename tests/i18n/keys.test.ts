@@ -2,8 +2,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import en from './en'
-import es from './es'
+import en from '@/i18n/en'
+import es from '@/i18n/es'
 
 /**
  * Keys built at runtime (`metric.comfort.excellent`, `surface.dirt`, ...) never

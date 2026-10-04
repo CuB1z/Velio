@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { checkPassword, isPasswordValid } from './passwordPolicy'
+import { checkPassword, isPasswordValid } from '@/lib/passwordPolicy'
 
 describe('password policy', () => {
   it("accepts a password meeting the backend's four rules", () => {

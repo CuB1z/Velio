@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import i18n from '@/i18n'
-import { MapControls } from './mapControls'
+import { MapControls } from '@/components/map/mapControls'
 
 function renderControls(styleId: 'map' | 'satellite', onStyleChange = vi.fn()) {
   render(

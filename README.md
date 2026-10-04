@@ -49,6 +49,7 @@ src/
   routes/      Route table
   lib/         Formatting, polylines, GPX, data palette, metrics, map styles
   i18n/        es and en; single source of terminology
+tests/         Vitest suites, mirroring src/ (setup in tests/setup.ts)
 ```
 
 ### The data layer rules
@@ -56,7 +57,7 @@ src/
 `src/types/api.ts` is a literal mirror of the backend's `docs/api.md`. If the
 API changes, change it there first and the compiler flags the rest.
 
-`src/api/contract.test.ts` checks those types, and every path the frontend
+`tests/api/contract.test.ts` checks those types, and every path the frontend
 calls, against `contract/openapi.json`, a committed snapshot of the backend's
 OpenAPI schema, so CI does not need a running backend. When the backend
 changes, run `pnpm contract:pull` (reads `VELIO_API_URL`, default

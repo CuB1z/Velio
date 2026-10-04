@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SurfaceScore } from '@/types/api'
-import { scoreBars, surfaceSegments } from './routeMetrics'
+import { scoreBars, surfaceSegments } from '@/lib/routeMetrics'
 
 const score: SurfaceScore = {
   comfort: 64.37,

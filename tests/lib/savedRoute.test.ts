@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SavedRoute } from '@/types/api'
-import { readSavedResult, savedRouteKind } from './savedRoute'
+import { readSavedResult, savedRouteKind } from '@/lib/savedRoute'
 
 const base = {
   id: 'a',

@@ -3,7 +3,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import i18n from '@/i18n'
 import type { SurfaceScore } from '@/types/api'
-import { SurfaceBar } from './surfaceBar'
+import { SurfaceBar } from '@/components/route/surfaceBar'
 
 const score: SurfaceScore = {
   comfort: 64.37,

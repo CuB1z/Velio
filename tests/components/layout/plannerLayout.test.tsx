@@ -5,7 +5,7 @@ import { beforeAll, describe, expect, it } from 'vitest'
 
 import i18n from '@/i18n'
 import { mapFitPadding } from '@/lib/mapStyles'
-import { PlannerLayout } from './plannerLayout'
+import { PlannerLayout } from '@/components/layout/plannerLayout'
 
 beforeAll(async () => {
   await i18n.changeLanguage('es')

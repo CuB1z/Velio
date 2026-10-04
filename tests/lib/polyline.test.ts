@@ -1,7 +1,7 @@
 import polyline from '@mapbox/polyline'
 import { describe, expect, it } from 'vitest'
 
-import { boundsOf, decodePolyline } from './polyline'
+import { boundsOf, decodePolyline } from '@/lib/polyline'
 
 const ORIGINAL: [number, number][] = [
   [40.5964, -3.6318],

@@ -1,7 +1,7 @@
 import type { StyleSpecification } from 'maplibre-gl'
 import { describe, expect, it } from 'vitest'
 
-import { tintStyle, tintToSlate } from './mapStyles'
+import { tintStyle, tintToSlate } from '@/lib/mapStyles'
 
 describe('tintToSlate', () => {
   it('moves every grey notation onto the slate hue and keeps alpha', () => {

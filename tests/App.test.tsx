@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import App from './App'
+import App from '@/App'
 import i18n from '@/i18n'
 
 beforeAll(async () => {

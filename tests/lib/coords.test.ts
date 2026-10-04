@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseCoordinates } from './coords'
+import { parseCoordinates } from '@/lib/coords'
 
 describe('coordinate parsing', () => {
   it('accepts dot decimals, as pasted from elsewhere', () => {

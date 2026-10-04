@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { useInitialPosition } from './useInitialPosition'
+import { useInitialPosition } from '@/hooks/useInitialPosition'
 
 function Probe({
   onPosition,

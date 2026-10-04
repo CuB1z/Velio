@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_LOOP_FORM, toLoopRequest } from './loopFormValue'
+import { DEFAULT_LOOP_FORM, toLoopRequest } from '@/components/planner/loopFormValue'
 
 describe('toLoopRequest', () => {
   it('sends both filters and no raw costing', () => {

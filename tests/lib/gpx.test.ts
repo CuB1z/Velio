@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { parseGpx } from './gpx'
-import { decodePolyline } from './polyline'
+import { parseGpx } from '@/lib/gpx'
+import { decodePolyline } from '@/lib/polyline'
 
 const GPX = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
