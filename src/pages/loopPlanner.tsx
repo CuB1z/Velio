@@ -20,7 +20,7 @@ import { positionFailure, useInitialPosition, type PositionFailure } from '@/hoo
 import { MADRID_CENTER, mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
-import type { AnyRouteResult, LatLon, LoopResult } from '@/types/api'
+import type { AnyRouteResult, LatLon } from '@/types/api'
 
 export function LoopPlannerPage() {
   const { t } = useTranslation()
@@ -203,7 +203,7 @@ export function LoopPlannerPage() {
             endpoint="loops"
             request={request}
             defaultName={defaultName}
-            profile={(mutation.data as LoopResult | undefined)?.profile}
+            requested={mutation.variables ? mutation.variables.alternatives + 1 : undefined}
             targetKm={form.distanceKm}
             // Sin objetivo de desnivel no se muestra ninguno: enseñar "+900 m"
             // cuando no se ha pedido hace que el resultado parezca un fallo.

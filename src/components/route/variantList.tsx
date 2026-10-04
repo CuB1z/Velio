@@ -25,52 +25,36 @@ export function VariantList({ variants, selected, onSelect, className }: Props) 
   if (variants.length < 2) return null
 
   return (
-    <div className={cn('flex flex-col gap-2', className)}>
-      <span className="text-[13px] text-muted">
-        {t('result.variants')}
-      </span>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-        {variants.map((variant, index) => {
-          const isSelected = index === selected
-          return (
-            <button
-              key={index}
-              type="button"
-              onClick={() => onSelect(index)}
-              aria-pressed={isSelected}
-              className={cn(
-                'flex min-h-11 items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors',
-                'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-                isSelected
-                  ? 'border-accent bg-accent-soft'
-                  : 'border-border bg-surface hover:bg-surface-hover',
-              )}
-            >
-              <span
-                aria-hidden="true"
-                className="size-2.5 shrink-0 rounded-sm"
-                style={{ background: categorical(resolved, index) }}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold">
-                  {index === 0
-                    ? t('result.variantMain')
-                    : t('result.variantAlternative', { index })}
-                </span>
-                <span className="tnum mt-0.5 block truncate text-xs text-muted">
-                  {formatDistance(variant.distance_km)} · {formatSigned(variant.gain_m)} ·{' '}
-                  {formatDuration(variant.duration_min)}
-                </span>
-              </span>
-              {variant.cycling_score ? (
-                <span className="tnum shrink-0 text-base font-semibold">
-                  {formatScore(variant.cycling_score.total)}
-                </span>
-              ) : null}
-            </button>
-          )
-        })}
-      </div>
+    <div role="group" aria-label={t('result.variants')} className={cn('flex flex-wrap gap-1.5', className)}>
+      {variants.map((variant, index) => {
+        const isSelected = index === selected
+        return (
+          <button
+            key={index}
+            type="button"
+            onClick={() => onSelect(index)}
+            aria-pressed={isSelected}
+            title={`${formatDistance(variant.distance_km)} · ${formatSigned(variant.gain_m)} · ${formatDuration(variant.duration_min)}`}
+            className={cn(
+              'flex min-h-9 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors',
+              'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+              isSelected
+                ? 'border-accent bg-accent-soft font-semibold'
+                : 'border-border bg-surface hover:bg-surface-hover',
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className="size-2.5 shrink-0 rounded-full"
+              style={{ background: categorical(resolved, index) }}
+            />
+            {index === 0 ? t('result.variantMain') : t('result.variantAlternative', { index })}
+            {variant.cycling_score ? (
+              <span className="tnum font-semibold">{formatScore(variant.cycling_score.total)}</span>
+            ) : null}
+          </button>
+        )
+      })}
     </div>
   )
 }

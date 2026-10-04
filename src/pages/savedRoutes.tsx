@@ -100,8 +100,13 @@ export function SavedRoutesPage() {
               aria-label={t('saved.searchPlaceholder')}
               className="w-full sm:w-64"
             >
-              <SearchField.Group className="min-h-11">
-                <SearchField.SearchIcon />
+              <SearchField.Group className="min-h-11 rounded-full ps-1.5">
+                <span
+                  aria-hidden="true"
+                  className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-soft-foreground"
+                >
+                  <SearchField.SearchIcon className="m-0 text-current" />
+                </span>
                 <SearchField.Input placeholder={t('saved.searchPlaceholder')} />
                 <SearchField.ClearButton />
               </SearchField.Group>

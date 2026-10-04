@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { cn } from '@/lib/cn'
 import { useTheme } from '@/hooks/useTheme'
 import { accent, categorical, ink, status } from '@/lib/chartPalette'
-import { DEFAULT_CENTER, DEFAULT_ZOOM, styleFor, type MapStyleId } from '@/lib/mapStyles'
+import { applyBaseStyle, DEFAULT_CENTER, DEFAULT_ZOOM, type MapStyleId } from '@/lib/mapStyles'
 import { MapControls } from './mapControls'
 import type { LngLat } from '@/lib/polyline'
 import { boundsOf } from '@/lib/polyline'
@@ -156,7 +156,6 @@ export function MapView({
 
     const instance = new MapLibreMap({
       container: container.current,
-      style: styleFor(styleId, dark),
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       attributionControl: { compact: true },
@@ -166,6 +165,8 @@ export function MapView({
         [5.5, 44.5],
       ],
     })
+
+    applyBaseStyle(instance, styleId, dark)
 
     instance.on('click', (event: MapMouseEvent) => {
       clickHandler.current?.([event.lngLat.lng, event.lngLat.lat])
@@ -269,7 +270,7 @@ export function MapView({
     }
     if (styleApplied.current === key) return
     styleApplied.current = key
-    instance.setStyle(styleFor(styleId, dark))
+    applyBaseStyle(instance, styleId, dark)
   }, [styleId, dark])
 
   // Datos de ruta: actualizar la fuente, no recrear las capas.

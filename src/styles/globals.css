@@ -43,6 +43,7 @@
 
     --overlay: #ffffff;
     --overlay-foreground: var(--foreground);
+    --overlay-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 40px -12px rgba(16, 24, 40, 0.18);
 
     --muted: #5b6476;
 
@@ -108,6 +109,7 @@
 
     --overlay: #182029;
     --overlay-foreground: var(--foreground);
+    --overlay-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 44px -12px rgba(0, 0, 0, 0.6);
 
     --muted: #94a3b8;
 
@@ -171,12 +173,41 @@
   .button {
     border-radius: 9999px;
   }
+  .switch {
+    flex-direction: row;
+  }
 }
 
 html,
 body,
 #root {
   height: 100%;
+}
+
+@layer base {
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) transparent;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--foreground) 30%, transparent);
+  }
 }
 
 /* Anclas de la landing: desplazamiento suave y sitio para la cabecera

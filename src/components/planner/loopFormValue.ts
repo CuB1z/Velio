@@ -14,7 +14,7 @@ export type LoopFormValue = {
   hills: HillsPreference
   waypointCount: number
   maxIterations: number
-  routes: number
+  alternatives: number
   includeProfile: boolean
 }
 
@@ -30,7 +30,7 @@ export const DEFAULT_LOOP_FORM: LoopFormValue = {
   hills: 'rolling',
   waypointCount: 10,
   maxIterations: 8,
-  routes: 1,
+  alternatives: 0,
   includeProfile: true,
 }
 
@@ -50,7 +50,7 @@ export function toLoopRequest(value: LoopFormValue): LoopRequest | null {
     max_iterations: value.maxIterations,
     bike: value.bike,
     hills: value.hills,
-    routes: value.routes > 1 ? value.routes : undefined,
+    routes: value.alternatives > 0 ? value.alternatives + 1 : undefined,
     // Sin `costing`: la bici ya es el `bicycle_type`. Enviarlo aparte era el
     // bug que hacía que el selector no cambiase nada, porque el costing crudo
     // gana siempre y sobrescribía la bici elegida.

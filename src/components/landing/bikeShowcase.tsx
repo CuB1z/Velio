@@ -20,8 +20,8 @@ const FOR_BIKE: Record<BikeType, string> = {
 
 /**
  * La idea central del producto, demostrada en vez de contada: eliges bici y
- * cambia el circuito y su reparto de firme. Cada opción muestra una ruta real
- * generada con esa bici, no una ilustración.
+ * cambia el circuito y su reparto de firme. Cada opción dibuja una ruta real
+ * generada con esa bici.
  */
 export function BikeShowcase() {
   const { t } = useTranslation()
@@ -68,7 +68,7 @@ export function BikeShowcase() {
       </div>
 
       <div key={bike} className="fade-in flex flex-col gap-5">
-        <RouteMap shape={example.shape} padding={30} className="aspect-[4/3] rounded-2xl shadow-card" />
+        <RouteMap shape={example.shape} className="aspect-[4/3] rounded-2xl shadow-card" />
         <SurfaceBar score={example.result.score} distanceKm={example.result.distance_km} />
       </div>
     </div>

@@ -29,6 +29,8 @@ type Props = {
   /** Objetivos pedidos, para contrastar lo obtenido con lo buscado. */
   targetKm?: number
   targetGainM?: number
+  lossHint?: string
+  durationHint?: string
   className?: string
 }
 
@@ -36,7 +38,7 @@ type Props = {
  * Fila de cifras principales. No es un gráfico: son números destacados, así que
  * el texto lleva tokens de texto y ningún color de serie.
  */
-export function MetricTiles({ result, targetKm, targetGainM, className }: Props) {
+export function MetricTiles({ result, targetKm, targetGainM, lossHint, durationHint, className }: Props) {
   const { t } = useTranslation()
 
   return (
@@ -61,8 +63,13 @@ export function MetricTiles({ result, targetKm, targetGainM, className }: Props)
         }
         tone="good"
       />
-      <Tile label={t('metric.loss')} value={formatSigned(-Math.abs(result.loss_m))} tone="critical" />
-      <Tile label={t('metric.duration')} value={formatDuration(result.duration_min)} />
+      <Tile
+        label={t('metric.loss')}
+        value={formatSigned(-Math.abs(result.loss_m))}
+        hint={lossHint}
+        tone="critical"
+      />
+      <Tile label={t('metric.duration')} value={formatDuration(result.duration_min)} hint={durationHint} />
     </div>
   )
 }

@@ -24,7 +24,7 @@ export function HeroShowcase({ authenticated }: { authenticated: boolean }) {
             {t(authenticated ? 'landing.openApp' : 'landing.heroCta')}
           </Link>
           <a
-            href="#funciones"
+            href="#bici"
             className="inline-flex min-h-12 items-center rounded-full px-5 text-base font-medium text-accent transition-colors duration-150 hover:bg-accent-soft"
           >
             {t('landing.heroSecondary')} →
@@ -34,8 +34,12 @@ export function HeroShowcase({ authenticated }: { authenticated: boolean }) {
       </div>
 
       {/* La interfaz real, recortada por arriba para que invite a bajar */}
-      <div className="mx-auto mt-14 max-w-[1200px] px-4 sm:mt-20 sm:px-6">
-        <div className="overflow-hidden rounded-2xl bg-surface shadow-raised">
+      <div className="relative mx-auto mt-14 max-w-[1200px] px-4 sm:mt-20 sm:px-6">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 -top-24 bottom-1/4 bg-[radial-gradient(55%_60%_at_50%_45%,var(--accent-soft),transparent)]"
+        />
+        <div className="relative overflow-hidden rounded-2xl bg-surface shadow-raised ring-1 ring-border">
           <AppShot priority />
         </div>
         <p className="mt-3 text-center text-[12px] text-muted">{t('landing.heroShot')}</p>

@@ -39,14 +39,14 @@ export function SliderField({
   hint,
 }: Props) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-4.5">
       <Slider
         value={value}
         onChange={(next) => onChange(Array.isArray(next) ? next[0] : next)}
         minValue={min}
         maxValue={max}
         step={step}
-        className="gap-3"
+        className="gap-x-3 gap-y-4.5"
       >
         <Label className="text-[15px] text-foreground">{label}</Label>
         {unit ? (

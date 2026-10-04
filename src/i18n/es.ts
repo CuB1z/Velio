@@ -209,6 +209,7 @@ export default {
     exportGeojson: 'GeoJSON, con todas las métricas',
     exporting: 'Preparando…',
     variants: 'Alternativas',
+    fewerVariants: 'Solo {{count}} de {{requested}} cumplían los objetivos',
     variantMain: 'Ruta principal',
     variantAlternative: 'Alternativa {{index}}',
     emptyHint: 'El resultado aparecerá aquí con sus métricas y su perfil de elevación.',
@@ -300,6 +301,7 @@ export default {
   landing: {
     navFeatures: 'Cómo funciona',
     navScoring: 'Puntuación',
+    navFaq: 'Preguntas',
     navData: 'Los datos',
     signIn: 'Entrar',
     openApp: 'Abrir la app',
@@ -431,12 +433,18 @@ export default {
     dataAccuracyBody: 'Error medio de 0,62 m, validado en una ruta de montaña de 74 km.',
     dataExport: 'Exportación',
     dataExportBody: 'GPX con altitud por punto y GeoJSON con todas las métricas.',
-    dataSatellite: 'Ortofoto PNOA del IGN sobre la sierra de Manzanares.',
+    dataSketch: 'Circuito real de gravel de {{distance}} en la sierra de Manzanares, con {{gain}} de desnivel.',
     statDem: 'Resolución del modelo de elevación',
     statError: 'Error medio de altitud',
     statValidated: 'Validados en montaña',
     statScore: 'Nota media de circuito',
     footerRights: 'Rutas ciclistas sobre datos abiertos.',
+    footerProduct: 'Producto',
+    footerApp: 'Aplicación',
+    footerData: 'Datos abiertos',
+    ctaTitle: 'Tu próxima vuelta sale de tu puerta',
+    ctaBody:
+      'Dile a Velio cuántos kilómetros y cuánto desnivel quieres. Te devuelve un circuito puntuado, el firme de cada kilómetro y un GPX listo para el GPS.',
   },
 
   error: {

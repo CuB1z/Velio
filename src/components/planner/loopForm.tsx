@@ -93,7 +93,7 @@ export function LoopForm({
         <InsetRow className="px-2">
           <Button
             variant="ghost"
-            className="min-h-11 w-full justify-start gap-2 text-[15px] text-accent"
+            className="min-h-11 w-full justify-start gap-2 px-2 text-[15px] text-accent"
             onPress={() => {
               patch({ via: [...value.via, value.origin ?? { lat: 40.4168, lon: -3.7038 }] })
               onPick(value.via.length)
@@ -177,7 +177,7 @@ export function LoopForm({
 
       {/* -------------------------------------------------------- avanzado */}
       <details className="group flex flex-col gap-1.5">
-        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-xl bg-surface-secondary px-4 text-[15px] marker:hidden">
+        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-xl bg-surface px-4 text-[15px] shadow-card marker:hidden">
           {t('planner.advanced')}
           <ChevronIcon className="text-muted transition-transform group-open:rotate-180" />
         </summary>
@@ -203,9 +203,9 @@ export function LoopForm({
           <InsetRow stacked>
             <NumberFieldRow
               label={t('planner.alternatives')}
-              value={value.routes}
-              onChange={(routes) => patch({ routes })}
-              min={1}
+              value={value.alternatives}
+              onChange={(alternatives) => patch({ alternatives })}
+              min={0}
               max={3}
             />
           </InsetRow>

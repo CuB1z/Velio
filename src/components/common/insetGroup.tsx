@@ -19,8 +19,8 @@ export function InsetGroup({
   className?: string
 }) {
   return (
-    <section className="flex flex-col gap-1.5">
-      {title ? <h3 className="px-3 text-[13px] font-normal text-muted">{title}</h3> : null}
+    <section className="flex flex-col gap-2">
+      {title ? <h3 className="px-4 text-[13px] font-normal text-muted">{title}</h3> : null}
       <div
         className={cn('flex flex-col divide-y divide-separator rounded-xl bg-surface shadow-card', className)}
         // Dentro del pergamino, lo blanco sube a superficie y lo "default"
@@ -52,7 +52,7 @@ export function InsetRow({
   return (
     <div
       className={cn(
-        stacked ? 'flex flex-col gap-3 px-4 py-3.5' : 'flex min-h-11 items-center gap-3 px-4',
+        stacked ? 'flex flex-col gap-3 px-4 py-3.5' : 'flex min-h-12 items-center gap-3 px-4',
         className,
       )}
     >

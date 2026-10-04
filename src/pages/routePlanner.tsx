@@ -22,7 +22,6 @@ import type {
   HillsPreference,
   LatLon,
   RouteRequest,
-  RouteResult,
 } from '@/types/api'
 
 const DEFAULT_WAYPOINTS: LatLon[] = [
@@ -212,7 +211,6 @@ export function RoutePlannerPage() {
             endpoint="routes"
             request={request}
             defaultName={name}
-            profile={(mutation.data as RouteResult | undefined)?.profile}
             onError={setExportError}
           />
         ) : undefined

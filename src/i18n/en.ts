@@ -208,6 +208,7 @@ export default {
     exportGeojson: 'GeoJSON, with every metric',
     exporting: 'Preparing…',
     variants: 'Alternatives',
+    fewerVariants: 'Only {{count}} of {{requested}} met the targets',
     variantMain: 'Main route',
     variantAlternative: 'Alternative {{index}}',
     emptyHint: 'The result will appear here with its metrics and elevation profile.',
@@ -299,6 +300,7 @@ export default {
   landing: {
     navFeatures: 'How it works',
     navScoring: 'Scoring',
+    navFaq: 'FAQ',
     navData: 'The data',
     signIn: 'Sign in',
     openApp: 'Open the app',
@@ -430,12 +432,18 @@ export default {
     dataAccuracyBody: 'Mean error of 0.62 m, validated on a 74 km mountain route.',
     dataExport: 'Export',
     dataExportBody: 'GPX with per-point elevation and GeoJSON carrying every metric.',
-    dataSatellite: 'IGN PNOA orthophoto over the Manzanares sierra.',
+    dataSketch: 'Real {{distance}} gravel loop in the Manzanares sierra, {{gain}} of climbing.',
     statDem: 'Elevation model resolution',
     statError: 'Mean elevation error',
     statValidated: 'Validated in the mountains',
     statScore: 'Mean loop score',
     footerRights: 'Cycling routes on open data.',
+    footerProduct: 'Product',
+    footerApp: 'App',
+    footerData: 'Open data',
+    ctaTitle: 'Your next loop starts at your door',
+    ctaBody:
+      'Tell Velio how far and how much climbing. It returns a scored loop, the surface under every kilometre and a GPX ready for your GPS.',
   },
 
   error: {

@@ -27,6 +27,11 @@ describe('toLoopRequest', () => {
     expect(request?.hills).toBe('rolling')
   })
 
+  it('counts alternatives on top of the main loop', () => {
+    expect(toLoopRequest(DEFAULT_LOOP_FORM)?.routes).toBeUndefined()
+    expect(toLoopRequest({ ...DEFAULT_LOOP_FORM, alternatives: 3 })?.routes).toBe(4)
+  })
+
   it('no pide ruta sin origen', () => {
     expect(toLoopRequest({ ...DEFAULT_LOOP_FORM, origin: null })).toBeNull()
   })

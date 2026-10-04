@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/cn'
 import { formatDistance, formatPercent, formatRatio } from '@/lib/format'
-import type { AnyRouteResult, ElevationPoint, LoopRequest, RouteRequest } from '@/types/api'
+import type { AnyRouteResult, LoopRequest, RouteRequest } from '@/types/api'
 import { ElevationProfile } from './elevationProfile'
 import { ExportMenu } from './exportMenu'
 import { MetricTiles } from './metricTiles'
@@ -19,8 +19,7 @@ type Props = {
   endpoint: 'loops' | 'routes'
   request: LoopRequest | RouteRequest
   defaultName: string
-  /** Perfil de elevación del trazado elegido, si se pidió o se cargó aparte. */
-  profile?: ElevationPoint[] | null
+  requested?: number
   targetKm?: number
   targetGainM?: number
   /** Mínimo impuesto por los puntos de paso, si los hay. */
@@ -36,7 +35,7 @@ export function RouteResultPanel({
   endpoint,
   request,
   defaultName,
-  profile,
+  requested,
   targetKm,
   targetGainM,
   minimumKm,
@@ -47,7 +46,7 @@ export function RouteResultPanel({
   const result = variants[selected]
   if (!result) return null
 
-  const points = profile ?? result.profile ?? []
+  const points = result.profile ?? []
   const feasible = result.feasible
 
   // La API dice que no llegó, pero no cuál de los dos objetivos falló. Se
@@ -72,8 +71,14 @@ export function RouteResultPanel({
           : 'result.notFeasibleHint'
 
   return (
-    <div className={cn('flex flex-col gap-5', className)}>
+    <div className={cn('@container flex flex-col gap-4', className)}>
       <div className="flex flex-wrap items-center gap-2">
+        <VariantList variants={variants} selected={selected} onSelect={onSelect} />
+        {requested !== undefined && variants.length < requested ? (
+          <span className="text-[13px] text-muted">
+            {t('result.fewerVariants', { count: variants.length, requested })}
+          </span>
+        ) : null}
         {feasible === true ? (
           <Chip color="success" variant="soft" size="sm">
             <Chip.Label>{t('result.feasible')}</Chip.Label>
@@ -82,20 +87,6 @@ export function RouteResultPanel({
         {feasible === false ? (
           <Chip color="warning" variant="soft" size="sm">
             <Chip.Label>{t('result.notFeasible')}</Chip.Label>
-          </Chip>
-        ) : null}
-        {result.overlap_ratio !== null && result.overlap_ratio > 0 ? (
-          <Chip color="default" variant="soft" size="sm">
-            <Chip.Label>
-              {t('metric.overlap')} {formatRatio(result.overlap_ratio)}
-            </Chip.Label>
-          </Chip>
-        ) : null}
-        {result.score ? (
-          <Chip color="default" variant="soft" size="sm">
-            <Chip.Label>
-              {t('metric.maxGrade')} {formatPercent(result.score.max_grade_pct)}
-            </Chip.Label>
           </Chip>
         ) : null}
 
@@ -115,23 +106,26 @@ export function RouteResultPanel({
         </p>
       ) : null}
 
-      <MetricTiles result={result} targetKm={targetKm} targetGainM={targetGainM} />
+      <MetricTiles
+        result={result}
+        targetKm={targetKm}
+        targetGainM={targetGainM}
+        lossHint={result.score ? `${t('metric.maxGrade')} ${formatPercent(result.score.max_grade_pct)}` : undefined}
+        durationHint={
+          result.overlap_ratio ? `${t('metric.overlap')} ${formatRatio(result.overlap_ratio)}` : undefined
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid gap-x-8 gap-y-4 @xl:grid-cols-2 @5xl:grid-cols-3">
         <ScoreCard score={result.cycling_score} hideElevation={targetGainM === undefined} />
         <SurfaceBar score={result.score} distanceKm={result.distance_km} />
+        {points.length > 1 ? (
+          <div className="flex flex-col gap-1.5 @xl:col-span-2 @5xl:col-span-1">
+            <span className="text-[13px] text-muted">{t('metric.elevationProfile')}</span>
+            <ElevationProfile profile={points} distanceKm={result.distance_km} height={96} />
+          </div>
+        ) : null}
       </div>
-
-      {points.length > 1 ? (
-        <div className="flex flex-col gap-2">
-          <span className="text-[13px] text-muted">
-            {t('metric.elevationProfile')}
-          </span>
-          <ElevationProfile profile={points} distanceKm={result.distance_km} />
-        </div>
-      ) : null}
-
-      <VariantList variants={variants} selected={selected} onSelect={onSelect} />
     </div>
   )
 }

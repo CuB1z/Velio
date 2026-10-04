@@ -34,6 +34,8 @@ function apply(): void {
   root.style.colorScheme = dark ? 'dark' : 'light'
 }
 
+if (typeof document !== 'undefined') apply()
+
 function emit(): void {
   apply()
   for (const listener of listeners) listener()

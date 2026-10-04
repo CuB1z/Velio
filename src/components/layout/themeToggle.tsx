@@ -28,9 +28,18 @@ export function ThemeToggle() {
             }
           }}
         >
-          <Dropdown.Item id="light">{t('theme.light')}</Dropdown.Item>
-          <Dropdown.Item id="dark">{t('theme.dark')}</Dropdown.Item>
-          <Dropdown.Item id="system">{t('theme.system')}</Dropdown.Item>
+          <Dropdown.Item id="light" textValue={t('theme.light')}>
+            <Dropdown.ItemIndicator />
+            {t('theme.light')}
+          </Dropdown.Item>
+          <Dropdown.Item id="dark" textValue={t('theme.dark')}>
+            <Dropdown.ItemIndicator />
+            {t('theme.dark')}
+          </Dropdown.Item>
+          <Dropdown.Item id="system" textValue={t('theme.system')}>
+            <Dropdown.ItemIndicator />
+            {t('theme.system')}
+          </Dropdown.Item>
         </Dropdown.Menu>
       </Dropdown.Popover>
     </Dropdown>
