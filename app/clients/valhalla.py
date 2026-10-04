@@ -92,6 +92,7 @@ class SnappedEdge(NamedTuple):
     # Cars are not allowed; the only attribute that tells a car-free park road
     # from a farm track.
     car_free: bool = False
+    dest_only: bool = False
 
     @classmethod
     def unreachable(cls) -> "SnappedEdge":
@@ -174,6 +175,7 @@ class ValhallaClient:
                     distance_m=float(best.get("distance", 0.0)),
                     # Absent means unknown, which must not be read as car-free.
                     car_free=access.get("car") is False,
+                    dest_only=edge.get("destination_only") is True,
                 )
             )
         while len(results) < len(points):

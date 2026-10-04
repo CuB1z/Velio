@@ -93,6 +93,7 @@ def _pin_hermetic_settings() -> None:
 
     # JSON callback is the baseline; SPA-redirect tests opt in themselves.
     settings.oauth_success_redirect = None
+    settings.restricted_areas_path = None
 
 
 def _require_hermetic_settings() -> None:

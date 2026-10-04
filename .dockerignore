@@ -11,6 +11,7 @@ scripts
 downloads
 valhalla
 data
+!data/restricted_areas.geojson
 *.md
 Dockerfile
 docker-compose.yaml

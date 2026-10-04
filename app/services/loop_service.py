@@ -24,6 +24,7 @@ from app.engine.loop import (
     spur_waypoints,
 )
 from app.engine.polyline import encode
+from app.engine.restricted import RestrictedAreas
 from app.engine.bikes import (
     CITY_MAX_LOOSE_SHARE,
     CITY_URBAN_COSTING,
@@ -47,6 +48,8 @@ SPUR_WAYPOINTS_PER_ROUND = 2
 MIN_RING_WAYPOINTS = 4
 # Loops gathered when the rider prefers flat or hilly, to choose between.
 HILLS_CANDIDATES = 3
+# Absorbs polygon edge noise and roads along a boundary.
+RESTRICTED_TOLERANCE_M = 50.0
 
 
 class LoopService:
@@ -54,9 +57,15 @@ class LoopService:
 
     logger = logging.getLogger(__name__)
 
-    def __init__(self, valhalla: ValhallaClient, dem: DemSource):
+    def __init__(
+        self,
+        valhalla: ValhallaClient,
+        dem: DemSource,
+        restricted: RestrictedAreas | None = None,
+    ):
         self.valhalla = valhalla
         self.dem = dem
+        self.restricted = restricted or RestrictedAreas()
 
     async def generate(self, data: LoopCreateRequest) -> LoopResponse:
         costing_options = costing_options_for(data.bike, data.hills, data.costing)
@@ -139,6 +148,7 @@ class LoopService:
                     request,
                     costing_options=costing_options,
                     avoid_locations=avoided or None,
+                    restricted=self.restricted,
                 )
             except RouteError:
                 continue  # this seed cannot be routed; try the next one
@@ -158,6 +168,13 @@ class LoopService:
             loop, analysis = await self._repair_overlap(
                 loop, analysis, request, data, costing_options, avoided
             )
+            inside_m = self.restricted.metres_inside(loop.coords)
+            if inside_m > RESTRICTED_TOLERANCE_M:
+                self.logger.info(
+                    "loop enters a restricted area; trying the next seed",
+                    extra={"extra_data": {"inside_m": round(inside_m)}},
+                )
+                continue
             if fallback is None:
                 fallback = (loop, analysis)  # best effort if nothing succeeds
             if loop.infeasible or not (loop.distance_ok and loop.gain_ok):
@@ -216,6 +233,7 @@ class LoopService:
                     replace(request, banned_bearings=tuple(banned)),
                     costing_options=costing_options,
                     avoid_locations=avoided or None,
+                    restricted=self.restricted,
                 )
             except RouteError:
                 break  # the reduced ring cannot be routed; keep what we have

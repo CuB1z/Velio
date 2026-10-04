@@ -20,6 +20,7 @@ from dataclasses import dataclass, field, replace
 
 from .elevation import build_profile, cumulative_distances
 from .geo import angular_distance_deg, destination_point, haversine_m
+from .restricted import RestrictedAreas
 
 # Controller tuning.
 HILLINESS_START = 0.5
@@ -188,12 +189,16 @@ def select_waypoints(
     stretch: float,
     elevation_fn,
     rideability: list[float] | None = None,
+    blocked: list[bool] | None = None,
+    restricted: RestrictedAreas | None = None,
 ) -> list[tuple[float, float]]:
     """Pick one waypoint per angular sector from DEM-aware candidates.
 
     `hilliness` biases each sector toward its highest candidate; `stretch`
     moves the pick outward in proportion to its height. `rideability`, when
-    given, rules out candidates well below their sector's best.
+    given, rules out candidates well below their sector's best. `blocked`
+    candidates are never picked. A sector whose pick lies in a `restricted`
+    area is skipped; a pick stretched into one stays on the ring instead.
     """
     bearings, candidates = ring_candidates(request, radius_m)
     elevations = [elevation_fn.elevation(la, lo) for la, lo in candidates]
@@ -221,12 +226,14 @@ def select_waypoints(
             continue
 
         allowed = set(range(lo_i, hi_i))
+        if blocked is not None:
+            allowed = {i for i in allowed if not blocked[i]}
+            if not allowed:
+                continue
         if rideability is not None:
-            best_ride = max(rideability[lo_i:hi_i])
+            best_ride = max(rideability[i] for i in allowed)
             near_best = {
-                i
-                for i in range(lo_i, hi_i)
-                if rideability[i] >= best_ride - RIDEABILITY_MARGIN
+                i for i in allowed if rideability[i] >= best_ride - RIDEABILITY_MARGIN
             }
             if near_best:
                 allowed = near_best
@@ -241,14 +248,17 @@ def select_waypoints(
             if score > best_score:
                 best_score = score
                 best_i = i
+        if restricted is not None and restricted.contains(*candidates[best_i]):
+            continue
         sector_radius = radius_m * (
             1.0 + stretch * (2.0 * height_of(best_i) - 1.0)
         )
-        waypoints.append(
-            destination_point(
-                *request.origin, math.radians(bearings[best_i]), sector_radius
-            )
+        waypoint = destination_point(
+            *request.origin, math.radians(bearings[best_i]), sector_radius
         )
+        if restricted is not None and restricted.contains(*waypoint):
+            waypoint = candidates[best_i]
+        waypoints.append(waypoint)
     return waypoints
 
 
@@ -256,6 +266,7 @@ def find_peak(
     origin: tuple[float, float],
     elevation_source,
     max_radius_m: float,
+    restricted: RestrictedAreas | None = None,
 ) -> tuple[tuple[float, float], float] | None:
     """Best climb within `max_radius_m` of the origin (grid search).
 
@@ -271,6 +282,8 @@ def find_peak(
             point = destination_point(
                 *origin, math.radians(bearing), radius
             )
+            if restricted is not None and restricted.contains(*point):
+                continue
             elevation = elevation_source.elevation(*point)
             if elevation is None:
                 continue
@@ -418,6 +431,7 @@ async def generate_loop(
     costing_options: dict | None = None,
     avoid_locations: list[tuple[float, float]] | None = None,
     progress: ProgressFn | None = None,
+    restricted: RestrictedAreas | None = None,
 ) -> GeneratedLoop:
     """Build the best closed loop satisfying `request`.
 
@@ -433,7 +447,7 @@ async def generate_loop(
     stretch = 0.0
     use_summit = False
     peak = (
-        find_peak(request.origin, dem, radius_m * SUMMIT_SEARCH_FACTOR)
+        find_peak(request.origin, dem, radius_m * SUMMIT_SEARCH_FACTOR, restricted)
         if request.target_gain_m
         else None
     )
@@ -442,34 +456,40 @@ async def generate_loop(
     previous_state: tuple | None = None
 
     # Keyed by radius: the ring only moves when the radius does.
-    rideability_cache: dict[int, list[float] | None] = {}
+    survey_cache: dict[int, tuple[list[float] | None, list[bool] | None]] = {}
 
-    async def rideability_for(radius: float) -> list[float] | None:
-        """Rideability of the ring's candidates; None when the client cannot locate."""
+    async def survey(radius: float) -> tuple[list[float] | None, list[bool] | None]:
+        """(rideability, private-road flags) per candidate; None when unknown."""
         key = int(radius)
-        if key in rideability_cache:
-            return rideability_cache[key]
+        if key in survey_cache:
+            return survey_cache[key]
 
-        value: list[float] | None = None
+        rideability: list[float] | None = None
+        blocked: list[bool] | None = None
         if hasattr(client, "locate"):
             _, candidates = ring_candidates(request, radius)
             snapped = await client.locate(candidates, costing_options)
             if len(snapped) == len(candidates):
-                value = [
+                rideability = [
                     waypoint_rideability(edge.use, edge.surface, edge.distance_m)
                     for edge in snapped
                 ]
-        rideability_cache[key] = value
-        return value
+                private = [edge.dest_only for edge in snapped]
+                blocked = private if any(private) else None
+        survey_cache[key] = (rideability, blocked)
+        return survey_cache[key]
 
     for iteration in range(1, request.max_iterations + 1):
+        rideability, blocked = await survey(radius_m)
         waypoints = select_waypoints(
             request,
             radius_m,
             hilliness,
             stretch,
             dem,
-            await rideability_for(radius_m),
+            rideability,
+            blocked,
+            restricted,
         )
         waypoints = place_via_points(
             waypoints, request.origin, request.via_points, radius_m

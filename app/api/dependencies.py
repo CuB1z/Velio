@@ -21,6 +21,7 @@ from app.core.exceptions import (
 from app.core.ratelimit import RULES, client_ip, enforce, match_rule
 from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.dem import DemSource
+from app.engine.restricted import RestrictedAreas
 from app.models import User
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.saved_route_repository import SavedRouteRepository
@@ -48,6 +49,11 @@ def get_valhalla_client(request: Request) -> ValhallaClient:
 def get_dem_source(request: Request) -> DemSource:
     """Shared DEM source created at startup."""
     return request.app.state.dem
+
+
+def get_restricted_areas(request: Request) -> RestrictedAreas:
+    """Restricted areas loaded at startup."""
+    return request.app.state.restricted
 
 
 # Repositories ---------------------------------------------------------------
@@ -130,9 +136,10 @@ def get_oauth_service(
 def get_loop_service(
     valhalla: ValhallaClient = Depends(get_valhalla_client),
     dem: DemSource = Depends(get_dem_source),
+    restricted: RestrictedAreas = Depends(get_restricted_areas),
 ) -> LoopService:
-    """Compose the shared client and DEM source into the loop service."""
-    return LoopService(valhalla=valhalla, dem=dem)
+    """Compose the shared client, DEM source and restricted areas."""
+    return LoopService(valhalla=valhalla, dem=dem, restricted=restricted)
 
 
 def get_route_service(

@@ -14,6 +14,7 @@ from pathlib import Path
 from app.clients.valhalla import TRACE_COSTING, ValhallaClient
 from app.core.exceptions import AppError
 from app.engine.dem import DemSource
+from app.engine.restricted import RestrictedAreas
 from app.schemas.loop import LoopCreateRequest
 from app.services.loop_service import LoopService
 
@@ -33,6 +34,7 @@ RIDEABLE_USES = frozenset(
 
 VALHALLA_URL = "http://localhost:8002"
 ELEVATION_DIR = "valhalla/elevation"
+RESTRICTED_AREAS = "data/restricted_areas.geojson"
 
 
 @dataclass
@@ -100,9 +102,9 @@ async def measure(service, client, origin_name, origin, distance_km, bike) -> Ro
     return row
 
 
-async def run() -> list[Row]:
+async def run(restricted: RestrictedAreas) -> list[Row]:
     client = ValhallaClient(base_url=VALHALLA_URL)
-    service = LoopService(client, DemSource(ELEVATION_DIR))
+    service = LoopService(client, DemSource(ELEVATION_DIR), restricted)
     rows: list[Row] = []
     try:
         for name, origin in ORIGINS.items():
@@ -175,9 +177,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--label", help="save the result as bench-LABEL.json")
     parser.add_argument("--compare", help="compare against a saved result file")
+    parser.add_argument(
+        "--no-restricted", action="store_true", help="ignore restricted areas"
+    )
     args = parser.parse_args()
 
-    rows = asyncio.run(run())
+    restricted = (
+        RestrictedAreas()
+        if args.no_restricted
+        else RestrictedAreas.from_geojson(RESTRICTED_AREAS)
+    )
+    rows = asyncio.run(run(restricted))
     render(rows)
 
     if args.label:

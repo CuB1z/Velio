@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.27.0"
+    app_version: str = "0.28.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     )
     elevation_dir: Path = Field(
         validation_alias=AliasChoices("elevation_dir", "VALHALLA_ELEVATION_DIR"),
+    )
+    restricted_areas_path: Path | None = Field(
+        default=Path("data/restricted_areas.geojson"), alias="RESTRICTED_AREAS_PATH"
     )
 
     cors_origins: list[str] = Field(default=["*"])

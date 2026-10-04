@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY migrations ./migrations
+COPY data/restricted_areas.geojson ./data/restricted_areas.geojson
 COPY start.sh ./start.sh
 RUN chmod +x start.sh
 
