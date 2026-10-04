@@ -126,7 +126,7 @@ export function usedPaths() {
   for (const file of readdirSync(dir).filter((f) => f.endsWith('.ts') && !f.includes('.test.'))) {
     const source = readFileSync(join(dir, file), 'utf8')
     for (const match of source.matchAll(
-      /request<[^>]*>\(\s*[`'"]([^`'"]+)[`'"]([\s\S]{0,160}?)\)/g,
+      /\b(?:request<[^>]*>|stream)\(\s*[`'"]([^`'"]+)[`'"]([\s\S]{0,160}?)\)/g,
     )) {
       const path = match[1].replace(/\$\{[^}]+\}/g, '{param}')
       const method = match[2].match(/method:\s*'(\w+)'/)?.[1] ?? 'GET'
