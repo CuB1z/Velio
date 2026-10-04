@@ -36,6 +36,7 @@ Working today:
 OpenStreetMap PBF ──> build_tiles.sh ──> Valhalla tiles ──> valhalla_service (Docker :8002)
 Geofabrik catalog  ──> download_osm.sh
 Copernicus DEM     ──> download_elevation.sh ──> .hgt.gz tiles ──> /height + app/engine
+OpenStreetMap PBF ──> tools/extract_restricted_areas.py ──> data/restricted_areas.geojson ──> loop engine
 ```
 
 The routing graph carries baked-in elevation (`mjolnir.use_elevation`), so

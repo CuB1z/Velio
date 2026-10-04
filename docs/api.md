@@ -429,6 +429,25 @@ Measured over three origins, two distances and three bikes, the mean quality
 score went from 5.4 to 7.0; the worst case (a 30 km road loop from farmland)
 from 1.3 to 7.5, with its repeated share dropping from 36% to 4%.
 
+#### Restricted areas
+
+Loops never ride through military land, aerodromes or prisons. Valhalla keeps
+point-to-point routes out of them on its own; a loop only got in when a ring
+waypoint landed inside an area and snapped to one of its internal roads. Ring
+candidates snapping to a destination-only road (`access=private`) are passed
+over for the next best in their sector, and a sector whose pick falls inside
+an area is skipped altogether (forcing a worse candidate there tends to leave
+the ring unroutable). As a backstop, a loop riding more than 50 m inside an
+area moves on to the next seed and is never returned, not even as the best
+effort. Via points chosen by the rider are left as given.
+
+The areas are read at startup from `data/restricted_areas.geojson`
+(`RESTRICTED_AREAS_PATH`), regenerated from the OSM extract with
+`python -m tools.extract_restricted_areas` (`landuse=military`;
+`military=airfield|barracks|base|danger_area|naval_base|range|training_area|yes`;
+`aeroway=aerodrome`; `amenity=prison`). Without the file the API logs a warning at startup and
+loops are not checked.
+
 Request:
 
 ```json
