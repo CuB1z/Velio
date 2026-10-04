@@ -1,0 +1,52 @@
+{
+  "name": "velio-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
+    "lint": "oxlint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "preview": "vite preview",
+    "contract:pull": "node scripts/pullContract.mjs",
+    "contract:check": "node -e \"import('./scripts/checkContract.mjs').then(m=>{const p=[...m.compare(),...m.comparePaths()];if(p.length){console.error(p.join('\\n'));process.exit(1)}console.log('contrato alineado')})\""
+  },
+  "dependencies": {
+    "@heroui/react": "3.2.4",
+    "@heroui/styles": "3.2.4",
+    "@mapbox/polyline": "^1.2.1",
+    "@tanstack/react-query": "^5.102.8",
+    "clsx": "^2.1.1",
+    "i18next": "^26.4.0",
+    "maplibre-gl": "^6.6.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-i18next": "^17.0.12",
+    "react-router-dom": "^7.18.3",
+    "tailwind-merge": "^3.6.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.1",
+    "@tailwindcss/vite": "4.3.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "jsdom": "^30.0.1",
+    "oxlint": "^1.79.0",
+    "tailwind-variants": "3.3.0",
+    "tailwindcss": "4.3.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  }
+}

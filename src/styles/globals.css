@@ -1,0 +1,386 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ---------------------------------------------------------------------------
+   Velio · dirección "suave con profundidad".
+
+   Es un giro deliberado respecto a la versión anterior, que era blanco y gris
+   frío con azul y hairlines al estilo Apple: se veía corporativa y fría para
+   un producto de salir en bici. Ahora:
+
+     - fondo gris azulado muy claro en vez de blanco puro, y tarjetas blancas
+       que FLOTAN sobre él: la separación la da la elevación, no una línea;
+     - acento verde azulado, que además no choca con ningún color semántico
+       de los gráficos (asfalto, compactado, tierra se redefinen abajo);
+     - esquinas generosas (12 / 16 / 22 px) y Plus Jakarta Sans.
+
+   Contraste (WCAG AA ≥ 4,5:1), calculado, no supuesto:
+     - #0E7C86 sobre #F7F8FA        4,65:1  (acento sobre el fondo)
+     - #FFFFFF sobre #0E7C86        4,95:1  (texto del botón)
+     - #5B6476 sobre #F7F8FA        5,28:1  (texto secundario)
+     - #5FD3DE sobre #0F1419        8,93:1  (acento-texto en oscuro; el verde
+                                            azulado oscuro daría 2,4:1)
+--------------------------------------------------------------------------- */
+
+@layer base {
+  :root,
+  .light,
+  [data-theme="light"] {
+    --velio-accent: #0e7c86;
+
+    --background: #f7f8fa;
+    --foreground: #111827;
+
+    /* Blanco sobre el fondo teñido: la tarjeta se distingue por elevación. */
+    --surface: #ffffff;
+    --surface-foreground: var(--foreground);
+    --surface-secondary: #eef1f6;
+    --surface-tertiary: #e3e8f0;
+    /* Realce al pasar por encima, un paso por debajo de --surface. */
+    --surface-hover: #e9edf4;
+
+    --overlay: #ffffff;
+    --overlay-foreground: var(--foreground);
+
+    --muted: #5b6476;
+
+    --accent: var(--velio-accent);
+    --accent-foreground: #ffffff;
+    --accent-soft: #d8f0f2;
+    --accent-soft-foreground: #0a5c64;
+
+    /* El campo ya no es un hueco hundido: con fondo elevado alrededor, basta
+       un relleno un punto más frío y un borde hairline. HeroUI deja los
+       campos sin borde (--field-border-width: 0) y hay que devolvérselo.
+
+       Ojo con --field-shadow: el anillo de foco es un ring-2 de Tailwind, que
+       compone box-shadow con --tw-shadow. Ponerlo a `none` invalida la lista
+       entera y el anillo desaparece; por eso va una sombra transparente pero
+       válida, el mismo truco que usa el tema oscuro de HeroUI. */
+    --field-background: #f4f6fa;
+    --field-foreground: var(--foreground);
+    --field-border: #dde3ec;
+    --field-border-width: 1px;
+    --border-width-field: 1px;
+    --field-shadow: 0 0 0 0 transparent;
+    --field-focus: #ffffff;
+
+    --default: #eef1f6;
+    --default-foreground: var(--foreground);
+
+    --border: #e2e7ef;
+    --separator: #edf0f5;
+
+    /* Gráficos: el acento es el primero, y ningún otro se le parece. */
+    --chart-1: #0e7c86;
+    --chart-2: #6366f1;
+    --chart-3: #d97706;
+    --chart-4: #db2777;
+    --chart-5: #16a34a;
+    --chart-neutral: #94a3b8;
+    --link: var(--velio-accent);
+
+    /* Secciones invertidas de la portada: oscuras en ambos temas, por eso se
+       definen una sola vez y no se repiten en el bloque .dark. */
+    --ink: #121a21;
+    --ink-muted: #aebbc7;
+    --ink-accent: #5fd3de;
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    /* Relleno y texto se separan: el relleno aguanta el azul de marca con
+       texto blanco encima; como texto sobre el fondo oscuro hace falta el
+       azul cielo. */
+    --velio-accent: #2ba8b4;
+    --velio-accent-text: #5fd3de;
+
+    --background: #0f1419;
+    --foreground: #f3f6f9;
+
+    --surface: #182029;
+    --surface-foreground: var(--foreground);
+    --surface-secondary: #1e2832;
+    --surface-tertiary: #141b22;
+    --surface-hover: #243040;
+
+    --overlay: #182029;
+    --overlay-foreground: var(--foreground);
+
+    --muted: #94a3b8;
+
+    --accent: var(--velio-accent);
+    --accent-foreground: #06202a;
+    --accent-soft: #113039;
+    /* El acento como texto necesita más luz que como relleno. */
+    --accent-soft-foreground: var(--velio-accent-text);
+
+    /* Todo lo que el bloque claro define sobre :root se filtra aquí, porque
+       ese bloque va después del .dark de HeroUI en la cascada. Cualquier
+       variable que se toque arriba hay que repetirla abajo. */
+    --field-background: #182029;
+    --field-foreground: var(--foreground);
+    --field-border: #33414f;
+    --field-border-width: 1px;
+    --border-width-field: 1px;
+    --field-shadow: 0 0 0 0 transparent;
+    --field-focus: #1e2832;
+
+    --default: #1e2832;
+    --default-foreground: var(--foreground);
+
+    --border: #2a3642;
+    --separator: #222c36;
+
+    --chart-1: #2ba8b4;
+    --chart-2: #818cf8;
+    --chart-3: #f59e0b;
+    --chart-4: #f472b6;
+    --chart-5: #4ade80;
+    --chart-neutral: #64748b;
+    --link: var(--velio-accent-text);
+  }
+}
+
+@theme inline {
+  /* system-ui / -apple-system resuelve a SF Pro en plataformas Apple; Inter
+     es el sustituto abierto más cercano en las demás. */
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* En Tailwind v4 la utilidad nace del namespace --color-*: declarar solo la
+     variable suelta no compila nada. HeroUI no trae tono de hover ni el
+     invertido de portada, así que se mapean aquí. */
+  --color-surface-hover: var(--surface-hover);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-accent: var(--ink-accent);
+
+  /* Esquinas generosas: la forma es parte de la identidad suave. */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 22px;
+}
+
+/* Toda acción es una píldora. Va en la capa de componentes, detrás de la de
+   HeroUI, para ganarle; las utilidades (`rounded-none` en los controles del
+   mapa) siguen mandando por estar en su propia capa. */
+@layer components {
+  .button {
+    border-radius: 9999px;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/* Anclas de la landing: desplazamiento suave y sitio para la cabecera
+   pegajosa (64 px). La regla de movimiento reducido lo vuelve instantáneo. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  /* 17px, no 16: el pixel de más marca el ritmo de lectura de la guía. Las
+     utilidades de Tailwind van en rem sobre la raíz, así que los componentes
+     no cambian de talla; solo el texto corrido. */
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: -0.374px;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Titulares: peso 600 y tracking negativo, el "apretado" de la guía. */
+h1, h2, h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Tailwind v4 dejó de poner la mano en los botones (v3 lo hacía). Todo lo
+   pulsable la recupera aquí, salvo lo deshabilitado. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) {
+    cursor: pointer;
+  }
+}
+
+/* En oscuro una sombra suave no se percibe: sube la densidad. */
+.dark {
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 44px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Cifras tabulares en todas las métricas, para que no bailen al actualizarse. */
+/* Cifras de ancho fijo en la tipografía de la interfaz, para que una columna
+   de métricas no baile. Para texto que de verdad es código, `.code`. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* MapLibre: el mapa hereda el tema en lugar de imponer su chrome blanco. */
+/* Sobre la ortofoto medía 3,99:1 (por debajo de AA): el 82% dejaba pasar el
+   blanco de la foto y --muted no aguanta. Fondo casi opaco y texto de cuerpo
+   a opacidad reducida, que da el mismo gris pero con suelo garantizado. */
+.maplibregl-ctrl-attrib {
+  background: color-mix(in oklab, var(--background) 94%, transparent) !important;
+  color: color-mix(in oklab, var(--foreground) 72%, var(--background)) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 10px !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: color-mix(in oklab, var(--foreground) 72%, var(--background)) !important;
+}
+
+.maplibregl-canvas:focus {
+  outline: none;
+}
+
+/* Tokens de movimiento. Las duraciones estaban sueltas por los componentes y
+   cada una elegía su curva; aquí hay tres curvas con significado: algo que
+   ENTRA desacelera, algo que SALE acelera, y un movimiento continuo usa la
+   estándar (un giro a ritmo constante es lineal y eso no es un error).
+
+   Las curvas van en @theme porque `--ease-*` es un espacio de nombres de
+   Tailwind y genera `ease-enter` / `ease-exit` / `ease-move` como utilidades.
+   Las duraciones NO lo son: en las clases se usa la escala numérica de
+   Tailwind (`duration-150`, `duration-300`) y estas variables son para el CSS
+   de aquí abajo. Comprobado en la build: `duration-(--duration-base)` y
+   `[transition-duration:var(--duration-base)]` no emiten nada en Tailwind 4.3,
+   y el CSS muerto no da ningún aviso. */
+@theme inline {
+  /* Elevación. El tema anterior prohibía las sombras; esta dirección las usa
+     como separación principal, así que viven aquí como tokens y no sueltas. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -8px rgba(16, 24, 40, 0.10);
+  --shadow-raised: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 40px -12px rgba(16, 24, 40, 0.16);
+  --ease-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
+}
+:root {
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 700ms;
+  --duration-draw: 2200ms;
+}
+
+/* ---------------------------------------------------------------------------
+   Landing: movimiento con propósito. Cada animación tiene un final y un
+   motivo; la regla de movimiento reducido de más abajo las apaga todas.
+--------------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  translate: 0 18px;
+  transition:
+    opacity var(--duration-slow) var(--ease-enter),
+    translate var(--duration-slow) var(--ease-enter);
+}
+.reveal[data-visible="true"] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+@keyframes marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--marquee-duration, 48s) linear infinite;
+}
+.marquee:hover .marquee__track,
+.marquee:focus-within .marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes route-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.route-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: route-draw var(--duration-draw) var(--ease-move) 150ms forwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+.fade-in {
+  animation: fade-in var(--duration-base) var(--ease-enter);
+}
+
+/* Escala tipográfica de la landing. Fluida a propósito: un titular fijo a
+   56px es enorme en un móvil y pequeño en un monitor. El tracking se cierra
+   según crece el tamaño, que es lo que da el aire "apretado" de la marca. */
+.display-xl {
+  font-size: clamp(2.75rem, 6.5vw, 5.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: 600;
+}
+.display-lg {
+  font-size: clamp(2rem, 4.2vw, 3.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+.lead {
+  font-size: clamp(1.0625rem, 1.5vw, 1.375rem);
+  line-height: 1.5;
+  letter-spacing: -0.011em;
+}
+/* Rótulo de sección: pequeño, en el color de marca, sin mayúsculas forzadas. */
+.eyebrow {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

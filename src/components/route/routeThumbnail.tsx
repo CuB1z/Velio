@@ -1,0 +1,84 @@
+import { useMemo } from 'react'
+
+import { useTheme } from '@/hooks/useTheme'
+import { accent, ink, status } from '@/lib/chartPalette'
+import { cn } from '@/lib/cn'
+import { boundsOf, decodePolyline } from '@/lib/polyline'
+
+type Props = {
+  polyline: string
+  className?: string
+  width?: number
+  height?: number
+}
+
+/** Silueta de la ruta, sin mapa: en una rejilla de tarjetas basta la forma. */
+export function RouteThumbnail({ polyline, className, width = 320, height = 140 }: Props) {
+  const { resolved } = useTheme()
+  const palette = ink(resolved)
+
+  const path = useMemo(() => {
+    const coordinates = decodePolyline(polyline)
+    const bounds = boundsOf(coordinates)
+    if (!bounds || coordinates.length < 2) return null
+
+    const [[minLng, minLat], [maxLng, maxLat]] = bounds
+    const spanLng = Math.max(maxLng - minLng, 1e-6)
+    const spanLat = Math.max(maxLat - minLat, 1e-6)
+
+    // Se conserva la proporción real corrigiendo la convergencia de meridianos,
+    // para que un circuito no salga aplastado según la latitud.
+    const cosLat = Math.cos(((minLat + maxLat) / 2) * (Math.PI / 180))
+    const dataWidth = spanLng * cosLat
+    const dataHeight = spanLat
+    const pad = 12
+    const scale = Math.min((width - pad * 2) / dataWidth, (height - pad * 2) / dataHeight)
+    const offsetX = (width - dataWidth * scale) / 2
+    const offsetY = (height - dataHeight * scale) / 2
+
+    const points = coordinates.map(([lng, lat]) => {
+      const x = offsetX + (lng - minLng) * cosLat * scale
+      // El eje Y de SVG crece hacia abajo; la latitud, hacia arriba.
+      const y = height - offsetY - (lat - minLat) * scale
+      return `${x.toFixed(1)} ${y.toFixed(1)}`
+    })
+
+    return {
+      d: `M${points.join(' L')}`,
+      start: coordinates[0],
+      startPoint: points[0].split(' ').map(Number) as [number, number],
+    }
+  }, [polyline, width, height])
+
+  if (!path) {
+    return <div className={cn('bg-surface-secondary', className)} aria-hidden="true" />
+  }
+
+  return (
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="xMidYMid meet"
+      className={cn('block h-full w-full', className)}
+      role="img"
+      aria-hidden="true"
+      style={{ background: palette.surface }}
+    >
+      <path
+        d={path.d}
+        fill="none"
+        stroke={accent(resolved)}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={path.startPoint[0]}
+        cy={path.startPoint[1]}
+        r={4}
+        fill={status(resolved, 'good')}
+        stroke={palette.surface}
+        strokeWidth={1.5}
+      />
+    </svg>
+  )
+}
