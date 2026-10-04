@@ -2,11 +2,10 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
-// Sin `globals: true`, testing-library no registra su limpieza automática y el
-// DOM de un test se cuela en el siguiente.
+// Without `globals: true` testing-library skips its auto-cleanup and DOM leaks between tests.
 afterEach(cleanup)
 
-// jsdom no implementa ResizeObserver y los gráficos lo usan para medirse.
+// jsdom lacks ResizeObserver, which the charts use to measure themselves.
 class ResizeObserverStub {
   observe(): void {}
   unobserve(): void {}
@@ -15,7 +14,7 @@ class ResizeObserverStub {
 
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver
 
-// matchMedia lo consultan el tema y las animaciones reducidas.
+// matchMedia is queried by the theme and reduced-motion checks.
 globalThis.matchMedia ??= ((query: string) => ({
   matches: false,
   media: query,

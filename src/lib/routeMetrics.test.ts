@@ -11,43 +11,43 @@ const score: SurfaceScore = {
   max_grade_pct: 24,
 }
 
-describe('desglose de firme', () => {
-  it('reparte sobre la distancia real, no sobre la suma de tramos conocidos', () => {
-    // 36,44 + 29,86 = 66,30 de una ruta de 68,84: faltan 2,54 km sin atributo.
+describe('surface breakdown', () => {
+  it('splits over the real distance, not the sum of known segments', () => {
+    // 36.44 + 29.86 = 66.30 of a 68.84 km route: 2.54 km have no attribute.
     const segments = surfaceSegments(score, 68.84)
     const total = segments.reduce((sum, segment) => sum + segment.share, 0)
     expect(total).toBeCloseTo(1, 5)
   })
 
-  it('muestra el hueco sin datos en vez de esconderlo', () => {
+  it('shows the no-data gap instead of hiding it', () => {
     const segments = surfaceSegments(score, 68.84)
     const unknown = segments.find((segment) => segment.key === '__unknown')
     expect(unknown).toBeDefined()
     expect(unknown?.km).toBeCloseTo(2.54, 2)
   })
 
-  it('no inventa un tramo cuando el hueco es puro redondeo', () => {
+  it('adds no segment when the gap is just rounding', () => {
     const segments = surfaceSegments(score, 66.32)
     expect(segments.some((segment) => segment.key === '__unknown')).toBe(false)
   })
 
-  it('ordena de mayor a menor', () => {
+  it('sorts from largest to smallest', () => {
     const segments = surfaceSegments(score, 68.84)
     expect(segments[0].key).toBe('dirt')
   })
 
-  it('devuelve vacío sin datos de firme', () => {
+  it('returns empty without surface data', () => {
     expect(surfaceSegments(null, 70)).toEqual([])
   })
 })
 
-describe('desglose de puntuación', () => {
-  it('no dibuja barras cuando el motor no pudo puntuar', () => {
-    // cycling_score es nullable en el esquema: sin datos de arista no hay nota.
+describe('score breakdown', () => {
+  it("draws no bars when the engine couldn't score", () => {
+    // cycling_score is nullable: no edge data, no score.
     expect(scoreBars(null)).toEqual([])
   })
 
-  it('incluye el desnivel cuando la API lo devuelve', () => {
+  it('includes elevation when the API returns it', () => {
     const bars = scoreBars({
       distance: 10,
       safety: 6.8,
@@ -61,9 +61,9 @@ describe('desglose de puntuación', () => {
   })
 })
 
-describe('firme ausente', () => {
-  // Una ruta guardada antigua puede no traer surface_km; no debe lanzar.
-  it('da el recorrido entero como desconocido en vez de romperse', () => {
+describe('missing surface data', () => {
+  // Old saved routes may lack surface_km; must not throw.
+  it('marks the whole route as unknown instead of breaking', () => {
     const partial = { comfort: 80, paved_share: 0.9, climb_load_m: 100, max_grade_pct: 8 }
     expect(surfaceSegments(partial as never, 30)).toEqual([
       { key: '__unknown', km: 30, share: 1, paved: false },

@@ -1,4 +1,4 @@
-/** Provoca la descarga de un blob ya obtenido con las cabeceras de sesión. */
+/** Downloads a blob already fetched with the session headers. */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
@@ -7,11 +7,11 @@ export function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()
-  // Sin revoke el blob se queda en memoria hasta recargar la pestaña.
+  // Without revoking, the blob stays in memory until the tab reloads.
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
-/** "Algete 70 · Vellón" → "algete-70-vellon". Evita nombres de fichero rotos. */
+/** "Algete 70 · Vellón" → "algete-70-vellon", a safe filename. */
 export function slugify(value: string, fallback = 'ruta'): string {
   const slug = value
     .normalize('NFD')

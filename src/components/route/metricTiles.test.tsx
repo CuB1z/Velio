@@ -23,13 +23,13 @@ const LOOP: LoopResult = {
 }
 
 describe('MetricTiles', () => {
-  it('sin objetivo de desnivel enseña la densidad de subida', () => {
-    // 768 m en 60 km: es lo que distingue «llano» de «montañoso» a la vista.
+  it('shows climb density when there is no elevation target', () => {
+    // 768 m over 60 km: what visibly tells "flat" from "hilly".
     render(<MetricTiles result={LOOP} targetKm={60} />)
     expect(screen.getByText('12,8 m/km')).toBeInTheDocument()
   })
 
-  it('con objetivo, el objetivo manda en la pista', () => {
+  it('with a target, the hint shows the target', () => {
     render(<MetricTiles result={LOOP} targetKm={60} targetGainM={900} />)
     expect(screen.queryByText(/m\/km/)).not.toBeInTheDocument()
     expect(screen.getByText(/\+900 m/)).toBeInTheDocument()

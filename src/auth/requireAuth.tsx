@@ -4,9 +4,8 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from './useAuth'
 
 /**
- * Los endpoints de cálculo exigen Bearer, así que el planificador entero vive
- * detrás del login. Mientras se canjea el refresh token no se decide nada: si
- * redirigiéramos, un recargado de página echaría fuera a quien sí tiene sesión.
+ * Keeps the app behind login, since routing endpoints require a Bearer token.
+ * Waits for the refresh exchange before deciding, so a reload doesn't kick out a valid session.
  */
 export function RequireAuth() {
   const { status } = useAuth()
@@ -27,7 +26,7 @@ export function RequireAuth() {
   return <Outlet />
 }
 
-/** Rutas de acceso: quien ya tiene sesión no debe ver el login. */
+/** Auth routes: signed-in users shouldn't see the login. */
 export function RedirectIfAuthenticated() {
   const { status } = useAuth()
 

@@ -14,27 +14,25 @@ const score: SurfaceScore = {
 }
 
 beforeAll(async () => {
-  // jsdom dice navigator.language = en-US; fijamos el idioma del test.
+  // jsdom reports navigator.language = en-US; pin the test language.
   await i18n.changeLanguage('es')
 })
 
-describe('barra de firme', () => {
-  it('etiqueta cada tramo por su nombre', () => {
-    // No es decorativo: el par naranja↔verde de la paleta está en la banda baja
-    // de tritanopía y solo es admisible con codificación secundaria. Si estas
-    // etiquetas desaparecen, el gráfico deja de ser accesible.
+describe('surface bar', () => {
+  it('labels each segment by name', () => {
+    // Required, not decorative: the palette's orange/green pair needs a secondary encoding.
     render(<SurfaceBar score={score} distanceKm={68.84} />)
 
     expect(screen.getByText('Tierra')).toBeInTheDocument()
     expect(screen.getByText('Asfalto liso')).toBeInTheDocument()
   })
 
-  it('nombra el tramo sin datos en vez de repartirlo entre los demás', () => {
+  it('names the no-data segment instead of spreading it over the others', () => {
     render(<SurfaceBar score={score} distanceKm={68.84} />)
     expect(screen.getByText('Sin datos de firme')).toBeInTheDocument()
   })
 
-  it('avisa cuando el backend no devuelve firme', () => {
+  it('warns when the backend returns no surface data', () => {
     render(<SurfaceBar score={null} distanceKm={68.84} />)
     expect(screen.getByText('Sin datos de firme')).toBeInTheDocument()
   })

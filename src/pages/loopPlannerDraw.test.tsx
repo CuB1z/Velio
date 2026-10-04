@@ -5,7 +5,7 @@ import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 import App from '@/App'
 import i18n from '@/i18n'
 
-// Captura lo que el planificador le pasa al mapa: es donde vive el trazado.
+// Captures the props the planner passes to the map, where the route geometry lands.
 const mapProps: { current: Record<string, unknown> | null } = { current: null }
 
 vi.mock('@/components/map/lazyMap', () => ({
@@ -46,7 +46,7 @@ beforeEach(() => {
   window.history.pushState({}, '', '/loops')
 })
 
-it('el trazado generado llega al mapa', async () => {
+it('the generated route reaches the map', async () => {
   localStorage.setItem('velio.refresh', 'refresh-1')
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
     const url = String(input)

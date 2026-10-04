@@ -2,12 +2,12 @@ import { useEffect } from 'react'
 
 import type { LatLon } from '@/types/api'
 
-/** Suficiente para una posición aproximada; no hace falta esperar al GPS fino. */
+/** Enough for a rough position; no need to wait for a precise GPS fix. */
 const TIMEOUT_MS = 8000
 
 export type PositionFailure = 'denied' | 'unavailable' | 'timeout' | 'unsupported'
 
-/** Códigos de GeolocationPositionError → causa legible. */
+/** Maps GeolocationPositionError codes to a readable cause. */
 export function positionFailure(error: { code: number }): PositionFailure {
   if (error.code === 1) return 'denied'
   if (error.code === 3) return 'timeout'
@@ -15,13 +15,8 @@ export function positionFailure(error: { code: number }): PositionFailure {
 }
 
 /**
- * Pide la posición del navegador una vez, al montar, y la entrega si llega.
- *
- * Si no llega, la página se queda con su valor por defecto (Madrid centro) y
- * `onFailure` recibe la causa. No es un detalle: "no coge mi ubicación pese a
- * tener permisos" suele ser POSITION_UNAVAILABLE — un navegador de escritorio
- * sin servicio de localización (Brave o Chromium en Linux sin GeoClue) — y
- * callar convierte un límite del navegador en un misterio de la app.
+ * Requests the browser position once on mount and passes it on if it arrives.
+ * Otherwise the page keeps its default and `onFailure` receives the cause.
  */
 export function useInitialPosition(
   onPosition: (position: LatLon) => void,
@@ -41,7 +36,7 @@ export function useInitialPosition(
       },
       (error) => {
         if (cancelled) return
-        // Visible en la consola del navegador para poder diagnosticarlo.
+        // Logged so failures can be diagnosed from the browser console.
         console.warn('[velio] geolocation failed', error.code, error.message)
         onFailure?.(positionFailure(error))
       },
@@ -50,7 +45,7 @@ export function useInitialPosition(
     return () => {
       cancelled = true
     }
-    // Solo al montar: volver a pedirla en cada render sería un prompt en bucle.
+    // Mount only: requesting on every render would loop the permission prompt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }

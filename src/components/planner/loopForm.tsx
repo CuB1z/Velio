@@ -39,8 +39,8 @@ export function LoopForm({
   const { t } = useTranslation()
   const patch = (next: Partial<LoopFormValue>) => onChange({ ...value, ...next })
 
-  // Un circuito que llega a un punto a D km necesita al menos 2·D. Por debajo
-  // de eso el motor solo puede devolver una ida y vuelta por el mismo camino.
+  // A loop reaching a point D km away needs at least 2·D; below that the engine
+  // can only return an out-and-back along the same road.
   const minimumKm = minimumLoopKm(value.origin, value.via)
   const viaTooFar = minimumKm > 0 && value.distanceKm < minimumKm
   const suggestedKm = Math.min(300, Math.ceil((minimumKm * 1.15) / 5) * 5)
@@ -53,7 +53,7 @@ export function LoopForm({
         onSubmit()
       }}
     >
-      {/* ---------------------------------------------------------- inicio */}
+      {/* ----------------------------------------------------------- start */}
       <InsetGroup title={t('planner.origin')}>
         <InsetRow className="py-2">
           <CoordinateField
@@ -121,7 +121,7 @@ export function LoopForm({
         </div>
       ) : null}
 
-      {/* ------------------------------------------------------- recorrido */}
+      {/* ----------------------------------------------------------- route */}
       <InsetGroup title={t('planner.ride')}>
         <InsetRow stacked>
           <SliderField
@@ -168,14 +168,14 @@ export function LoopForm({
         ) : null}
       </InsetGroup>
 
-      {/* ------------------------------------------------------------ bici */}
+      {/* ------------------------------------------------------------ bike */}
       <InsetGroup title={t('bike.label')}>
         <InsetRow stacked>
           <BikeSegments bike={value.bike} onChange={(bike) => patch({ bike })} />
         </InsetRow>
       </InsetGroup>
 
-      {/* -------------------------------------------------------- avanzado */}
+      {/* -------------------------------------------------------- advanced */}
       <details className="group flex flex-col gap-1.5">
         <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-xl bg-surface px-4 text-[15px] shadow-card marker:hidden">
           {t('planner.advanced')}

@@ -7,7 +7,7 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 60_000,
       refetchOnWindowFocus: false,
-      // Insistir ante un 422 o unas credenciales malas solo gasta cuota.
+      // Retrying a 422 or bad credentials only burns quota.
       retry: (attempt, error) => attempt < 2 && isRetryable(error),
     },
     mutations: {

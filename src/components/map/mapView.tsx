@@ -25,7 +25,7 @@ const LAYER_SELECTED_LINE = 'velio-routes-selected-line'
 export type RouteLayer = {
   id: string
   coordinates: LngLat[]
-  /** Ranura fija de la paleta categórica: el color pertenece a la variante, no a su orden. */
+  /** Fixed categorical palette slot: the color belongs to the variant, not its order. */
   colorIndex: number
   selected: boolean
 }
@@ -39,33 +39,29 @@ export type MapMarker = {
 
 export type MapViewProps = {
   /**
-   * Punto al que llevar la vista. Se aplica cuando cambia `key`, no cuando
-   * cambia el punto: así fijar el origen con un clic no mueve el mapa, pero
-   * localizar al usuario sí lo encuadra.
+   * Point to move the view to. Applied when `key` changes, not the point, so
+   * setting the origin with a click does not move the map but locating the user does.
    */
   focus?: { center: [number, number]; key: number }
   styleId: MapStyleId
   routes?: RouteLayer[]
   markers?: MapMarker[]
-  /** Cambiar este valor vuelve a encuadrar. Un contador o el id del resultado. */
+  /** Changing this value refits the view. A counter or the result id. */
   fitKey?: string | number
   /**
-   * Margen del encuadre, en píxeles. El panel de resultado flota sobre el
-   * mapa, así que sin un margen inferior mayor la ruta se encuadra centrada y
-   * queda escondida detrás de él.
+   * Fit padding in pixels. The result panel floats over the map, so the bottom
+   * needs extra room or the route hides behind it.
    */
   fitPadding?: { top: number; right: number; bottom: number; left: number }
   onMapClick?: (coordinate: LngLat) => void
   isPicking?: boolean
   className?: string
-  /** Muestra los controles superpuestos (estilo, zoom, encuadre, ubicación). */
+  /** Shows the overlaid controls (style, zoom, fit, location). */
   onStyleChange?: (id: MapStyleId) => void
   onLocate?: () => void
 }
 
-/** Los colores salen de la paleta, no a mano: el marcador de paso y el de
- *  final iban en el azul del tema anterior mientras el trazado ya era verde
- *  azulado, y el aro usaba un gris que no es la superficie de ningún tema. */
+/** Marker colors come from the palette, never hard-coded. */
 function markerElement(marker: MapMarker, dark: boolean): HTMLElement {
   const mode = dark ? 'dark' : 'light'
   const surface = ink(mode).surface
@@ -142,7 +138,7 @@ export function MapView({
     [routes],
   )
 
-  // Expresión data-driven: el color sale de la ranura, no del orden de pintado.
+  // Data-driven expression: the color comes from the slot, not the paint order.
   const colorExpression = useMemo(() => {
     const cases: unknown[] = ['match', ['get', 'colorIndex']]
     for (let slot = 0; slot < 5; slot += 1) cases.push(slot, categorical(resolved, slot))
@@ -150,7 +146,7 @@ export function MapView({
     return cases
   }, [resolved])
 
-  // Creación única. El estilo y las capas se sincronizan en efectos aparte.
+  // Created once. Style and layers sync in separate effects.
   useEffect(() => {
     if (!container.current || map.current) return
 
@@ -159,7 +155,7 @@ export function MapView({
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       attributionControl: { compact: true },
-      // El grafo del backend es España: no tiene sentido dejar navegar más lejos.
+      // The backend graph covers Spain only: no point panning further.
       maxBounds: [
         [-19.5, 26.5],
         [5.5, 44.5],
@@ -181,11 +177,8 @@ export function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Sembrar fuente y capas.
-  //
-  // `styledata` (no `once`) es la señal fiable: se dispara cuando el primer
-  // estilo termina de cargar y otra vez tras cada cambio de estilo, que borra
-  // fuentes y capas. `ensure` es idempotente, así que puede correr de más.
+  // Seed source and layers on `styledata`, not `once`: it also fires after every
+  // style change, which wipes them. `ensure` is idempotent.
   useEffect(() => {
     const instance = map.current
     if (!instance) return
@@ -201,7 +194,7 @@ export function MapView({
       const common = { source: ROUTES_SOURCE, type: 'line' as const }
       const layout = { 'line-cap': 'round' as const, 'line-join': 'round' as const }
 
-      // Las descartadas van debajo y más finas; la elegida encima y con realce.
+      // Discarded variants go underneath and thinner; the selected one on top, highlighted.
       if (!instance.getLayer(LAYER_CASING)) {
         instance.addLayer({
           ...common,
@@ -247,9 +240,8 @@ export function MapView({
 
     ensure()
     instance.on('styledata', ensure)
-    // Red de seguridad: durante un cambio de estilo, `styledata` puede llegar
-    // con el estilo aún a medias y `ensure` se sale sin sembrar. `idle` se
-    // emite cuando ya no queda nada por renderizar, así que ahí siempre entra.
+    // Safety net: mid style change, `styledata` can fire with a half-loaded style and
+    // `ensure` bails out. `idle` fires once nothing is left to render.
     instance.on('idle', ensure)
     return () => {
       instance.off('styledata', ensure)
@@ -257,8 +249,8 @@ export function MapView({
     }
   }, [resolved, colorExpression, collection])
 
-  // El estilo solo se cambia cuando cambia de verdad: el constructor ya puso
-  // el inicial, y volver a ponerlo es un no-op que además no emite styledata.
+  // Only set the style on a real change: the constructor already set the initial
+  // one, and setting it again is a no-op that emits no styledata.
   const styleApplied = useRef<string | null>(null)
   useEffect(() => {
     const instance = map.current
@@ -273,7 +265,7 @@ export function MapView({
     applyBaseStyle(instance, styleId, dark)
   }, [styleId, dark])
 
-  // Datos de ruta: actualizar la fuente, no recrear las capas.
+  // Route data: update the source, do not recreate the layers.
   useEffect(() => {
     const instance = map.current
     if (!instance) return
@@ -283,7 +275,7 @@ export function MapView({
     }
   }, [collection])
 
-  // Marcadores: son DOM, así que sobreviven al cambio de estilo.
+  // Markers are DOM, so they survive style changes.
   useEffect(() => {
     const instance = map.current
     if (!instance) return
@@ -301,7 +293,7 @@ export function MapView({
     }
   }, [markers, dark])
 
-  // Encuadre: solo cuando cambia fitKey, para no pelear con el usuario.
+  // Fit only when fitKey changes, so it does not fight the user.
   useEffect(() => {
     const instance = map.current
     if (!instance || fitKey === undefined) return
@@ -337,7 +329,7 @@ export function MapView({
   }, [isPicking])
 
 
-  /** maplibre falla si el margen se come el viewport; se limita al 42 %. */
+  /** maplibre fails if the padding eats the viewport; clamp it to 42 %. */
   const paddingFor = useCallback(
     (instance: MapLibreMap) => {
       const base = fitPadding ?? { top: 48, right: 48, bottom: 48, left: 48 }
@@ -367,11 +359,8 @@ export function MapView({
 
   return (
     <div className={cn('relative', className)}>
-      {/* Tamaño por dimensiones, no por posicionamiento: maplibre añade
-          .maplibregl-map { position: relative } desde una hoja SIN capa, y en
-          CSS lo no-capado gana a la capa `utilities` de Tailwind. Con
-          `absolute inset-0`, ese `relative` ganaba, `inset-0` quedaba inerte y
-          el contenedor colapsaba a 0 de alto: el mapa montaba en blanco. */}
+      {/* Sized by dimensions, not `absolute inset-0`: maplibre's unlayered
+          `.maplibregl-map { position: relative }` beats Tailwind's utilities layer. */}
       <div ref={container} className="size-full" data-testid="map" />
       {onStyleChange ? (
         <MapControls

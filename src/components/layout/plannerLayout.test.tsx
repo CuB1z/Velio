@@ -25,11 +25,11 @@ function Harness() {
 }
 
 describe('PlannerLayout', () => {
-  it('oculta el panel de resultado al plegarlo', async () => {
+  it('hides the result panel when collapsed', async () => {
     render(<Harness />)
 
-    // En móvil el resultado va en flujo debajo del mapa y no se pliega, así
-    // que hay dos copias; la de escritorio es la que el botón esconde.
+    // On mobile the result flows below the map and never collapses, so there are
+    // two copies; the button hides the desktop one.
     expect(screen.getAllByText('métricas de la ruta')).toHaveLength(2)
 
     await userEvent.click(screen.getByRole('button', { name: 'Ocultar panel' }))
@@ -43,11 +43,8 @@ describe('PlannerLayout', () => {
 })
 
 describe('mapFitPadding', () => {
-  it('deja de reservar hueco cuando el panel está plegado', () => {
-    /*
-     * Las tres páginas repetían el 440 a mano. Al plegar el panel el hueco
-     * seguía reservado y la ruta quedaba encajada en la mitad de arriba.
-     */
+  it('stops reserving space when the panel is collapsed', () => {
+    // Reserving the gap while collapsed squeezes the route into the top half.
     expect(mapFitPadding(true).bottom).toBe(440)
     expect(mapFitPadding(true, true).bottom).toBe(48)
     expect(mapFitPadding(false).bottom).toBe(48)

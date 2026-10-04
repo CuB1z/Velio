@@ -2,20 +2,17 @@ import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
 
 import polyline from '@mapbox/polyline'
 
-/** La API codifica siempre con precisión 1e-6. */
+/** The API always encodes with 1e-6 precision. */
 const PRECISION = 6
 
-/** Par [lng, lat], el orden que esperan GeoJSON y MapLibre. */
+/** [lng, lat], the order GeoJSON and MapLibre expect. */
 export type LngLat = [number, number]
 
 export type BBox = [LngLat, LngLat]
 
 /**
- * Decodifica polyline6 a coordenadas GeoJSON.
- *
- * decode() no lanza ante una cadena arbitraria: devuelve números sin sentido.
- * Como en la pantalla de analizar esto es texto pegado por el usuario, se
- * valida el rango y una sola coordenada imposible invalida la cadena entera.
+ * Decodes polyline6 into GeoJSON coordinates. decode() returns garbage instead
+ * of throwing on pasted input, so one out-of-range point invalidates the string.
  */
 export function decodePolyline(encoded: string): LngLat[] {
   if (!encoded) return []
@@ -62,7 +59,7 @@ export function emptyCollection(): FeatureCollection {
   return { type: 'FeatureCollection', features: [] }
 }
 
-/** Caja envolvente en el orden que pide map.fitBounds. */
+/** Bounding box in the order map.fitBounds expects. */
 export function boundsOf(coordinates: LngLat[]): BBox | null {
   if (coordinates.length === 0) return null
 

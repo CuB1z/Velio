@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 /**
- * Cifra que cuenta desde cero al entrar en pantalla. Sin observer o con
- * movimiento reducido muestra el valor final directamente: el número es el
- * contenido, la cuenta es el adorno.
+ * Number that counts up from zero when it enters the viewport. Without an
+ * observer or with reduced motion it shows the final value straight away.
  */
 export function CountUp({
   value,

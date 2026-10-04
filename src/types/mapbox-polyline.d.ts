@@ -1,4 +1,4 @@
-/** @mapbox/polyline no publica tipos. Solo usamos decode con precisión explícita. */
+/** @mapbox/polyline ships no types. */
 declare module '@mapbox/polyline' {
   const polyline: {
     decode(encoded: string, precision?: number): [number, number][]

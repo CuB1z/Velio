@@ -16,8 +16,8 @@ type Props = {
 }
 
 /**
- * Paradas en orden. Se reordenan con botones y no arrastrando: el teclado y los
- * lectores de pantalla llegan igual, y el objetivo táctil no depende del pulso.
+ * Ordered stops. Reordered with buttons, not drag, so keyboard and screen
+ * reader users can do it too.
  */
 export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
   const { t } = useTranslation()

@@ -1,6 +1,6 @@
 import type { AnyRouteResult, CyclingScore, SurfaceScore } from '@/types/api'
 
-/** Clave i18n del firme. Un tipo desconocido cae a su propio nombre crudo. */
+/** i18n key for a surface type; unknown types fall back to the raw name. */
 export function surfaceLabelKey(key: string): string {
   return `surface.${key}`
 }
@@ -8,7 +8,7 @@ export function surfaceLabelKey(key: string): string {
 export type SurfaceSegment = {
   key: string
   km: number
-  /** Fracción sobre la distancia total, no sobre la suma de tramos conocidos. */
+  /** Share of the total distance, not of the known segments' sum. */
   share: number
   paved: boolean
 }
@@ -16,11 +16,8 @@ export type SurfaceSegment = {
 const PAVED_KEYS = new Set(['paved', 'paved_smooth', 'paved_rough'])
 
 /**
- * Desglose de firme normalizado sobre la distancia real.
- *
- * `surface_km` no siempre suma la distancia total: hay aristas sin atributo de
- * firme. Repartirlo como porcentaje de la suma miente sobre el recorrido, así
- * que el hueco se muestra explícitamente como "sin datos".
+ * Surface breakdown over the real distance. `surface_km` may not add up (edges
+ * without a surface attribute), so the gap is shown as "no data".
  */
 export function surfaceSegments(
   score: SurfaceScore | null,
@@ -28,8 +25,7 @@ export function surfaceSegments(
 ): SurfaceSegment[] {
   if (!score || distanceKm <= 0) return []
 
-  // Un payload guardado hace meses puede no traer el reparto de firme; sin
-  // tramos conocidos el hueco de abajo lo marca entero como desconocido.
+  // Old saved payloads may lack surface_km; the gap below then covers it all.
   const entries = Object.entries(score.surface_km ?? {})
     .filter(([, km]) => km > 0)
     .sort((a, b) => b[1] - a[1])
@@ -42,7 +38,7 @@ export function surfaceSegments(
     paved: PAVED_KEYS.has(key),
   }))
 
-  // Un redondeo de decenas de metros no merece un tramo propio.
+  // Ignore rounding gaps of a few tens of metres.
   const gap = distanceKm - known
   if (gap > 0.05) {
     segments.push({
@@ -58,10 +54,7 @@ export function surfaceSegments(
 
 export type ScoreBar = { key: string; label: string; value: number; penalty: boolean }
 
-/**
- * Barras del desglose 0-10. `elevation` solo existe si hubo objetivo de
- * desnivel, y el bloque entero falta cuando el motor no pudo puntuar.
- */
+/** 0-10 score breakdown bars; empty when the engine couldn't score. */
 export function scoreBars(score: CyclingScore | null): ScoreBar[] {
   if (!score) return []
   const bars: ScoreBar[] = [
@@ -81,10 +74,10 @@ export function scoreBars(score: CyclingScore | null): ScoreBar[] {
   return bars
 }
 
-/** El solape resta hasta 5 puntos; se dibuja sobre esa escala, no sobre 10. */
+/** Overlap subtracts up to 5 points; drawn on that scale, not 10. */
 export const OVERLAP_PENALTY_MAX = 5
 
-/** Clave i18n del tramo de confort en el que cae la puntuación de firme. */
+/** i18n key for the comfort band of a surface score. */
 export function comfortLabelKey(comfort: number): string {
   if (comfort >= 80) return 'metric.comfort.excellent'
   if (comfort >= 65) return 'metric.comfort.good'
@@ -92,12 +85,12 @@ export function comfortLabelKey(comfort: number): string {
   return 'metric.comfort.demanding'
 }
 
-/** Un resultado de loop trae `feasible`; uno de route, no. */
+/** Loop results carry `feasible`; route results don't. */
 export function isLoopResult(result: AnyRouteResult): boolean {
   return typeof result.feasible === 'boolean'
 }
 
-/** Todos los trazados de un resultado: el principal primero, luego las alternativas. */
+/** All tracks of a result: the main one first, then the alternatives. */
 export function allVariants(result: AnyRouteResult): AnyRouteResult[] {
   return [result, ...((result.alternatives ?? []) as AnyRouteResult[])]
 }

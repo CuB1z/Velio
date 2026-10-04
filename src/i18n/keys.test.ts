@@ -6,10 +6,8 @@ import en from './en'
 import es from './es'
 
 /**
- * Las claves construidas en tiempo de ejecución (`metric.comfort.excellent`,
- * `surface.dirt`, `error.NOT_FOUND`) no aparecen literalmente en ningún `t()`,
- * así que una traducción que falte sale en pantalla como la propia clave. Pasó:
- * la barra de firme llegó a mostrar "metric.comfort.excellent" en la portada.
+ * Keys built at runtime (`metric.comfort.excellent`, `surface.dirt`, ...) never
+ * appear literally in a `t()` call, so a missing translation renders as the key.
  */
 const RUNTIME_KEYS = [
   'metric.comfort.excellent',
@@ -56,12 +54,11 @@ function get(bundle: unknown, key: string): unknown {
   }, bundle)
 }
 
-describe('claves de traducción', () => {
+describe('translation keys', () => {
   const sources = walk('src')
   const used = new Set<string>()
-  // Una clave no siempre está dentro de un `t()`: las hay en Records que se
-  // indexan después. Cuenta también cualquier literal 'seccion.algo' cuya
-  // sección exista en el paquete, que es lo que la distingue de una cadena.
+  // Keys also live in Records indexed later: count any 'section.key' literal
+  // whose section exists in the bundle.
   const sections = new Set(Object.keys(en))
   for (const file of sources) {
     const text = readFileSync(file, 'utf8')
@@ -72,7 +69,7 @@ describe('claves de traducción', () => {
   }
   for (const key of RUNTIME_KEYS) used.add(key)
 
-  it.each([...used].sort())('%s existe en los dos idiomas', (key) => {
+  it.each([...used].sort())('%s exists in both languages', (key) => {
     expect(typeof get(es, key), `es.${key}`).toBe('string')
     expect(typeof get(en, key), `en.${key}`).toBe('string')
   })

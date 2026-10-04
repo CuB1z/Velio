@@ -28,9 +28,8 @@ export function AppShell() {
         {t('nav.skipToContent')}
       </a>
 
-      {/* Raíl lateral en escritorio: rótulo bajo el icono, como la barra
-          inferior del móvil. Superficie y filete propios para que se lea como
-          cromo y no como parte del contenido. */}
+      {/* Desktop side rail: label under the icon, like the mobile bottom bar.
+          Own surface and border so it reads as chrome, not content. */}
       <nav
         aria-label={t('app.name')}
         className="hidden w-[84px] shrink-0 flex-col items-center border-e border-border bg-surface py-4 md:flex"
@@ -73,7 +72,7 @@ export function AppShell() {
       </nav>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Cabecera solo en móvil: en escritorio manda el raíl */}
+        {/* Mobile-only header: on desktop the rail takes over */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-3 md:hidden">
           <NavLink to="/" className="flex items-center" aria-label={t('app.name')}>
             <VelioLogo height={24} decorative />
@@ -88,7 +87,7 @@ export function AppShell() {
           <Outlet />
         </main>
 
-        {/* Barra inferior en móvil */}
+        {/* Mobile bottom bar */}
         <nav
           aria-label={t('app.name')}
           className="flex shrink-0 items-stretch border-t border-border bg-surface md:hidden"

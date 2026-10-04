@@ -8,19 +8,16 @@ beforeAll(async () => {
   await i18n.changeLanguage('es')
 })
 
-describe('selector de tema', () => {
-  it('no anida un botón dentro de otro', () => {
-    // Dropdown.Trigger ya es el <button>; meter un <Button> dentro produce
-    // <button><button>, HTML inválido que el navegador avisa por consola.
+describe('theme toggle', () => {
+  it('does not nest a button inside another', () => {
+    // Dropdown.Trigger already is the <button>; a nested <Button> is invalid HTML.
     const { container } = render(<ThemeToggle />)
     expect(container.querySelector('button button')).toBeNull()
     expect(screen.getAllByRole('button')).toHaveLength(1)
   })
 
-  it('el disparador recupera el flex que .dropdown__trigger le quita', () => {
-    // .dropdown__trigger impone display:block y gana a .button. Sin devolver
-    // inline-flex, el icono se pega al borde izquierdo y el fondo del hover
-    // se ve desplazado respecto a él.
+  it('the trigger restores the flex that .dropdown__trigger removes', () => {
+    // .dropdown__trigger forces display:block over .button's inline-flex.
     render(<ThemeToggle />)
     const trigger = screen.getByRole('button', { name: 'Cambiar de tema' })
     expect(trigger.className).toContain('inline-flex')

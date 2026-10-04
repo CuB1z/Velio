@@ -10,7 +10,7 @@ import { RouteMap } from './routeMap'
 
 const BIKES: BikeType[] = ['road', 'city', 'gravel', 'mtb']
 
-/** Un circuito real por bici, para que la diferencia se vea en el firme. */
+/** One real loop per bike, so the difference shows in the surface. */
 const FOR_BIKE: Record<BikeType, string> = {
   road: 'girona-road',
   city: 'sevilla-city',
@@ -19,9 +19,8 @@ const FOR_BIKE: Record<BikeType, string> = {
 }
 
 /**
- * La idea central del producto, demostrada en vez de contada: eliges bici y
- * cambia el circuito y su reparto de firme. Cada opción dibuja una ruta real
- * generada con esa bici.
+ * Pick a bike and the loop and its surface breakdown change. Each option draws
+ * a real route generated with that bike.
  */
 export function BikeShowcase() {
   const { t } = useTranslation()

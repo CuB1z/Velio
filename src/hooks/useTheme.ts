@@ -10,7 +10,7 @@ function read(): ThemePreference {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'light' || stored === 'dark' || stored === 'system') return stored
   } catch {
-    // localStorage inaccesible: se cae a la preferencia del sistema.
+    // localStorage unavailable: fall back to the system preference.
   }
   return 'system'
 }
@@ -25,7 +25,7 @@ function resolve(value: ThemePreference): 'light' | 'dark' {
   return value
 }
 
-/** El <html> lleva siempre una de las dos clases: HeroUI tematiza por clase. */
+/** <html> always carries one of the two classes: HeroUI themes by class. */
 function apply(): void {
   const dark = resolve(preference) === 'dark'
   const root = document.documentElement
@@ -41,12 +41,12 @@ function emit(): void {
   for (const listener of listeners) listener()
 }
 
-// Con la preferencia en «sistema», seguir al SO en caliente.
+// With the "system" preference, follow OS changes live.
 media?.addEventListener('change', () => {
   if (preference === 'system') emit()
 })
 
-// Otra pestaña cambió el tema: reflejarlo aquí también.
+// Another tab changed the theme: mirror it here.
 if (typeof window !== 'undefined') {
   window.addEventListener('storage', (event) => {
     if (event.key !== STORAGE_KEY) return
@@ -77,7 +77,7 @@ export function useTheme(): {
     try {
       localStorage.setItem(STORAGE_KEY, next)
     } catch {
-      // sin persistencia, pero el tema sigue aplicándose en esta sesión
+      // not persisted, but the theme still applies for this session
     }
     emit()
   }, [])
@@ -89,7 +89,7 @@ export function useTheme(): {
   return { preference: current, resolved: resolve(current), setPreference, toggle }
 }
 
-/** El mapa necesita saber el tema resuelto fuera de React. */
+/** The map needs the resolved theme outside React. */
 export function currentlyDark(): boolean {
   return resolve(preference) === 'dark'
 }

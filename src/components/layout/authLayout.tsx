@@ -28,7 +28,7 @@ export function AuthLayout({ children, footer }: Props) {
         {footer ? <div className="text-sm text-muted">{footer}</div> : null}
       </div>
 
-      {/* Panel decorativo: curvas de nivel, sin teselas ni peticiones de red. */}
+      {/* Decorative panel: contour lines, no tiles or network requests. */}
       <div className="relative hidden flex-1 overflow-hidden bg-accent lg:block" aria-hidden="true">
         <svg
           className="absolute inset-0 size-full"
@@ -55,8 +55,8 @@ export function AuthLayout({ children, footer }: Props) {
           <p className="max-w-md text-2xl font-semibold leading-snug tracking-tight text-pretty">
             {t('auth.heroClaim')}
           </p>
-          {/* Las cifras van en la traducción: llevan unidad y separador
-              decimal, que cambian con el idioma. */}
+          {/* Figures live in the translation: their unit and decimal separator
+              change with the locale. */}
           <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
             {(['Area', 'Dem', 'Speed'] as const).map((stat) => (
               <div key={stat}>

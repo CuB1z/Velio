@@ -30,7 +30,7 @@ export function LoginPage() {
       void navigate(from ?? '/loops', { replace: true })
     },
     onError: (cause) => {
-      // Una cuenta sin verificar no es un error del formulario: es el paso siguiente.
+      // An unverified account isn't a form error: it's the next step.
       if (isApiError(cause) && cause.code === 'EMAIL_NOT_VERIFIED') {
         void navigate(`/verify?email=${encodeURIComponent(email)}`)
         return

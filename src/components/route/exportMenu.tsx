@@ -11,7 +11,7 @@ import { useApiErrorMessage } from '../common/apiErrorMessage'
 
 type Props = {
   endpoint: 'loops' | 'routes'
-  /** El export recalcula: hay que reenviar la misma petición que produjo el resultado. */
+  /** Export recomputes the route: resend the same request that produced the result. */
   request: LoopRequest | RouteRequest
   name: string
   isDisabled?: boolean

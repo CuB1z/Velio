@@ -1,19 +1,16 @@
 import polyline from '@mapbox/polyline'
 
-/** Un track de varias horas trae decenas de miles de puntos; la API no los necesita. */
+/** Multi-hour tracks carry tens of thousands of points; the API doesn't need them. */
 const MAX_POINTS = 2000
 
 export type GpxTrack = {
-  /** polyline6, lo que espera /routes/analyze. */
+  /** polyline6, as /routes/analyze expects. */
   encoded: string
   pointCount: number
   name?: string
 }
 
-/**
- * Extrae la traza de un GPX. Se usa DOMParser en vez de una librería: el
- * navegador ya trae un parser de XML y solo necesitamos lat/lon de los trkpt.
- */
+/** Extracts the track from a GPX with the browser's DOMParser (only trkpt lat/lon). */
 export function parseGpx(xml: string): GpxTrack | null {
   const doc = new DOMParser().parseFromString(xml, 'application/xml')
   if (doc.querySelector('parsererror')) return null
@@ -37,7 +34,7 @@ export function parseGpx(xml: string): GpxTrack | null {
   }
 }
 
-/** Muestreo uniforme conservando el primer y el último punto. */
+/** Uniform sampling that keeps the first and last points. */
 function downsample(points: [number, number][]): [number, number][] {
   if (points.length <= MAX_POINTS) return points
   const step = (points.length - 1) / (MAX_POINTS - 1)

@@ -33,7 +33,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setStatus('anonymous')
   }, [])
 
-  // Debe quedar registrado antes de que ningún hijo lance una petición autenticada.
+  // Must be registered before any child fires an authenticated request.
   useLayoutEffect(() => {
     setAuthHandlers({
       getAccessToken: () => accessToken.current,
@@ -53,9 +53,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
     return () => setAuthHandlers(null)
   }, [applySession, clearSession])
 
-  // Arranque: si hay refresh token guardado, se canjea por una sesión viva.
-  // El setState aquí es deliberado: sincroniza con dos sistemas externos
-  // (localStorage y el backend), que es justo para lo que existen los efectos.
+  // On startup, exchange a stored refresh token for a live session.
+  // setState is deliberate here: the effect syncs with localStorage and the backend.
   // oxlint-disable-next-line react/set-state-in-effect
   useLayoutEffect(() => {
     if (bootstrapped.current) return
@@ -76,7 +75,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     })()
   }, [applySession, clearSession])
 
-  /** El fragmento solo trae tokens, así que el perfil se pide aparte. */
+  /** The fragment only carries tokens, so the profile is fetched separately. */
   const adoptTokens = useCallback(
     async (tokens: Tokens) => {
       accessToken.current = tokens.access_token
@@ -103,12 +102,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const logout = useCallback(async () => {
     const token = readRefreshToken()
-    // La sesión local se cierra pase lo que pase: si el backend no responde,
-    // dejar al usuario dentro sería peor que un refresh token huérfano.
+    // Always clear locally: an orphaned refresh token beats keeping the user signed in.
     try {
       if (token) await authApi.logout(token)
     } catch {
-      // sin efecto
+      // ignored
     } finally {
       clearSession()
     }

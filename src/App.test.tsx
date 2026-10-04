@@ -14,8 +14,8 @@ beforeEach(() => {
   window.history.pushState({}, '', '/')
 })
 
-describe('arranque de la aplicación', () => {
-  it('la portada es pública', async () => {
+describe('app bootstrap', () => {
+  it('the landing page is public', async () => {
     render(<App />)
 
     await waitFor(() => {
@@ -28,8 +28,7 @@ describe('arranque de la aplicación', () => {
     })
   })
 
-  it('el planificador exige sesión y redirige al login', async () => {
-    // Los endpoints de cálculo piden Bearer, así que sin sesión no hay planificador.
+  it('the planner requires a session and redirects to login', async () => {
     window.history.pushState({}, '', '/loops')
     render(<App />)
 
@@ -38,7 +37,7 @@ describe('arranque de la aplicación', () => {
     })
   })
 
-  it('con un refresh token guardado intenta canjearlo antes de decidir', async () => {
+  it('tries to exchange a stored refresh token before deciding', async () => {
     window.history.pushState({}, '', '/loops')
     localStorage.setItem('velio.refresh', 'un-token')
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -49,15 +48,14 @@ describe('arranque de la aplicación', () => {
 
     render(<App />)
 
-    // Si redirigiera antes de resolver el refresco, recargar echaría fuera a
-    // quien sí tiene sesión.
+    // Redirecting before the refresh resolves would kick out a valid session on reload.
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled())
     expect(fetchSpy.mock.calls[0][0]).toContain('/auth/refresh')
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Vuelve a la carretera' })).toBeInTheDocument()
     })
-    // Un refresh token muerto no debe quedarse guardado.
+    // A dead refresh token must not stay stored.
     expect(localStorage.getItem('velio.refresh')).toBeNull()
   })
 })

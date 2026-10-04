@@ -2,7 +2,7 @@ import type { LatLon } from '@/types/api'
 
 const EARTH_RADIUS_KM = 6371.0088
 
-/** Distancia en línea recta, en kilómetros. */
+/** Straight-line distance in kilometres. */
 export function haversineKm(a: LatLon, b: LatLon): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
   const dLat = toRad(b.lat - a.lat)
@@ -14,12 +14,8 @@ export function haversineKm(a: LatLon, b: LatLon): number {
 }
 
 /**
- * Distancia mínima que puede tener un circuito que pase por estos puntos.
- *
- * Un circuito que llega a un punto a D km del origen necesita al menos 2·D
- * para ir y volver, y por carretera siempre más. Pedir menos no da un
- * circuito: da una ida y vuelta por el mismo camino, porque es lo único que
- * cabe. Merece la pena avisar antes de calcular.
+ * Minimum length of a loop through these points: a point D km away needs at
+ * least 2·D. Asking for less can only yield an out-and-back.
  */
 export function minimumLoopKm(origin: LatLon | null, via: LatLon[]): number {
   if (!origin || via.length === 0) return 0

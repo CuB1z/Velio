@@ -7,7 +7,7 @@ import { TextInput } from '../common/field'
 import { useApiErrorMessage } from '../common/apiErrorMessage'
 
 type Props = {
-  /** Respuesta literal del endpoint de cálculo: es lo que el backend guarda. */
+  /** Verbatim response of the compute endpoint: it is what the backend stores. */
   payload: Record<string, unknown>
   defaultName: string
   isDisabled?: boolean

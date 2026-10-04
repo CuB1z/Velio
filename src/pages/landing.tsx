@@ -21,9 +21,9 @@ import { formatDistance, formatSigned } from '@/lib/format'
 import { LANDING_EXAMPLES } from './landingExamples'
 import { LANDING_WALL } from './landingWall'
 
-/** El circuito que ilustra la puntuación: el urbano de Usera, el mejor de los tres. */
+/** Loop that illustrates scoring: the Usera city loop, best of the three. */
 const SCORING_EXAMPLE = LANDING_EXAMPLES[0]
-/** La sierra pone la silueta del cierre. */
+/** The sierra loop provides the closing silhouette. */
 const SIERRA = LANDING_EXAMPLES[1]
 const CTA_EXAMPLE = LANDING_WALL.find((item) => item.key === 'mallorca-road') ?? LANDING_WALL[0]
 
@@ -47,8 +47,7 @@ const footerLink = 'inline-flex min-h-10 items-center text-[15px] text-muted tra
 export function LandingPage() {
   const { t } = useTranslation()
   const { status } = useAuth()
-  // Con sesión, la landing sigue siendo visitable (es la portada); lo que
-  // cambia es la acción: en vez de entrar o registrarse, abrir la app.
+  // Signed-in users can still visit the landing; the CTA opens the app instead of login/register.
   const authenticated = status === 'authenticated'
 
   const anchors = [
@@ -109,7 +108,7 @@ export function LandingPage() {
       <main>
         <HeroShowcase authenticated={authenticated} />
 
-        {/* ------------------------------------------------------------ bici */}
+        {/* ------------------------------------------------------------ bike */}
         <section id="bici" className="mt-24 bg-surface-secondary lg:mt-32">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:py-32">
             <Reveal className="max-w-2xl">
@@ -122,7 +121,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ------------------------------------------------------- funciones */}
+        {/* -------------------------------------------------------- features */}
         <section id="funciones">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:py-32">
             <Reveal className="max-w-2xl">
@@ -132,7 +131,7 @@ export function LandingPage() {
 
             <Reveal delay={100} className="mt-14">
               <Bento>
-                {/* La celda dominante: la app */}
+                {/* Dominant cell: the app */}
                 <BentoCell span={7} className="flex flex-col">
                   <div className="p-7 pb-5">
                     <BentoLabel title={t('landing.modeLoopTitle')} body={t('landing.modeLoopBody')} />
@@ -142,19 +141,19 @@ export function LandingPage() {
                   </div>
                 </BentoCell>
 
-                {/* Puntuación: un gráfico, no un mapa */}
+                {/* Scoring: a chart, not a map */}
                 <BentoCell span={5} className="flex flex-col gap-7 p-7">
                   <BentoLabel title={t('landing.scoringTitle')} body={t('landing.scoringBody')} />
                   <ScoreCard score={SCORING_EXAMPLE.result.cycling_score} hideElevation />
                 </BentoCell>
 
-                {/* Perfil de elevación */}
+                {/* Elevation profile */}
                 <BentoCell span={5} className="flex flex-col gap-5 p-7">
                   <BentoLabel title={t('landing.cellProfileTitle')} body={t('landing.cellProfileBody')} />
                   <ProfileCell />
                 </BentoCell>
 
-                {/* Una cifra, grande */}
+                {/* One big number */}
                 <BentoCell span={3} tone="ink" className="flex flex-col justify-center gap-3 p-7">
                   <div className="text-[15px] text-ink-muted">{t('landing.cellErrorLabel')}</div>
                   <div className="text-5xl font-semibold tracking-tight">
@@ -165,7 +164,7 @@ export function LandingPage() {
                   </p>
                 </BentoCell>
 
-                {/* Firme: la barra de datos */}
+                {/* Surface: the data bar */}
                 <BentoCell span={4} className="flex flex-col gap-5 p-7">
                   <BentoLabel title={t('landing.cellSurfaceTitle')} />
                   <SurfaceBar
@@ -174,7 +173,7 @@ export function LandingPage() {
                   />
                 </BentoCell>
 
-                {/* Exportar: texto puro */}
+                {/* Export: plain text */}
                 <BentoCell span={4} tone="parchment" className="flex flex-col justify-between gap-6 p-7">
                   <BentoLabel title={t('landing.modeExportTitle')} body={t('landing.modeExportBody')} />
                   <div className="flex gap-2">
@@ -196,7 +195,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* --------------------------------------- historia: ida y vuelta */}
+        {/* ------------------------------------------ story: out-and-back */}
         <section id="motor" className="bg-surface-secondary">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:py-32">
             <Reveal className="max-w-2xl">
@@ -210,7 +209,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ----------------------------------------------------------- datos */}
+        {/* ------------------------------------------------------------ data */}
         <section id="datos" className="bg-ink text-white">
           <div className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:py-32">
             <Reveal className="max-w-2xl">
@@ -264,7 +263,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ------------------------------------------------------- preguntas */}
+        {/* ------------------------------------------------------- questions */}
         <section id="preguntas" className="mx-auto max-w-6xl px-4 py-24 sm:px-6 lg:py-32">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,0.6fr)_minmax(0,1fr)] lg:gap-20">
             <Reveal>

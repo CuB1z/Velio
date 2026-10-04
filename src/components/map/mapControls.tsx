@@ -18,7 +18,7 @@ type Props = {
   onLocate?: () => void
 }
 
-/** Controles del mapa. Todos con objetivo táctil de 44 px, también en escritorio. */
+/** Map controls, all with a 44 px touch target, desktop included. */
 export function MapControls({
   styleId,
   onStyleChange,
@@ -31,8 +31,7 @@ export function MapControls({
 
   return (
     <div className="pointer-events-none absolute right-3 top-3 z-10 flex flex-col items-end gap-2">
-      {/* Segmentado sobre material translúcido: la misma píldora que en el
-        * formulario, sin sombra. */}
+      {/* Segmented control on translucent material: the form's pill, without shadow. */}
       <SegmentedControl
         label={t('map.style')}
         options={STYLES.map(({ id, labelKey }) => ({ id, label: t(labelKey) }))}

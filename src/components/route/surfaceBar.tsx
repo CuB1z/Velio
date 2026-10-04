@@ -14,12 +14,8 @@ type Props = {
 }
 
 /**
- * Barra apilada del firme.
- *
- * Cada tramo lleva etiqueta directa: es obligatorio, no decorativo. El par
- * naranja↔verde de la paleta queda en la banda baja de tritanopía y solo es
- * admisible con codificación secundaria. Los 2 px de hueco entre tramos son
- * parte de esa separación.
+ * Stacked surface bar. Every segment carries a direct label (required: the
+ * palette's orange/green pair needs a secondary encoding), plus 2 px gaps.
  */
 export function SurfaceBar({ score, distanceKm, className }: Props) {
   const { t } = useTranslation()

@@ -8,13 +8,8 @@ import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { AuthLayout } from '@/components/layout/authLayout'
 
 /**
- * Vuelta de OAuth.
- *
- * El backend redirige aquí con el resultado en el fragmento (`#`), que nunca
- * viaja al servidor: así los tokens no acaban en logs de acceso, proxies ni en
- * la cabecera Referer. Requiere `OAUTH_SUCCESS_REDIRECT` apuntando a esta ruta;
- * sin esa variable el backend responde JSON y el navegador nunca llega hasta
- * aquí.
+ * OAuth callback: reads the result from the URL fragment, which keeps tokens out of server logs, proxies and Referer.
+ * Requires the backend's `OAUTH_SUCCESS_REDIRECT` to point at this route.
  */
 export function OAuthCallbackPage() {
   const { t } = useTranslation()
@@ -24,14 +19,14 @@ export function OAuthCallbackPage() {
   const [error, setError] = useState<string | null>(null)
   const done = useRef(false)
 
-  // El intercambio ocurre una sola vez, contra un sistema externo.
+  // The exchange runs once, against an external system.
   // oxlint-disable-next-line react/set-state-in-effect
   useEffect(() => {
     if (done.current) return
     done.current = true
 
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-    // Se borra de la barra y del historial en cuanto se ha leído.
+    // Clear it from the address bar and history as soon as it's read.
     window.history.replaceState(null, '', window.location.pathname)
 
     const failure = fragment.get('error')

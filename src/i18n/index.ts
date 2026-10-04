@@ -14,7 +14,7 @@ function detect(): Language {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === 'es' || stored === 'en') return stored
   } catch {
-    // sin localStorage: se decide por el idioma del navegador
+    // no localStorage: fall back to the browser language
   }
   return navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'es'
 }
@@ -31,7 +31,7 @@ void i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 })
 
-/** format.ts lee el idioma de <html lang>, así que hay que mantenerlo al día. */
+/** format.ts reads the locale from <html lang>, so keep it in sync. */
 function syncDocumentLanguage(language: string): void {
   document.documentElement.lang = language
 }
@@ -43,7 +43,7 @@ i18n.on('languageChanged', (language) => {
   try {
     localStorage.setItem(STORAGE_KEY, language)
   } catch {
-    // sin persistencia; el idioma sigue aplicado en esta sesión
+    // no persistence; the language still applies for this session
   }
 })
 

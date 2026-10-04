@@ -8,11 +8,11 @@ import { TextInput } from '../common/field'
 
 type Props = {
   label: string
-  /** El grupo que lo contiene ya muestra el rótulo: dejarlo solo para lectores. */
+  /** The parent group already shows the label: keep it for screen readers only. */
   labelHidden?: boolean
   value: LatLon | null
   onChange: (value: LatLon | null) => void
-  /** Activa el modo "elegir en el mapa" para este campo. */
+  /** Enables "pick on map" mode for this field. */
   onPick?: () => void
   isPicking?: boolean
   onLocate?: () => void
@@ -33,8 +33,8 @@ export function CoordinateField({
   const [text, setText] = useState(value ? coordinatesToInput(value) : '')
   const [touched, setTouched] = useState(false)
 
-  // Cuando el punto llega del mapa hay que reflejarlo en el texto, pero sin
-  // pisar lo que el usuario esté escribiendo.
+  // Reflect a point picked on the map in the text, without overwriting what
+  // the user is typing.
   useEffect(() => {
     if (!value) return
     const parsed = parseCoordinates(text)
@@ -60,8 +60,8 @@ export function CoordinateField({
         value={text}
         onChange={handleChange}
         placeholder={t('planner.originPlaceholder')}
-        // Sin etiqueta visible el asterisco flota solo; el formulario ya
-        // impide enviar sin origen.
+        // Without a visible label the asterisk floats alone; the form already
+        // blocks submitting without an origin.
         isRequired={labelHidden ? undefined : isRequired}
         inputMode="decimal"
         errorMessage={invalid ? t('analyze.polylineInvalid') : undefined}

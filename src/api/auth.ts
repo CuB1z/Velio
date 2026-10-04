@@ -12,17 +12,17 @@ import type {
 } from '@/types/api'
 import { API_BASE_URL, request } from './client'
 
-/** Crea una cuenta pendiente y dispara el correo con el código. Devuelve el usuario, sin tokens. */
+/** Creates a pending account and emails the code. Returns the user, without tokens. */
 export function register(payload: RegisterRequest): Promise<User> {
   return request<User>('/auth/register', { method: 'POST', body: payload })
 }
 
-/** Confirma el código de seis dígitos y activa la cuenta. Idempotente si ya está activa. */
+/** Confirms the six-digit code and activates the account. Idempotent if already active. */
 export function verify(payload: VerifyRequest): Promise<User> {
   return request<User>('/auth/verify', { method: 'POST', body: payload })
 }
 
-/** Siempre 202: el endpoint no permite averiguar si un correo está registrado. */
+/** Always 202, so the endpoint can't reveal whether an email is registered. */
 export function resendVerification(email: string): Promise<void> {
   return request<void>('/auth/resend-verification', { method: 'POST', body: { email } })
 }
@@ -31,7 +31,7 @@ export function login(payload: LoginRequest): Promise<AuthSession> {
   return request<AuthSession>('/auth/login', { method: 'POST', body: payload })
 }
 
-/** Rota el par de tokens. El refresh usado queda revocado. */
+/** Rotates the token pair; the used refresh token is revoked. */
 export function refresh(refreshToken: string): Promise<AuthSession> {
   return request<AuthSession>('/auth/refresh', {
     method: 'POST',
@@ -58,49 +58,44 @@ export function revokeSession(id: number): Promise<void> {
   return request<void>(`/auth/sessions/${id}`, { method: 'DELETE', auth: true })
 }
 
-/** Cierra todas menos la del llamante. */
+/** Revokes every session except the caller's. */
 export function revokeOtherSessions(): Promise<void> {
   return request<void>('/auth/sessions', { method: 'DELETE', auth: true })
 }
 
-/** Siempre 202. Solo se envía código a cuentas activas con credencial local. */
+/** Always 202. Codes go only to active accounts with a local password. */
 export function forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
   return request<void>('/auth/forgot-password', { method: 'POST', body: payload })
 }
 
-/** Fija la contraseña nueva y revoca todas las sesiones. */
+/** Sets the new password and revokes every session. */
 export function resetPassword(payload: ResetPasswordRequest): Promise<void> {
   return request<void>('/auth/reset-password', { method: 'POST', body: payload })
 }
 
-/** Rota la credencial. También revoca todas las sesiones, incluida la actual. */
+/** Changes the password and revokes every session, the current one included. */
 export function changePassword(payload: ChangePasswordRequest): Promise<void> {
   return request<void>('/auth/change-password', { method: 'POST', body: payload, auth: true })
 }
 
-/** Paso 1 del borrado: pide el código por correo. Siempre 202. */
+/** Deletion step 1: emails the code. Always 202. */
 export function requestAccountDeletion(): Promise<void> {
   return request<void>('/auth/me/delete-request', { method: 'POST', auth: true })
 }
 
-/** Paso 2 del borrado: irreversible, en cascada sobre rutas, sesiones e identidades. */
+/** Deletion step 2: irreversible, cascades to routes, sessions and identities. */
 export function deleteAccount(code: string): Promise<void> {
   return request<void>('/auth/me', { method: 'DELETE', body: { code }, auth: true })
 }
 
-/**
- * El backend responde 307 hacia el proveedor, así que se navega, no se hace fetch.
- */
+/** The backend answers 307 to the provider, so navigate to it instead of fetching. */
 export function oauthAuthorizeUrl(provider: OAuthProvider): string {
   return `${API_BASE_URL}/auth/${provider}/authorize`
 }
 
 /**
- * Cierra la vuelta de OAuth desde un cliente que sí puede leer la respuesta.
- *
- * La web no la usa: con OAUTH_SUCCESS_REDIRECT configurado, el backend redirige
- * el navegador a /oauth/callback con los tokens en el fragmento. Queda por si
- * hace falta cerrar la vuelta desde código.
+ * Completes the OAuth flow for a client that can read the response.
+ * Unused by the web app, which receives the tokens in the /oauth/callback fragment.
  */
 export function oauthCallback(
   provider: OAuthProvider,

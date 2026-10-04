@@ -1,10 +1,9 @@
 /**
- * Contrato real de la API de Velio.
- * Reflejo fiel de cycling-router/docs/api.md — no inventar campos aquí.
- * Todo cuelga de /api/v1 salvo /api/health.
+ * Velio API contract, mirroring cycling-router/docs/api.md: don't invent fields.
+ * Everything lives under /api/v1 except /api/health.
  */
 
-/* ------------------------------------------------------------------ comunes */
+/* ------------------------------------------------------------------- common */
 
 export type LatLon = { lat: number; lon: number }
 
@@ -29,7 +28,7 @@ export type ErrorCode =
   | 'NETWORK_ERROR'
   | 'UNKNOWN'
 
-/** Cuerpo de error común a todos los endpoints: {error, message, details}. */
+/** Error body shared by every endpoint: {error, message, details}. */
 export type ApiErrorBody = {
   error: ErrorCode
   message: string
@@ -68,7 +67,7 @@ export type Tokens = {
   token_type: 'bearer'
 }
 
-/** login, refresh y el callback de OAuth devuelven esta forma. */
+/** Returned by login, refresh and the OAuth callback. */
 export type AuthSession = {
   user: User
   tokens: Tokens
@@ -77,9 +76,9 @@ export type AuthSession = {
 export type DeviceSession = {
   id: number
   created_at: string
-  /** Un cliente puede no enviar User-Agent. */
+  /** null when the client sent no User-Agent. */
   user_agent: string | null
-  /** El backend marca la sesión del propio llamante vía el claim `sid`. */
+  /** The caller's own session, flagged via the `sid` claim. */
   current: boolean
 }
 
@@ -93,32 +92,29 @@ export type DeleteAccountRequest = { code: string }
 
 export type OAuthProvider = 'google'
 
-/* ------------------------------------------------------- métricas de una ruta */
+/* -------------------------------------------------------------- route metrics */
 
-/** Calidad del firme derivada de los datos de arista de Valhalla. */
+/** Surface quality derived from Valhalla edge data. */
 export type SurfaceScore = {
-  /** 0-100, calidad de firme ponderada por distancia. */
+  /** 0-100, distance-weighted surface quality. */
   comfort: number
-  /** Fracción del recorrido sobre firme asfaltado, 0-1. */
+  /** Paved fraction of the route, 0-1. */
   paved_share: number
-  /** Kilómetros por tipo de firme, p. ej. { dirt: 36.44, paved_smooth: 29.86 }. */
+  /** Km per surface type, e.g. { dirt: 36.44, paved_smooth: 29.86 }. */
   surface_km: Record<string, number>
-  /** Metros equivalentes verticales de pendiente positiva. */
+  /** Equivalent vertical metres of uphill grade. */
   climb_load_m: number
   max_grade_pct: number
 }
 
-/** Valoración multifactor 0-10. `elevation` solo aparece cuando hubo objetivo de desnivel. */
+/** Multi-factor 0-10 score. */
 export type CyclingScore = {
   distance: number
-  /**
-   * Exposición al tráfico. Es un eje aparte del firme a propósito: un camino
-   * de parque cerrado a coches es ciclismo estupendo aunque sea de tierra.
-   */
+  /** Traffic exposure, separate from surface: a car-free dirt park path is great cycling. */
   safety: number
-  /** Qué hay bajo las ruedas, con independencia de quién más circule por ahí. */
+  /** What's under the wheels, regardless of traffic. */
   surface: number
-  /** Siempre presente: el esquema lo declara obligatorio. */
+  /** Always present: required in the schema. */
   elevation: number
   overlap_penalty: number
   total: number
@@ -129,24 +125,22 @@ export type ElevationPoint = {
   lon: number
   distance_m: number
   elevation_m: number
-  /** null en el primer punto: no hay tramo previo con el que calcular pendiente. */
+  /** null on the first point (no previous segment). */
   grade_pct: number | null
 }
 
 /**
- * Con qué bici sales, que es lo que filtra el terreno. Es la palanca más
- * fuerte del motor: medido sobre el mismo tramo, `road` sale con un 0,4% de
- * pista y `mtb` con un 53%. `city` es la de carretera que rehúye el tráfico:
- * carril bici y vías verdes, sin calzada y sin barro.
+ * Bike type, which filters terrain; the engine's strongest lever. `city` is a
+ * road bike avoiding traffic: bike lanes and greenways, no roadway, no mud.
  */
 export type BikeType = 'road' | 'city' | 'gravel' | 'mtb'
 
-/** Cuánto desnivel buscar. Independiente de la bici: cualquier combinación vale. */
+/** How much climbing to seek; independent of the bike type. */
 export type HillsPreference = 'flat' | 'rolling' | 'hilly'
 
 export type BicycleType = 'Road' | 'Hybrid' | 'Mountain' | 'Cross'
 
-/** Sobrescrituras crudas del costing de Valhalla, por encima de `bike` y `hills`. */
+/** Raw Valhalla costing overrides, applied on top of `bike` and `hills`. */
 export type Costing = {
   bicycle_type?: BicycleType
   use_roads?: number
@@ -163,15 +157,15 @@ export type LoopRequest = {
   distance_km: number
   gain_m?: number
   via?: LatLon[]
-  /** Tolerancia de distancia, fracción. Por defecto 0.05. */
+  /** Distance tolerance as a fraction. Default 0.05. */
   tolerance?: number
-  /** Tolerancia de desnivel, fracción. Por defecto 0.20. */
+  /** Elevation tolerance as a fraction. Default 0.20. */
   gain_tolerance?: number
   waypoint_count?: number
   max_iterations?: number
   bike?: BikeType
   hills?: HillsPreference
-  /** >1 devuelve circuitos extra en `alternatives`, cada uno vetando los puertos del anterior. */
+  /** >1 returns extra loops in `alternatives`, each vetoing the previous one's climbs. */
   routes?: number
   costing?: Costing
   include_profile?: boolean
@@ -181,16 +175,16 @@ export type LoopResult = {
   distance_km: number
   gain_m: number
   loss_m: number
-  /** false = mejor intento posible; no se alcanzaron los objetivos desde ese origen. */
+  /** false = best effort; the targets weren't reachable from that origin. */
   feasible: boolean
   iterations: number
-  /** polyline6 (precisión 1e-6). */
+  /** polyline6 (1e-6 precision). */
   polyline: string
   duration_min: number
-  /** null cuando Valhalla no aporta way ids. */
+  /** null when Valhalla returns no way ids. */
   overlap_ratio: number | null
   score: SurfaceScore | null
-  /** null cuando el motor no ha podido puntuar el trazado. */
+  /** null when the engine couldn't score the track. */
   cycling_score: CyclingScore | null
   profile?: ElevationPoint[] | null
   alternatives?: LoopResult[] | null
@@ -199,13 +193,13 @@ export type LoopResult = {
 /* ------------------------------------------------------------------- routes */
 
 export type RouteRequest = {
-  /** De 2 a 20 puntos, en orden. */
+  /** 2 to 20 points, in order. */
   waypoints: LatLon[]
   bike?: BikeType
   hills?: HillsPreference
   costing?: Costing
   include_profile?: boolean
-  /** Hasta 2 trazados extra entre los mismos puntos. */
+  /** Up to 2 extra tracks between the same points. */
   alternatives?: number
 }
 
@@ -222,7 +216,7 @@ export type RouteResult = {
   alternatives?: RouteResult[] | null
 }
 
-/** Lo que comparten loop y route: todo lo que necesitan mapa, métricas y export. */
+/** Shared loop/route shape: everything the map, metrics and export need. */
 export type AnyRouteResult = RouteResult & Partial<Pick<LoopResult, 'feasible' | 'iterations'>>
 
 /* -------------------------------------------------------- analyze / elevation */
@@ -253,12 +247,12 @@ export type ElevationResult = {
   profile: ElevationPoint[]
 }
 
-/* ------------------------------------------------------------- rutas guardadas */
+/* ---------------------------------------------------------------- saved routes */
 
 export type SavedRoute = {
   id: string
   name: string
-  /** Respuesta literal del endpoint de cálculo que la produjo. */
+  /** Raw response of the compute endpoint that produced it. */
   payload: Record<string, unknown>
   created_at: string
   updated_at: string

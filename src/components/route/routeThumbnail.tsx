@@ -12,7 +12,7 @@ type Props = {
   height?: number
 }
 
-/** Silueta de la ruta, sin mapa: en una rejilla de tarjetas basta la forma. */
+/** Route silhouette without a map: in a card grid the shape is enough. */
 export function RouteThumbnail({ polyline, className, width = 320, height = 140 }: Props) {
   const { resolved } = useTheme()
   const palette = ink(resolved)
@@ -26,8 +26,8 @@ export function RouteThumbnail({ polyline, className, width = 320, height = 140 
     const spanLng = Math.max(maxLng - minLng, 1e-6)
     const spanLat = Math.max(maxLat - minLat, 1e-6)
 
-    // Se conserva la proporción real corrigiendo la convergencia de meridianos,
-    // para que un circuito no salga aplastado según la latitud.
+    // Correct for meridian convergence to keep the real aspect ratio, so a loop
+    // is not squashed depending on latitude.
     const cosLat = Math.cos(((minLat + maxLat) / 2) * (Math.PI / 180))
     const dataWidth = spanLng * cosLat
     const dataHeight = spanLat
@@ -38,7 +38,7 @@ export function RouteThumbnail({ polyline, className, width = 320, height = 140 
 
     const points = coordinates.map(([lng, lat]) => {
       const x = offsetX + (lng - minLng) * cosLat * scale
-      // El eje Y de SVG crece hacia abajo; la latitud, hacia arriba.
+      // SVG's Y axis grows downwards; latitude grows upwards.
       const y = height - offsetY - (lat - minLat) * scale
       return `${x.toFixed(1)} ${y.toFixed(1)}`
     })

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-/** Cuenta atrás para reenviar códigos, en segundos. */
+/** Countdown in seconds before a code can be resent. */
 export function useCooldown(seconds: number): { left: number; start: () => void } {
   const [left, setLeft] = useState(0)
   const timer = useRef<number | null>(null)

@@ -9,13 +9,13 @@ import type { ElevationPoint } from '@/types/api'
 
 const PAD = { top: 10, right: 10, bottom: 20, left: 46 }
 
-/** Un perfil de 70 km trae ~7000 puntos; dibujarlos todos no aporta un píxel. */
+/** A 70 km profile has ~7000 points; drawing them all adds nothing visible. */
 const MAX_POINTS = 600
 
 type Props = {
   profile: ElevationPoint[]
   height?: number
-  /** Distancia total en km, para rotular el eje aunque el muestreo se recorte. */
+  /** Total distance in km, to label the axis even when sampling trims the profile. */
   distanceKm: number
 }
 
@@ -28,8 +28,7 @@ function downsample(profile: ElevationPoint[]): ElevationPoint[] {
   for (let i = 0; i < MAX_POINTS; i += 1) {
     const from = Math.floor(i * step)
     const to = Math.min(profile.length, Math.floor((i + 1) * step))
-    // Nos quedamos con el punto más alto del tramo: así no se pierden los
-    // puertos al reducir la resolución.
+    // Keep the highest point of each bucket so downsampling does not drop the climbs.
     let peak = profile[from]
     for (let j = from + 1; j < to; j += 1) {
       if (profile[j].elevation_m > peak.elevation_m) peak = profile[j]
@@ -41,7 +40,7 @@ function downsample(profile: ElevationPoint[]): ElevationPoint[] {
   return out
 }
 
-/** Escalones "bonitos" para el eje de altitud. */
+/** "Nice" steps for the altitude axis. */
 function niceTicks(min: number, max: number, count = 3): number[] {
   const span = Math.max(1, max - min)
   const raw = span / count
@@ -79,7 +78,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
       if (point.elevation_m < minElevation) minElevation = point.elevation_m
       if (point.elevation_m > maxElevation) maxElevation = point.elevation_m
     }
-    // Un margen del 8 % evita que la cresta toque el borde superior.
+    // An 8 % margin keeps the crest off the top edge.
     const span = Math.max(20, maxElevation - minElevation)
     const low = minElevation - span * 0.08
     const high = maxElevation + span * 0.08
@@ -117,8 +116,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
       if (!rect) return
 
       const x = event.clientX - rect.left
-      // Búsqueda binaria: en cada movimiento del puntero recorrer 600 puntos
-      // se nota en móviles modestos.
+      // Binary search: scanning 600 points on every pointer move shows on low-end phones.
       let lo = 0
       let hi = chart.samples.length - 1
       while (hi - lo > 1) {
@@ -154,7 +152,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
     )
   }
 
-  // Cerca del borde derecho el globo se voltea al otro lado del cursor.
+  // Near the right edge the tooltip flips to the other side of the cursor.
   const tooltipFlips = hover ? hover.x > (width || 0) - 190 : false
 
   return (
@@ -244,7 +242,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
                   strokeWidth={1}
                   strokeDasharray="3 3"
                 />
-                {/* Anillo del color de la superficie: el punto se lee sobre la línea. */}
+                {/* Surface-colored ring so the dot reads against the line. */}
                 <circle cx={hover.x} cy={hover.y} r={5} fill={color} stroke={palette.surface} strokeWidth={2} />
               </g>
             ) : null}

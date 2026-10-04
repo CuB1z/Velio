@@ -1,4 +1,4 @@
-/** Iconos compartidos entre secciones. Los de un solo uso viven en su fichero. */
+/** Icons shared across sections. Single-use icons live in their own file. */
 
 export function ChevronIcon({ className }: { className?: string }) {
   return (

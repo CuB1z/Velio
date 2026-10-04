@@ -17,18 +17,14 @@ function renderControls(styleId: 'map' | 'satellite', onStyleChange = vi.fn()) {
   return onStyleChange
 }
 
-// jsdom habla ingles; el resto de la suite fija el idioma igual.
+// jsdom defaults to English; pin the language like the rest of the suite.
 beforeAll(async () => {
   await i18n.changeLanguage('es')
 })
 
 describe('MapControls', () => {
-  /*
-   * Regresión visual: con ToggleButtonGroup de HeroUI el botón *no*
-   * seleccionado se pintaba como un botón sólido, así que sobre el satélite el
-   * inactivo parecía el activo. Solo uno de los dos puede estar pulsado.
-   */
-  it('marca como pulsado únicamente el estilo activo', () => {
+  // Regression guard: HeroUI's ToggleButtonGroup painted both buttons solid.
+  it('marks only the active style as pressed', () => {
     renderControls('satellite')
 
     expect(screen.getByRole('button', { name: 'Satélite' })).toHaveAttribute(
@@ -41,12 +37,7 @@ describe('MapControls', () => {
     )
   })
 
-  it('solo el activo lleva la píldora', () => {
-    /*
-     * El fallo era visual, no semántico: con el grupo de HeroUI los dos
-     * botones se pintaban con fondo sólido. Un control segmentado solo puede
-     * tener uno marcado o no se sabe cuál está puesto.
-     */
+  it('only the active style gets the pill', () => {
     renderControls('satellite')
 
     const selected = ['Mapa', 'Satélite'].filter(
@@ -56,7 +47,7 @@ describe('MapControls', () => {
     expect(selected).toEqual(['Satélite'])
   })
 
-  it('cambia de estilo al pulsar el otro', async () => {
+  it('switches style when the other one is pressed', async () => {
     const onStyleChange = renderControls('map')
 
     await userEvent.click(screen.getByRole('button', { name: 'Satélite' }))

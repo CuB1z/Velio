@@ -7,7 +7,7 @@ import type { BikeType, HillsPreference } from '@/types/api'
 const BIKES: BikeType[] = ['road', 'city', 'gravel', 'mtb']
 const HILLS: HillsPreference[] = ['flat', 'rolling', 'hilly']
 
-/** Cuatro posiciones y una línea que dice qué implica la elegida. */
+/** Four options and a line saying what the selected one implies. */
 export function BikeSegments({
   bike,
   onChange,
@@ -48,9 +48,8 @@ export function HillsSegments({
 }
 
 /**
- * Las dos preguntas que se hace un ciclista antes de salir, como dos grupos.
- * El planificador de circuitos las reparte en su propia estructura; este
- * conjunto es para las pantallas que solo necesitan las dos juntas.
+ * The two questions a rider asks before heading out, as two groups. For screens
+ * that need both together; the loop planner lays them out itself.
  */
 export function BikePicker({
   bike,

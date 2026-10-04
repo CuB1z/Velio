@@ -1,14 +1,7 @@
 /**
- * Contrasta src/types/api.ts con el esquema OpenAPI del backend.
- *
- * Nació de un fallo real: `cycling_score` es nullable en el esquema pero yo lo
- * había transcrito como obligatorio, y al llegar un null la página entera se
- * caía. Este contraste existe para que ese tipo de deriva la cante una prueba
- * y no el usuario.
- *
- * Se compara contra contract/openapi.json, una instantánea versionada, para
- * que CI no dependa de un backend en marcha. Se refresca con:
- *   pnpm contract:pull
+ * Checks src/types/api.ts against the backend's OpenAPI schema, using the
+ * versioned contract/openapi.json snapshot so CI needs no running backend.
+ * Refresh it with `pnpm contract:pull`.
  */
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -16,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-/** Nombre del esquema en el backend → nombre del tipo en el frontend. */
+/** Backend schema name → frontend type name. */
 export const SCHEMA_TO_TYPE = {
   LoopResponse: 'LoopResult',
   RouteResponse: 'RouteResult',
@@ -49,17 +42,15 @@ export function loadSpec() {
   return JSON.parse(readFileSync(join(ROOT, 'contract/openapi.json'), 'utf8'))
 }
 
-/** Parseo deliberadamente tonto: los tipos del contrato son objetos planos. */
+/** Deliberately naive parser: contract types are flat objects. */
 export function parseTypes(source = readFileSync(join(ROOT, 'src/types/api.ts'), 'utf8')) {
   const types = {}
-  // Los comentarios se quitan antes de trocear: alguno contiene llaves
-  // (`{ dirt: 36.44 }`) y le cortaban el bloque al buscador.
+  // Strip comments first: some contain braces (`{ dirt: 36.44 }`) that would cut a block short.
   source = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
   const blocks = source.matchAll(/export type (\w+) = \{([\s\S]*?)\n?\}/g)
   for (const [, name, body] of blocks) {
     const fields = {}
-    // Un tipo puede venir en una línea (`{ lat: number; lon: number }`) o en
-    // varias; se normaliza a una lista de campos en ambos casos.
+    // Handles single-line (`{ lat: number; lon: number }`) and multi-line types.
     for (const line of body.split(/[\n;]/)) {
       const clean = line.trim()
       const match = clean.match(/^(\w+)(\?)?:\s*(.+?)$/)
@@ -76,7 +67,7 @@ export function parseTypes(source = readFileSync(join(ROOT, 'src/types/api.ts'),
   return types
 }
 
-/** Un campo del esquema es nullable si su tipo lo dice o si es anyOf con null. */
+/** A schema field is nullable if its type says so or it is anyOf with null. */
 function specField(schema) {
   const nullable =
     schema.type === 'null' ||
@@ -92,12 +83,12 @@ export function compare(spec = loadSpec(), types = parseTypes()) {
   for (const [schemaName, typeName] of Object.entries(SCHEMA_TO_TYPE)) {
     const schema = schemas[schemaName]
     if (!schema) {
-      problems.push(`${schemaName}: no está en el esquema del backend`)
+      problems.push(`${schemaName}: not in the backend schema`)
       continue
     }
     const type = types[typeName]
     if (!type) {
-      problems.push(`${typeName}: no está en src/types/api.ts (esquema ${schemaName})`)
+      problems.push(`${typeName}: not in src/types/api.ts (schema ${schemaName})`)
       continue
     }
 
@@ -105,30 +96,30 @@ export function compare(spec = loadSpec(), types = parseTypes()) {
     for (const [field, sub] of Object.entries(schema.properties ?? {})) {
       const mine = type[field]
       if (!mine) {
-        problems.push(`${typeName}.${field}: falta en el frontend`)
+        problems.push(`${typeName}.${field}: missing in the frontend`)
         continue
       }
       const { nullable } = specField(sub)
       if (nullable && !mine.nullable && !mine.optional) {
         problems.push(
-          `${typeName}.${field}: el backend lo declara nullable y el frontend no (${mine.raw})`,
+          `${typeName}.${field}: nullable in the backend but not in the frontend (${mine.raw})`,
         )
       }
       if (required.has(field) && mine.optional) {
-        problems.push(`${typeName}.${field}: el backend lo exige y el frontend lo hace opcional`)
+        problems.push(`${typeName}.${field}: required by the backend but optional in the frontend`)
       }
     }
 
     for (const field of Object.keys(type)) {
       if (!(field in (schema.properties ?? {}))) {
-        problems.push(`${typeName}.${field}: no existe en el esquema ${schemaName}`)
+        problems.push(`${typeName}.${field}: not in schema ${schemaName}`)
       }
     }
   }
   return problems
 }
 
-/** Rutas que el frontend llama de verdad, sacadas de src/api/*.ts. */
+/** Paths the frontend actually calls, scraped from src/api/*.ts. */
 export function usedPaths() {
   const dir = join(ROOT, 'src/api')
   const found = new Map()
@@ -145,7 +136,7 @@ export function usedPaths() {
   return [...found.values()]
 }
 
-/** El backend nombra los parámetros de ruta; el frontend los interpola. */
+/** The backend names path params; the frontend interpolates them. */
 function normalise(path) {
   return path.replace(/\{[^}]+\}/g, '{param}')
 }
@@ -160,11 +151,10 @@ export function comparePaths(spec = loadSpec()) {
     }
   }
   for (const { path, method } of usedPaths()) {
-    // Un primer segmento interpolado (`/${endpoint}`) no es un parámetro de
-    // ruta sino una elección entre endpoints: no se puede verificar aquí.
+    // An interpolated first segment (`/${endpoint}`) picks between endpoints; not checkable here.
     if (path.startsWith('/{param}')) continue
     const key = `${method.toUpperCase()} ${normalise(base + path)}`
-    if (!known.has(key)) problems.push(`${key}: el frontend la llama y el backend no la expone`)
+    if (!known.has(key)) problems.push(`${key}: called by the frontend but not exposed by the backend`)
   }
   return problems
 }

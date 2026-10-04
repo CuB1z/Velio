@@ -1,11 +1,11 @@
 import type { ApiErrorBody, ErrorCode } from '@/types/api'
 
-/** Error tipado de la API. Todo fallo de red o de negocio llega como esto. */
+/** Typed API error; every network or business failure arrives as one. */
 export class ApiError extends Error {
   readonly code: ErrorCode
   readonly status: number
   readonly details?: Record<string, unknown>
-  /** Segundos hasta el próximo intento, solo en 429. */
+  /** Seconds until the next attempt, only on 429. */
   readonly retryAfter?: number
 
   constructor(init: {
@@ -28,7 +28,7 @@ export function isApiError(value: unknown): value is ApiError {
   return value instanceof ApiError
 }
 
-/** Códigos ante los que reintentar no sirve de nada. */
+/** Codes where retrying never helps. */
 const TERMINAL: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'VALIDATION_ERROR',
   'INVALID_CREDENTIALS',
@@ -59,7 +59,7 @@ function derivedCode(status: number): ErrorCode {
   return 'UNKNOWN'
 }
 
-/** Traduce una respuesta fallida al error tipado, tolerando cuerpos no-JSON. */
+/** Turns a failed response into a typed error, tolerating non-JSON bodies. */
 export async function errorFromResponse(response: Response): Promise<ApiError> {
   const retryAfterHeader = response.headers.get('retry-after')
   let body: Partial<ApiErrorBody> = {}
@@ -67,12 +67,12 @@ export async function errorFromResponse(response: Response): Promise<ApiError> {
   try {
     body = (await response.json()) as Partial<ApiErrorBody>
   } catch {
-    // Un proxy o un 502 pueden devolver HTML: nos quedamos con el estado.
+    // A proxy or a 502 may return HTML: keep just the status.
   }
 
   return new ApiError({
     code: body.error ?? derivedCode(response.status),
-    message: body.message ?? `La petición falló con estado ${response.status}`,
+    message: body.message ?? `Request failed with status ${response.status}`,
     status: response.status,
     details: body.details,
     retryAfter: retryAfterHeader ? Number.parseInt(retryAfterHeader, 10) : undefined,

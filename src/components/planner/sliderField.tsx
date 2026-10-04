@@ -9,23 +9,18 @@ type Props = {
   max: number
   step?: number
   /**
-   * Con unidad, el valor se puede escribir: un slider de 1 km en 500 no se
-   * clava arrastrando. Sin ella se muestra `display` tal cual.
+   * With a unit, the value is typeable: 1 km on a 500 km slider is hard to hit by
+   * dragging. Without one, `display` is shown as is.
    */
   unit?: string
-  /** Valor ya formateado, para los usos que no necesitan edición. */
+  /** Pre-formatted value, for uses that need no editing. */
   display?: string
   hint?: string
 }
 
 /**
- * El Slider de HeroUI es un grid con áreas propias — "label output" arriba y
- * "track" debajo —, así que sus tres hijos van directamente dentro: meter un
- * div de por medio saca a la etiqueta de su área.
- *
- * Aspecto: pista fina de 4px y pomo blanco de 24px con hairline, en vez de la
- * pista gorda y el pomo azul por defecto. El pomo se posiciona a la mitad de
- * la pista, así que puede ser más alto que ella sin romper nada.
+ * HeroUI's Slider is a grid with named areas ("label output" / "track"), so its
+ * three children must be direct: a wrapper div pulls the label out of its area.
  */
 export function SliderField({
   label,
@@ -73,10 +68,8 @@ export function SliderField({
 }
 
 /**
- * El valor como campo: se escribe, se confirma al salir o con Intro, y se
- * acota al rango del slider. El borrador solo existe mientras el campo tiene
- * el foco; fuera de él se muestra el valor real, así el slider y el campo no
- * necesitan sincronizarse con un efecto.
+ * The value as an input: commits on blur or Enter, clamped to the slider range.
+ * The draft only exists while focused, so slider and input need no sync effect.
  */
 function EditableValue({
   label,

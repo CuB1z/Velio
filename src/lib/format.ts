@@ -1,10 +1,6 @@
 /**
- * Formato único para toda la app.
- *
- * Español: decimales con coma y espacio fino antes del %, también en las
- * coordenadas (mezclar 40.5964 con 68,8 en el mismo panel se lee como un fallo).
- * El signo menos es U+2212, no un guion, para que no rompa línea ni se confunda
- * con un separador.
+ * App-wide number and date formatting; coordinates use the same decimal separator.
+ * Minus is U+2212, not a hyphen, so it never breaks a line or reads as a separator.
  */
 
 const MINUS = '−'
@@ -22,7 +18,7 @@ function number(value: number, decimals: number): string {
   }).format(value)
 }
 
-/** 68,8 km · 118 km (sin decimales a partir de 100, donde ya no aportan). */
+/** 68,8 km · 118 km (no decimals from 100 km up). */
 export function formatDistance(km: number): string {
   return `${number(km, km >= 100 ? 0 : 1)}${NBSP}km`
 }
@@ -31,14 +27,14 @@ export function formatElevation(meters: number): string {
   return `${number(Math.round(meters), 0)}${NBSP}m`
 }
 
-/** Desnivel con signo explícito: +922 m / −921 m. */
+/** Elevation with an explicit sign: +922 m / −921 m. */
 export function formatSigned(meters: number): string {
   const rounded = Math.round(meters)
   const sign = rounded < 0 ? MINUS : '+'
   return `${sign}${number(Math.abs(rounded), 0)}${NBSP}m`
 }
 
-/** El backend da la duración en minutos: 178,4 → "2 h 58". */
+/** API duration in minutes: 178.4 → "2 h 58". */
 export function formatDuration(minutes: number): string {
   if (!Number.isFinite(minutes) || minutes < 0) return '—'
   const total = Math.round(minutes)
@@ -49,34 +45,30 @@ export function formatDuration(minutes: number): string {
   return `${hours}${NBSP}h${NBSP}${String(rest).padStart(2, '0')}`
 }
 
-/** Fracción 0-1 → "4,1 %". */
+/** Fraction 0-1 → "4,1 %". */
 export function formatRatio(ratio: number, decimals = 1): string {
   return `${number(ratio * 100, decimals)}${NBSP}%`
 }
 
-/** Porcentaje ya expresado como tal → "24,0 %". Un decimal siempre, para no bailar. */
+/** Value already in percent → "24,0 %". Fixed decimals so values don't jitter. */
 export function formatPercent(percent: number, decimals = 1): string {
   const sign = percent < 0 ? MINUS : ''
   return `${sign}${number(Math.abs(percent), decimals)}${NBSP}%`
 }
 
-/** Puntuaciones 0-10 y 0-100 con un decimal fijo. */
+/** 0-10 and 0-100 scores with fixed decimals. */
 export function formatScore(value: number, decimals = 1): string {
   return number(value, decimals)
 }
 
-/** 40,5964 · −3,6318 — mismo criterio decimal que el resto de la interfaz. */
+/** 40,5964 · −3,6318, same decimal separator as the rest of the UI. */
 export function formatCoordinates(lat: number, lon: number): string {
   const one = (value: number) =>
     `${value < 0 ? MINUS : ''}${number(Math.abs(value), 4)}`
   return `${one(lat)} · ${one(lon)}`
 }
 
-/**
- * `Intl.DateTimeFormat.format` lanza `RangeError` ante un `Date` inválido, lo
- * que tumbaría la pantalla entera por un solo campo mal formado. Una marca de
- * tiempo ilegible se pinta como raya.
- */
+/** Invalid timestamps render as a dash: `Intl.DateTimeFormat` throws `RangeError` on them. */
 function whenValid(iso: string, render: (date: Date) => string): string {
   const date = new Date(iso)
   return Number.isNaN(date.getTime()) ? EM_DASH : render(date)
@@ -103,7 +95,7 @@ export function formatDateTime(iso: string): string {
   )
 }
 
-/** "hace 3 días". Cae a fecha absoluta pasado un mes, donde lo relativo estorba. */
+/** "3 days ago"; falls back to an absolute date after a month. */
 export function formatRelative(iso: string): string {
   const then = new Date(iso).getTime()
   if (Number.isNaN(then)) return EM_DASH

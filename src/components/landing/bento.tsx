@@ -2,11 +2,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/lib/cn'
 
-/**
- * Rejilla bento: celdas de distinto tamaño en un marco común. Es lo que da
- * variedad a una sección de funciones — una captura grande manda, y alrededor
- * conviven gráficos, cifras y texto. Hueco y radio uniformes.
- */
+/** Bento grid: cells of different sizes in a shared frame, with uniform gap and radius. */
 export function Bento({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-6 lg:grid-cols-12', className)}>
@@ -22,7 +18,7 @@ export function BentoCell({
   className,
 }: {
   children: ReactNode
-  /** Columnas que ocupa en la rejilla de 12 (en móvil siempre ocupa todo). */
+  /** Columns spanned in the 12-column grid (always full width on mobile). */
   span?: 3 | 4 | 5 | 6 | 7 | 8 | 12
   tone?: 'surface' | 'parchment' | 'ink' | 'accent'
   className?: string
@@ -49,7 +45,7 @@ export function BentoCell({
   )
 }
 
-/** Cabecera común de una celda: rótulo pequeño y frase. */
+/** Shared cell header: small label and a sentence. */
 export function BentoLabel({ title, body, tone }: { title: string; body?: string; tone?: 'ink' }) {
   return (
     <div className="flex flex-col gap-2">

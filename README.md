@@ -1,12 +1,12 @@
 # Velio · web
 
-Interfaz web de [Velio](../../cycling-router): genera rutas ciclistas circulares
-y punto a punto sobre la API FastAPI del motor, las puntúa por firme, seguridad
-y desnivel, y las guarda.
+Web interface for [Velio](../../cycling-router): generates loop and
+point-to-point cycling routes on top of the engine's FastAPI API, scores them
+by surface, safety and elevation, and saves them.
 
-SPA de React sobre Vite, con HeroUI v3 y Tailwind v4.
+React SPA on Vite, with HeroUI v3 and Tailwind v4.
 
-## Puesta en marcha
+## Getting started
 
 ```bash
 pnpm install
@@ -14,214 +14,232 @@ cp .env.example .env
 pnpm dev
 ```
 
-Necesita el backend en marcha. Desde el repositorio del motor:
+It needs the backend running. From the engine repository:
 
 ```bash
 uvicorn app.main:app --reload --port 8000
 ```
 
-El proxy de Vite reenvía `/api` a `http://127.0.0.1:8000`, así que en desarrollo
-no hay que tocar CORS.
+The Vite proxy forwards `/api` to `http://127.0.0.1:8000`, so there is no CORS
+to deal with in development. `VITE_API_BASE_URL` stays relative (`/api/v1`) in
+development; in production set it to the backend's absolute public URL.
 
-| Comando | Qué hace |
+| Command | What it does |
 |---|---|
-| `pnpm dev` | Servidor de desarrollo con HMR |
-| `pnpm build` | Comprobación de tipos y build de producción |
-| `pnpm typecheck` | Solo tipos |
+| `pnpm dev` | Dev server with HMR |
+| `pnpm build` | Type check and production build |
+| `pnpm preview` | Serves the production build locally |
+| `pnpm typecheck` | Types only |
 | `pnpm lint` | Oxlint |
 | `pnpm test` | Vitest |
-| `pnpm test:coverage` | Vitest con cobertura |
+| `pnpm test:watch` | Vitest in watch mode |
+| `pnpm test:coverage` | Vitest with coverage |
+| `pnpm contract:pull` | Refreshes `contract/openapi.json` from a running backend |
+| `pnpm contract:check` | Checks `src/types/api.ts` and the called paths against `contract/openapi.json` |
 
-## Cómo está organizado
+## How it is organised
 
 ```
 src/
-  api/         Cliente HTTP y un módulo por área de la API
-  types/api.ts Contrato de la API, reflejo de cycling-router/docs/api.md
-  auth/        Sesión, almacenamiento de tokens y guardas de ruta
-  components/  common · layout · map · planner · route · auth
-  pages/       Una por pantalla
-  lib/         Formato, polilíneas, GPX, paleta de datos, métricas
-  i18n/        es y en; fuente única de la terminología
+  api/         HTTP client and one module per API area
+  types/api.ts API contract, mirrors cycling-router/docs/api.md
+  auth/        Session, token storage and route guards
+  components/  common · layout · map · planner · route · auth · landing
+  pages/       One per screen
+  routes/      Route table
+  lib/         Formatting, polylines, GPX, data palette, metrics, map styles
+  i18n/        es and en; single source of terminology
 ```
 
-### La capa de datos manda
+### The data layer rules
 
-`src/types/api.ts` es un reflejo literal de `docs/api.md` del backend. Si la API
-cambia, se cambia ahí primero y el compilador señala el resto.
+`src/types/api.ts` is a literal mirror of the backend's `docs/api.md`. If the
+API changes, change it there first and the compiler flags the rest.
 
-Los endpoints de cálculo (`/loops`, `/routes`, `/routes/analyze`,
-`/routes/elevation`) exigen `Authorization: Bearer`, así que **toda la
-aplicación vive detrás del login**. No hay modo invitado.
+`src/api/contract.test.ts` checks those types, and every path the frontend
+calls, against `contract/openapi.json`, a committed snapshot of the backend's
+OpenAPI schema, so CI does not need a running backend. When the backend
+changes, run `pnpm contract:pull` (reads `VELIO_API_URL`, default
+`http://localhost:8000`) and re-run the tests.
 
-El refresco de sesión es de un solo vuelo (`src/api/client.ts`): sin eso, varias
-peticiones simultáneas con el token caducado dispararían varias rotaciones, y el
-backend trata la reutilización de un refresh token como robo y cierra todas las
-sesiones del usuario.
+The compute endpoints (`/loops`, `/routes`, `/routes/analyze`,
+`/routes/elevation`) require `Authorization: Bearer`, so **the whole app lives
+behind the login**. There is no guest mode.
 
-## Rutas
+Session refresh is single-flight (`src/api/client.ts`): without it, several
+concurrent requests with an expired token would trigger several rotations, and
+the backend treats refresh-token reuse as theft and revokes all of the user's
+sessions.
 
-| Ruta | Qué es |
+## Routes
+
+| Route | What it is |
 |---|---|
-| `/` | Portada pública. Con sesión abierta redirige a `/planificar` |
-| `/planificar` | Planificador de circuitos |
-| `/punto-a-punto`, `/analizar`, `/guardadas`, `/cuenta` | El resto de la aplicación, tras el login |
-| `/entrar`, `/crear-cuenta`, `/verificar`, `/recuperar`, `/nueva-contrasena` | Acceso |
-| `/oauth/callback` | Vuelta del proveedor de OAuth |
+| `/` | Public landing. Still reachable when signed in; the call to action then opens `/loops` |
+| `/loops` | Loop planner |
+| `/routes`, `/analyze`, `/saved`, `/saved/:id`, `/account` | The rest of the app, behind the login |
+| `/login`, `/register`, `/verify`, `/forgot-password`, `/reset-password` | Access. A signed-in user is redirected to `/loops` |
+| `/oauth/callback` | Return from the OAuth provider |
 
-## Marca y tema
+## Brand and theme
 
-Paleta: `#FFFFFF`, `#222222`, `#126CC7`. HeroUI v3 tematiza con variables CSS
-planas, así que todo vive en `src/styles/globals.css`.
+Light mode: background `#F7F8FA`, white cards that float on it, teal accent
+`#0E7C86`. Dark mode: background `#0F1419`, cards `#182029`. HeroUI v3 themes
+with plain CSS variables, so everything lives in `src/styles/globals.css`.
 
-El azul de marca da 5,26:1 sobre blanco, pero solo **3,03:1 sobre `#222222`**,
-por debajo de AA. En modo oscuro se parte en dos usos manteniendo el tono:
+The accent gives 4.95:1 with white text and 4.65:1 on the light background. On
+the dark background the same teal is too dark, so in dark mode it splits into
+two uses that keep the hue:
 
-| Uso | Color | Contraste |
+| Use | Colour | Contrast |
 |---|---|---|
-| Relleno (botón primario) | `#2D75C7` | 4,69:1 con texto blanco |
-| Texto y enlaces | `#5AA1F6` | 5,96:1 sobre `#222222` |
+| Fill (primary button) | `#2BA8B4` | 5.90:1 with `#06202A` text |
+| Text and links | `#5FD3DE` | 10.45:1 on `#0F1419` |
 
-El tema se aplica en un script en línea de `index.html` antes de pintar, para que
-no haya destello claro al recargar en modo oscuro.
+The theme is applied by an inline script in `index.html` before first paint,
+so reloading in dark mode does not flash light.
 
-### Dos trampas del tema de HeroUI
+### Two HeroUI theme traps
 
-Ambas costaron un rato, así que quedan escritas:
+1. **Fields have no border.** HeroUI sets `--field-border-width: 0` and tells
+   fields apart only by background and a raised shadow. Here a field gets a
+   1 px border, a slightly cooler fill and no elevation.
+2. **`--field-shadow: none` kills the focus ring.** The ring is a Tailwind
+   `ring-2`, which composes `box-shadow` with `--tw-shadow`; `none` invalidates
+   the whole list and a focused field shows no signal at all. It uses a
+   transparent but valid shadow (`0 0 0 0 transparent`) instead, the same trick
+   HeroUI's dark theme uses.
 
-1. **Los campos no llevan borde.** HeroUI define `--field-border-width: 0` y los
-   distingue solo con fondo y sombra elevada. Sobre una página blanca de marca,
-   un campo blanco con esa sombra flota en vez de integrarse, así que aquí el
-   campo es un hueco: fondo apenas teñido, borde de 1 px y sin elevación.
-2. **`--field-shadow: none` mata el anillo de foco.** El anillo es un `ring-2` de
-   Tailwind, que compone `box-shadow` con `--tw-shadow`; poner `none` invalida la
-   lista entera y el campo enfocado se queda sin ninguna señal. Va una sombra
-   transparente pero válida (`0 0 0 0 transparent`), el mismo truco que usa el
-   tema oscuro de HeroUI.
+And a cascade detail: the light block is written on `:root`, which also applies
+in dark mode, and comes **after** HeroUI's `.dark`. Any variable touched in the
+light block must be repeated in the dark one or it leaks.
 
-Y un tercer detalle de cascada: el bloque claro se escribe sobre `:root`, que
-también aplica en oscuro, y va **después** del `.dark` de HeroUI. Cualquier
-variable que se toque en el bloque claro hay que repetirla en el oscuro o se
-filtra.
+### Dropdown.Trigger does not take a button inside
 
-### Dropdown.Trigger no admite un botón dentro
+`Dropdown.Trigger` **already is** the `<button>`. Putting a HeroUI `<Button>`
+inside produces `<button><button>`, which is invalid HTML. Passing it the
+button classes instead raises a second problem: `.dropdown__trigger` forces
+`display: block` and wins over `.button`, which is inline-flex, so
+`justify-center` stops working, the icon sticks to the left edge and the hover
+background looks offset.
 
-`Dropdown.Trigger` **ya es** el `<button>`. Meter un `<Button>` de HeroUI dentro
-produce `<button><button>`, HTML inválido. Pero al pasarle las clases del botón
-aparece un segundo problema: `.dropdown__trigger` impone `display: block` y gana
-a `.button`, que es inline-flex, así que `justify-center` deja de hacer nada, el
-icono se pega al borde izquierdo y el fondo del hover se ve desplazado.
+`src/components/common/dropdownTrigger.ts` fixes both at once; use it for any
+button-like trigger. There is a regression test in `themeToggle.test.tsx`,
+because neither the compiler nor the linter catches either bug.
 
-`src/components/common/dropdownTrigger.ts` resuelve las dos cosas de una vez;
-úsalo para cualquier disparador con aspecto de botón. Hay un test de regresión
-en `themeToggle.test.tsx`, porque ninguno de los dos fallos lo ve el compilador
-ni el linter.
+### Three map traps
 
-### Tres trampas del mapa
+All three gave a blank map or a map without the route, and the compiler catches
+none of them:
 
-Las tres daban un mapa en blanco o sin ruta, y ninguna la ve el compilador:
+1. **Do not size the container through positioning.** maplibre adds the
+   `.maplibregl-map` class, which brings `position: relative` from an
+   **unlayered** stylesheet, and in CSS unlayered rules beat any layer —
+   including `utilities`, where Tailwind v4 puts its utilities. With
+   `absolute inset-0`, that `relative` won, `inset-0` did nothing and the div
+   collapsed to zero height. It uses `size-full`, which does not compete with
+   `position`.
+2. **`setStyle` with the same style is a no-op and does not emit `styledata`.**
+   Calling it on mount with the style the constructor had already set left the
+   seeding of sources and layers waiting on a `once('styledata')` that never
+   came: a map without the route. The style is now only changed when it really
+   changes, and seeding listens to `styledata` **and** `idle`, because during a
+   style change `styledata` can arrive with the style half-loaded.
+3. **maplibre and Vite pre-bundling.** Vite rewrites the path of maplibre's
+   worker and it returns 404 in development: the map mounts but does not
+   decode a single tile. It is excluded in `optimizeDeps` (`vite.config.ts`).
+   Since it is lazy-loaded, Vite discovers it late and the problem is more
+   likely.
 
-1. **No dimensionar el contenedor por posicionamiento.** maplibre le añade la
-   clase `.maplibregl-map`, que trae `position: relative` desde una hoja **sin
-   capa**, y en CSS lo no-capado gana a cualquier capa — incluida `utilities`,
-   donde Tailwind v4 mete sus utilidades. Con `absolute inset-0`, ese `relative`
-   ganaba, `inset-0` quedaba inerte y el div colapsaba a 0 de alto. Va
-   `size-full`, que no compite con `position`.
-2. **`setStyle` con el mismo estilo es un no-op y no emite `styledata`.** Se
-   llamaba en el montaje con el estilo que ya puso el constructor, colgando la
-   siembra de fuentes y capas de un `once('styledata')` que nunca llegaba: mapa
-   sin ruta. Ahora el estilo solo se cambia cuando cambia de verdad, y la
-   siembra escucha `styledata` **y** `idle`, porque durante un cambio de estilo
-   `styledata` puede llegar con el estilo a medias.
-3. **maplibre y el pre-bundling de Vite.** Vite reescribe la ruta de su worker
-   y en desarrollo da 404: el mapa monta pero no decodifica ni una tesela. Se
-   excluye en `optimizeDeps` (`vite.config.ts`). Al cargarse en diferido, Vite
-   lo descubre tarde y el problema es más probable.
+And a fourth one, about usage: the result panel floats over the map, so
+`fitPadding` (from `mapFitPadding` in `src/lib/mapStyles.ts`) reserves room at
+the bottom, or the route is framed in the centre and ends up behind it.
 
-Y una cuarta, de uso: el panel de resultado flota sobre el mapa, así que
-`fitPadding` reserva sitio abajo o la ruta se encuadra centrada y queda
-detrás de él.
+### The logo
 
-### El logo
+`src/components/layout/logo.tsx` is **generated** from `public/velio.svg`: the
+two paths are copied as-is, not transcribed. If the logo changes, regenerate it
+instead of editing it by hand. `VelioMark` is just the symbol (rail, favicon)
+and `VelioLogo` the full lockup; both inherit `currentColor`.
 
-`src/components/layout/logo.tsx` está **generado** desde `public/velio.svg`: los
-dos trazados se copian tal cual, no se transcriben. Si el logo cambia, se vuelve
-a generar en vez de editarse a mano. `VelioMark` es solo el símbolo (raíl,
-favicon) y `VelioLogo` el lockup completo; ambos heredan `currentColor`.
+## Maps without an API key
 
-## Mapas sin API key
+- **Map**: OpenFreeMap Positron (light) and Dark (dark), vector, worldwide. In
+  dark mode the basemap colours are re-tinted to slate (`tintStyle`).
+- **Satellite**: IGN PNOA orthophoto. It only covers Spain, which is exactly
+  the coverage of the backend's Valhalla graph.
 
-- **Mapa**: Carto Positron (claro) y Dark Matter (oscuro), vectoriales.
-- **Satélite**: ortofoto PNOA del IGN. Solo cubre España, que es justo el alcance
-  del grafo de Valhalla del backend.
+None needs credentials. Styles are changed in `src/lib/mapStyles.ts`.
 
-Ninguno pide credenciales. El estilo se cambia en `src/lib/mapStyles.ts`.
+`maplibre-gl` weighs close to a megabyte, so it loads in its own chunk
+(`src/components/map/lazyMap.tsx`): the access screens do not download it.
 
-`maplibre-gl` pesa cerca de un megabyte, así que se carga en su propio chunk
-(`src/components/map/lazyMap.tsx`): las pantallas de acceso no lo descargan.
+## Data colours
 
-## Colores de datos
+Chart colours are theme tokens (`--chart-1` … `--chart-5`, `--chart-neutral` in
+`src/styles/globals.css`), with separate steps for light and dark mode, not a
+flip of one another. `src/lib/chartPalette.ts` reads them at runtime and falls
+back to its own per-mode lists when a token is missing (e.g. in tests). Each
+surface type keeps a fixed slot, so asphalt is the same colour on every route.
 
-La paleta de gráficos (`src/lib/chartPalette.ts`) está validada con el script de
-la guía de visualización contra los fondos reales de cada modo: banda de
-luminosidad, croma mínimo, separación para daltonismo, suelo de visión normal y
-contraste. Modo claro y oscuro tienen pasos propios, no un volteo del otro.
+**Rule to respect**: the surface bar uses orange and green in the same bar, a pair
+that is hard to tell apart with tritanopia (the validator flagged it in the
+fallback palette at ΔE 5.0 light / 3.7 dark). It is only acceptable with
+secondary encoding, so every segment of the surface bar carries a direct label
+and segments are separated by 2 px. A test guards it (`surfaceBar.test.tsx`);
+if the labels disappear, the chart is no longer accessible.
 
-**Aviso que hay que respetar**: el par naranja↔verde queda en la banda baja de
-tritanopía (ΔE 5,0 claro / 3,7 oscuro). Solo es admisible con codificación
-secundaria, así que la barra de firme lleva etiqueta directa en cada tramo y 2 px
-de separación. Hay un test que lo vigila (`surfaceBar.test.tsx`); si desaparecen
-las etiquetas, el gráfico deja de ser accesible.
+## Terminology
 
-## Terminología
+`src/i18n/es.ts` is the single source. One concept, one name:
 
-`src/i18n/es.ts` es la fuente única. Un concepto, un nombre:
-
-| Campo de la API | Cómo se llama en pantalla |
+| API field | On-screen name (Spanish UI) |
 |---|---|
-| `gain_m` | Desnivel + (nunca "Subida" ni "Ascenso") |
+| `gain_m` | Desnivel + (never "Subida" or "Ascenso") |
 | `loss_m` | Desnivel − |
-| `cycling_score` | Puntuación (nunca "Nota") |
-| `score.comfort` | Firme (nunca "Comodidad") |
-| `score.max_grade_pct` | Rampa máx. |
+| `cycling_score` | Puntuación (never "Nota") |
+| `score.comfort` | Firme (never "Comodidad") |
+| `score.max_grade_pct` | Pendiente máx. |
+| `profile.max_uphill_grade_pct` | Rampa máx. |
 | `overlap_ratio` | Solape |
-| el objeto en sí | Ruta (nunca "Trazado" ni "Track") |
+| the object itself | Ruta (never "Trazado" or "Track") |
 
-Las cifras llevan coma decimal, también las coordenadas: mezclar `40.5964` con
-`68,8` en el mismo panel se lee como un fallo. Todo pasa por `src/lib/format.ts`.
+In Spanish, numbers use a decimal comma, coordinates included: mixing `40.5964`
+with `68,8` in the same panel reads as a bug. English uses `en-GB` formatting.
+Everything goes through `src/lib/format.ts`.
 
-## Decisiones que conviene revisar
+## Decisions worth revisiting
 
-- **El refresh token vive en `localStorage`** y el access token solo en memoria.
-  Es lo máximo que se puede hacer sin apoyo del backend: la API entrega los
-  tokens en el cuerpo de la respuesta, no como cookie `httpOnly`. Si algún día
-  las emite como cookie, este almacenamiento sobra.
-- **OAuth necesita dos variables en el backend**, y son distintas:
-  `AUTH_REDIRECT_BASE` sigue apuntando **a la API** (es la URI registrada en
-  Google), y `OAUTH_SUCCESS_REDIRECT=http://localhost:5173/oauth/callback` es
-  adónde manda la API el navegador después. Sin la segunda, el callback
-  responde JSON y el usuario aterriza en una página cruda.
-  Los tokens llegan en el **fragmento** (`#`), que nunca viaja al servidor:
-  `src/pages/auth/oauthCallback.tsx` los adopta, pide `/auth/me` y limpia la
-  barra de direcciones en el acto.
-- **La búsqueda de rutas guardadas filtra la página cargada, no el total**: la
-  API no tiene endpoint de búsqueda.
-- **El export desde el detalle de una ruta guardada se genera en el cliente**
-  (`src/lib/exportLocal.ts`). Los `?format=gpx` del backend recalculan a partir
-  de la petición original, y de una ruta guardada solo tenemos el resultado.
-- **El desglose de firme normaliza sobre la distancia real**, no sobre la suma de
-  `surface_km`: no todas las aristas traen atributo de firme, y el hueco se
-  muestra como "sin datos" en vez de repartirse.
-- **La portada usa el ejemplo de `docs/api.md`** (circuito de 70 km desde
-  Algete) para la tarjeta de demostración, con los componentes reales del
-  producto. El perfil de elevación de esa tarjeta sí es sintético y la tarjeta
-  lo dice. No hay precios ni testimonios inventados.
-- **El mapa limita la navegación a España** (`maxBounds` en `mapView.tsx`),
-  porque es lo que cubre el grafo del backend.
+- **The refresh token lives in `localStorage`** and the access token only in
+  memory. That is the most that can be done without backend support: the API
+  returns the tokens in the response body, not as an `httpOnly` cookie. If it
+  ever issues them as a cookie, this storage goes away.
+- **OAuth needs two backend variables**, and they are different:
+  `AUTH_REDIRECT_BASE` still points **to the API** (it is the URI registered
+  with Google), and `OAUTH_SUCCESS_REDIRECT=http://localhost:5173/oauth/callback`
+  is where the API sends the browser afterwards. Without the second one, the
+  callback answers JSON and the user lands on a raw page.
+  The tokens arrive in the **fragment** (`#`), which never reaches the server:
+  `src/pages/auth/oauthCallback.tsx` adopts them, calls `/auth/me` and clears
+  the address bar straight away.
+- **Saved-route search filters the loaded page, not the whole set**: the API
+  has no search endpoint.
+- **Export from a saved route's detail is generated on the client**
+  (`src/lib/exportLocal.ts`). The backend's `?format=gpx` exports recompute
+  from the original request, and for a saved route we only have the result.
+- **The surface breakdown normalises over the real distance**, not over the
+  sum of `surface_km`: not every edge carries a surface attribute, and the gap
+  is shown as "no data" instead of being spread across the others.
+- **The landing shows real engine output**: loops generated by the engine as-is
+  (`src/pages/landingExamples.ts`, `src/pages/landingWall.ts`), rendered with
+  the product's real components. No invented prices or testimonials.
+- **The map limits navigation to Spain** (`maxBounds` in `mapView.tsx`),
+  because that is what the backend graph covers.
 
-## Licencias de los datos
+## Data licences
 
-Cartografía © [OpenStreetMap](https://www.openstreetmap.org/copyright),
-estilos de [CARTO](https://carto.com/attribution/).
-Ortofoto PNOA cedida por © Instituto Geográfico Nacional de España.
-Elevaciones: Copernicus DEM GLO-30, a través del backend.
+Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright)
+contributors, tiles and styles by [OpenFreeMap](https://openfreemap.org/)
+© [OpenMapTiles](https://www.openmaptiles.org/).
+PNOA orthophoto courtesy of © Instituto Geográfico Nacional de España.
+Elevation: Copernicus DEM GLO-30, via the backend.

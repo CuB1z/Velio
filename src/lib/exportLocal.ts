@@ -2,11 +2,8 @@ import type { AnyRouteResult, ElevationPoint } from '@/types/api'
 import { decodePolyline } from './polyline'
 
 /**
- * Export de una ruta ya guardada.
- *
- * Los endpoints ?format=gpx del backend recalculan a partir de la petición
- * original, y de una ruta guardada solo tenemos el resultado. Así que el
- * archivo se arma aquí con la geometría almacenada, sin volver a rutear.
+ * Export of a saved route. The backend's ?format=gpx endpoints recompute from
+ * the original request, which a saved route lacks, so the file is built here.
  */
 
 function escapeXml(value: string): string {
@@ -19,8 +16,8 @@ export function toGpx(result: AnyRouteResult, name: string): Blob {
   const coordinates = decodePolyline(result.polyline)
   const profile = result.profile ?? null
 
-  // El perfil viene remuestreado (~1 punto cada 10 m), así que no casa 1:1 con
-  // la polilínea: se asigna la altitud del punto de perfil más cercano en índice.
+  // The profile is resampled (~1 point per 10 m) and doesn't match the polyline
+  // 1:1, so each point takes the elevation of the nearest profile index.
   const elevationAt = (index: number): number | null => {
     if (!profile || profile.length === 0) return null
     const ratio = coordinates.length > 1 ? index / (coordinates.length - 1) : 0

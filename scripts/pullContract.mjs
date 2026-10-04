@@ -1,4 +1,4 @@
-/** Refresca contract/openapi.json desde un backend en marcha. */
+/** Refreshes contract/openapi.json from a running backend. */
 import { writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -9,4 +9,4 @@ if (!resp.ok) throw new Error(`${url}/openapi.json → HTTP ${resp.status}`)
 
 const target = join(dirname(fileURLToPath(import.meta.url)), '..', 'contract/openapi.json')
 writeFileSync(target, `${JSON.stringify(await resp.json(), null, 2)}\n`)
-console.log(`contract/openapi.json actualizado desde ${url}`)
+console.log(`contract/openapi.json updated from ${url}`)

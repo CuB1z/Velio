@@ -5,10 +5,7 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // maplibre-gl arranca su propio worker. Al pre-empaquetarlo, Vite reescribe
-  // la ruta del worker y en desarrollo devuelve 404: el mapa monta, pero se
-  // queda en blanco porque no puede decodificar ni una tesela. Se carga en
-  // diferido, así que Vite lo descubre tarde y el problema es más probable.
+  // Pre-bundling maplibre-gl rewrites its worker path: 404 in dev and a blank map.
   optimizeDeps: { exclude: ['maplibre-gl'] },
   resolve: {
     alias: {

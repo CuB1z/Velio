@@ -11,19 +11,18 @@ type Props = {
   className?: string
   compact?: boolean
   /**
-   * Sin objetivo de desnivel, el motor devuelve igualmente su barra y sale un
-   * 10 en algo que no se ha pedido. Se oculta para no dar por bueno un dato
-   * que no significa nada aquí.
+   * Without an elevation target the engine still returns that bar, scoring a 10
+   * for something not requested. Hidden so a meaningless figure is not shown.
    */
   hideElevation?: boolean
 }
 
-/** Puntuación 0-10 con su desglose. Magnitud: un solo tono, sin paleta categórica. */
+/** 0–10 score with its breakdown. A magnitude: single hue, no categorical palette. */
 export function ScoreCard({ score, className, compact, hideElevation }: Props) {
   const { t } = useTranslation()
   const bars = scoreBars(score).filter((bar) => !(hideElevation && bar.key === 'elevation'))
 
-  // El motor no siempre puntúa: sin datos de arista no hay seguridad ni firme.
+  // The engine does not always score: without edge data there is no safety or surface.
   if (!score) {
     return (
       <div className={cn('text-sm text-muted', className)}>{t('metric.noScore')}</div>

@@ -7,17 +7,14 @@ type Props = {
   form: ReactNode
   map: ReactNode
   result?: ReactNode
-  /** Plegado por el usuario para ver el mapa entero. Solo aplica en escritorio. */
+  /** Collapsed by the user to see the whole map. Desktop only. */
   resultCollapsed?: boolean
   onResultCollapsedChange?: (collapsed: boolean) => void
 }
 
 /**
- * Escritorio: panel fijo a la izquierda, mapa a la derecha y el resultado
- * flotando sobre el mapa.
- * Móvil: el mapa ocupa la mitad superior y todo lo demás se apila debajo, en
- * flujo normal. Sin hoja arrastrable: en un scroll de página se comporta mejor
- * y no pelea con el gesto de zoom del mapa.
+ * Desktop: fixed panel on the left, map on the right, result floating over the map.
+ * Mobile: map on the top half, everything else stacked below in normal page flow.
  */
 export function PlannerLayout({
   form,
@@ -26,8 +23,7 @@ export function PlannerLayout({
   resultCollapsed: collapsed = false,
   onResultCollapsedChange,
 }: Props) {
-  // El plegado solo aplica en escritorio: ahí el resultado tapa medio mapa.
-  // En móvil va en flujo debajo, así que plegarlo no descubriría nada.
+  // Collapsing only applies on desktop, where the result covers half the map.
   const { t } = useTranslation()
 
   return (
@@ -43,8 +39,7 @@ export function PlannerLayout({
           {result ? (
             <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 hidden lg:block">
               <div className="pointer-events-auto overflow-hidden rounded-2xl bg-overlay/95 shadow-raised backdrop-blur-xl">
-                {/* Asa de hoja: se pliega y despliega desde ella; el texto va
-                  * en el aria-label para no ocupar la cabecera. */}
+                {/* Sheet handle: toggles the panel; its label lives in aria-label. */}
                 <button
                   type="button"
                   onClick={() => onResultCollapsedChange?.(!collapsed)}

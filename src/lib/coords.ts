@@ -1,8 +1,7 @@
 import type { LatLon } from '@/types/api'
 
 /**
- * Acepta las dos convenciones decimales, porque la interfaz muestra coma pero
- * cualquier fuente externa (OSM, Google, la propia API) usa punto:
+ * Accepts both decimal separators: the UI shows commas, external sources use dots.
  *   "40.5964, -3.6318"   "40,5964 −3,6318"   "40.5964 -3.6318"
  */
 const NUMBER = /[-−+]?\d+(?:[.,]\d+)?/g
@@ -21,7 +20,7 @@ export function parseCoordinates(input: string): LatLon | null {
   return { lat, lon }
 }
 
-/** Texto editable del campo: punto decimal, que es lo que se pega desde fuera. */
+/** Editable field text, with dot decimals like pasted coordinates. */
 export function coordinatesToInput({ lat, lon }: LatLon): string {
   return `${lat.toFixed(6)}, ${lon.toFixed(6)}`
 }

@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from '@/App'
 import i18n from '@/i18n'
 
-// maplibre-gl necesita WebGL; en jsdom no arranca y aquí no es lo que se prueba.
+// maplibre-gl needs WebGL, which jsdom lacks; the map isn't under test here.
 vi.mock('@/components/map/lazyMap', () => ({
   LazyMap: ({ className }: { className?: string }) => (
     <div data-testid="map-stub" className={className} />
@@ -26,8 +26,8 @@ beforeEach(() => {
   window.history.pushState({}, '', '/loops')
 })
 
-describe('planificador de circuitos', () => {
-  it('con sesión válida muestra el formulario y el mapa', async () => {
+describe('loop planner', () => {
+  it('shows the form and the map with a valid session', async () => {
     localStorage.setItem('velio.refresh', 'refresh-1')
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input)
@@ -41,10 +41,10 @@ describe('planificador de circuitos', () => {
 
     await waitFor(() => expect(screen.getByTestId('map-stub')).toBeInTheDocument())
 
-    // Los controles que definen la petición a /loops.
+    // Controls that build the /loops request.
     expect(screen.getByRole('button', { name: 'Generar ruta' })).toBeInTheDocument()
     expect(screen.getByRole('group', { name: /Distancia/ })).toBeInTheDocument()
-    // Los dos filtros: con qué bici, y cuánto desnivel. Independientes.
+    // The two independent filters: bike and elevation.
     expect(screen.getByRole('button', { name: /Carretera/ })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -59,7 +59,7 @@ describe('planificador de circuitos', () => {
     )
   })
 
-  it('guarda el refresh token rotado que devuelve el backend', async () => {
+  it('stores the rotated refresh token returned by the backend', async () => {
     localStorage.setItem('velio.refresh', 'refresh-1')
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       if (String(input).includes('/auth/refresh')) {
@@ -70,7 +70,7 @@ describe('planificador de circuitos', () => {
 
     render(<App />)
 
-    // Reutilizar el anterior lo trataría el backend como robo de token.
+    // The backend treats reuse of the old token as theft.
     await waitFor(() => expect(localStorage.getItem('velio.refresh')).toBe('refresh-2'))
   })
 })

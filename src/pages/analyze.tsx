@@ -95,7 +95,7 @@ export function AnalyzePage() {
             <p className="mt-1.5 text-sm text-muted">{t('analyze.subtitle')}</p>
           </div>
 
-          {/* El mismo control segmentado que bicicleta y desnivel. */}
+          {/* Same segmented control as bike and elevation. */}
           <div className="flex flex-col gap-4">
             <SegmentedControl
               label={t('analyze.title')}
@@ -220,8 +220,7 @@ export function AnalyzePage() {
           routes={routes}
           markers={markers}
           fitKey={fitKey}
-          // El panel de resultado flota sobre el mapa: sin este hueco la
-          // ruta se encuadra centrada y queda detrás de él.
+          // The result panel floats over the map; without this padding the route is fitted behind it.
           fitPadding={mapFitPadding(Boolean(result), resultCollapsed)}
         />
       }

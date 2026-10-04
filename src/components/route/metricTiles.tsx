@@ -26,7 +26,7 @@ function Tile({ label, value, hint, tone }: Tile) {
 
 type Props = {
   result: AnyRouteResult
-  /** Objetivos pedidos, para contrastar lo obtenido con lo buscado. */
+  /** Requested targets, to compare what was obtained with what was asked for. */
   targetKm?: number
   targetGainM?: number
   lossHint?: string
@@ -34,10 +34,7 @@ type Props = {
   className?: string
 }
 
-/**
- * Fila de cifras principales. No es un gráfico: son números destacados, así que
- * el texto lleva tokens de texto y ningún color de serie.
- */
+/** Headline figures. Not a chart, so text tokens and no series colors. */
 export function MetricTiles({ result, targetKm, targetGainM, lossHint, durationHint, className }: Props) {
   const { t } = useTranslation()
 
@@ -51,9 +48,8 @@ export function MetricTiles({ result, targetKm, targetGainM, lossHint, durationH
       <Tile
         label={t('metric.gain')}
         value={formatSigned(result.gain_m)}
-        // Sin objetivo, la densidad de subida es lo que hace visible la
-        // diferencia entre pedir «llano» y «montañoso»: 8 m/km es un paseo,
-        // 25 m/km un puerto tras otro.
+        // Without a target, climb density is what shows the difference between asking
+        // for "flat" and "hilly": 8 m/km is a stroll, 25 m/km one climb after another.
         hint={
           targetGainM
             ? `${t('metric.target')} ${formatSigned(targetGainM)}`

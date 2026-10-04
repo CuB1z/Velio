@@ -9,8 +9,8 @@ const ORIGINAL: [number, number][] = [
   [40.6488, -3.5772],
 ]
 
-describe('polilíneas', () => {
-  it('decodifica con precisión 1e−6 y devuelve el orden [lng, lat] de GeoJSON', () => {
+describe('polylines', () => {
+  it('decodes with 1e−6 precision into GeoJSON [lng, lat] order', () => {
     const encoded = polyline.encode(ORIGINAL, 6)
     const decoded = decodePolyline(encoded)
 
@@ -21,12 +21,12 @@ describe('polilíneas', () => {
     }
   })
 
-  it('una cadena corrupta da lista vacía en vez de reventar el mapa', () => {
+  it('returns an empty list for a corrupt string instead of breaking the map', () => {
     expect(decodePolyline('no es una polilínea')).toEqual([])
     expect(decodePolyline('')).toEqual([])
   })
 
-  it('la caja envolvente sale en el orden que pide fitBounds', () => {
+  it('returns the bounding box in fitBounds order', () => {
     const bounds = boundsOf(decodePolyline(polyline.encode(ORIGINAL, 6)))
     expect(bounds).not.toBeNull()
     const [[minLng, minLat], [maxLng, maxLat]] = bounds!
@@ -35,7 +35,7 @@ describe('polilíneas', () => {
     expect(minLat).toBeCloseTo(40.5964, 4)
   })
 
-  it('sin puntos no hay caja', () => {
+  it('returns null without points', () => {
     expect(boundsOf([])).toBeNull()
   })
 })

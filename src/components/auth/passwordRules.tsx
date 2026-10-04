@@ -11,7 +11,7 @@ const LABEL: Record<string, string> = {
   notEmail: 'auth.ruleNotEmail',
 }
 
-/** Estado de la política de contraseña. El icono acompaña al color, nunca lo sustituye. */
+/** Password policy checklist. The icon accompanies the color, never replaces it. */
 export function PasswordRules({ password, email }: { password: string; email?: string }) {
   const { t } = useTranslation()
   const rules = checkPassword(password, email)

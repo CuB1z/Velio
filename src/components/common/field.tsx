@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn'
 
 type BaseProps = {
   label: string
-  /** Solo para lectores de pantalla: cuando el contenedor ya muestra el rótulo. */
+  /** Screen-reader only: for when the container already shows the label. */
   labelHidden?: boolean
   value: string
   onChange: (value: string) => void
@@ -20,14 +20,11 @@ type BaseProps = {
   inputMode?: 'text' | 'email' | 'numeric' | 'decimal'
   type?: 'text' | 'email'
   className?: string
-  /** Acción al final del campo (por ejemplo, localizar en el mapa). */
+  /** Trailing action inside the field (e.g. locate on the map). */
   endContent?: ReactNode
 }
 
-/**
- * Composición TextField + Label + Input + FieldError, que en HeroUI v3 hay que
- * montar a mano. Se repite en quince sitios, así que vive en un solo lugar.
- */
+/** TextField + Label + Input + FieldError, which HeroUI v3 leaves to be composed by hand. */
 export function TextInput({
   label,
   labelHidden,
@@ -75,7 +72,7 @@ export function TextInput({
 }
 
 type PasswordProps = Omit<BaseProps, 'type' | 'inputMode' | 'endContent'> & {
-  /** Acción alineada con la etiqueta, p. ej. «¿La has olvidado?». */
+  /** Action aligned with the label, e.g. "Forgot it?". */
   labelAction?: ReactNode
 }
 
@@ -122,7 +119,7 @@ export function PasswordInput({
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          /* 44 px de objetivo táctil, aunque el icono mida 18. */
+          /* 44 px touch target, even though the icon is 18. */
           className="absolute right-0 flex size-11 items-center justify-center rounded-md text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           aria-label={visible ? t('auth.hidePassword') : t('auth.showPassword')}
         >

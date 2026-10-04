@@ -3,10 +3,8 @@ import { cn } from '@/lib/cn'
 export type SegmentOption<T extends string> = { id: T; label: string }
 
 /**
- * Control segmentado: una pista con una píldora blanca sobre la opción activa.
- * Sustituye a las tarjetas con borde de antes: una opción entre pocas no es
- * una tarjeta, es un interruptor de varias posiciones. Botones con
- * `aria-pressed`, así que lectores y tests lo entienden como lo que es.
+ * Segmented control: a track with a white pill over the active option.
+ * Options are `aria-pressed` buttons.
  */
 export function SegmentedControl<T extends string>({
   options,
@@ -41,7 +39,7 @@ export function SegmentedControl<T extends string>({
               'min-h-11 truncate rounded-[7px] px-2 text-[13px] transition-colors duration-150 ease-enter md:min-h-8',
               'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
               isSelected
-                ? // Blanca en claro; en oscuro, un paso por encima de la pista.
+                ? // White in light mode; in dark, one step above the track.
                   'bg-surface font-semibold text-foreground shadow-sm dark:bg-surface-hover'
                 : 'text-muted hover:bg-surface/60 hover:text-foreground',
             )}

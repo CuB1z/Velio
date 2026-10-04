@@ -1,9 +1,8 @@
 import type { AnyRouteResult, SavedRoute } from '@/types/api'
 
 /**
- * El payload guardado es la respuesta literal del endpoint que lo produjo, así
- * que llega como Record<string, unknown>. Se valida lo mínimo para pintarlo sin
- * confiar en su forma: una ruta guardada hace meses puede no tener todo.
+ * The payload is the raw response of the endpoint that produced it; validate
+ * just enough to render it, since old saved routes may lack fields.
  */
 export function readSavedResult(route: SavedRoute): AnyRouteResult | null {
   const payload = route.payload as Partial<AnyRouteResult> | undefined
@@ -28,7 +27,7 @@ export function readSavedResult(route: SavedRoute): AnyRouteResult | null {
   }
 }
 
-/** Un circuito trae `feasible`; una ruta punto a punto, no. */
+/** Loops carry `feasible`; point-to-point routes don't. */
 export function savedRouteKind(route: SavedRoute): 'loop' | 'route' {
   return typeof (route.payload as { feasible?: unknown } | undefined)?.feasible === 'boolean'
     ? 'loop'

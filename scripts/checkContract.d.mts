@@ -1,4 +1,4 @@
-/** Tipos del contraste de contrato, que se escribe en JS por ser una herramienta. */
+/** Types for the JS contract checker. */
 export declare function compare(): string[]
 export declare function comparePaths(): string[]
 export declare function usedPaths(): { path: string; method: string }[]

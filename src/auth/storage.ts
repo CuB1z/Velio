@@ -1,11 +1,10 @@
 /**
- * El refresh token es lo único que persiste. El access token vive solo en
- * memoria: es lo que se puede hacer sin apoyo del backend, que entrega los
- * tokens en el cuerpo de la respuesta y no como cookie httpOnly.
+ * Only the refresh token is persisted; the access token lives in memory.
+ * The backend returns tokens in the response body, not as an httpOnly cookie.
  */
 const REFRESH_KEY = 'velio.refresh'
 
-/** En modo privado o con las cookies bloqueadas, localStorage lanza al escribir. */
+/** localStorage throws on write in private mode or with cookies blocked. */
 function safe<T>(operation: () => T, fallback: T): T {
   try {
     return operation()

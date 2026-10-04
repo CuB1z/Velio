@@ -10,17 +10,17 @@ import type {
 } from '@/types/api'
 import { request } from './client'
 
-/** Circuito cerrado desde un origen, ajustado a distancia y desnivel objetivo. */
+/** Closed loop from an origin, fitted to the target distance and elevation gain. */
 export function createLoop(payload: LoopRequest, signal?: AbortSignal): Promise<LoopResult> {
   return request<LoopResult>('/loops', { method: 'POST', body: payload, auth: true, signal })
 }
 
-/** Ruta punto a punto por los waypoints en orden (de 2 a 20). */
+/** Point-to-point route through the waypoints in order (2 to 20). */
 export function createRoute(payload: RouteRequest, signal?: AbortSignal): Promise<RouteResult> {
   return request<RouteResult>('/routes', { method: 'POST', body: payload, auth: true, signal })
 }
 
-/** Puntúa una polilínea existente sin recalcular la ruta. */
+/** Scores an existing polyline without re-routing. */
 export function analyze(payload: AnalyzeRequest, signal?: AbortSignal): Promise<AnalyzeResult> {
   return request<AnalyzeResult>('/routes/analyze', {
     method: 'POST',
@@ -30,7 +30,7 @@ export function analyze(payload: AnalyzeRequest, signal?: AbortSignal): Promise<
   })
 }
 
-/** Perfil de elevación desde las teselas DEM. No pasa por Valhalla. */
+/** Elevation profile from the DEM tiles, bypassing Valhalla. */
 export function elevation(polyline: string, signal?: AbortSignal): Promise<ElevationResult> {
   return request<ElevationResult>('/routes/elevation', {
     method: 'POST',
@@ -45,10 +45,7 @@ const MIME: Record<Exclude<ExportFormat, 'json'>, string> = {
   geojson: 'application/geo+json',
 }
 
-/**
- * Los endpoints de export exigen Bearer, así que no vale un <a href>: hay que
- * pedir el blob y provocar la descarga desde el cliente.
- */
+/** Export endpoints require a Bearer token, so fetch the blob and trigger the download client-side. */
 export async function exportRouting(
   endpoint: 'loops' | 'routes',
   payload: LoopRequest | RouteRequest,

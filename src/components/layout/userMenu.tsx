@@ -50,7 +50,7 @@ export function UserMenu() {
             ))}
           </Dropdown.Section>
           <Dropdown.Section>
-            {/* Rojo: es la única acción del menú que no se deshace con un clic. */}
+            {/* Red: the only menu action a click cannot undo. */}
             <Dropdown.Item id="logout" variant="danger">
               {t('nav.logout')}
             </Dropdown.Item>

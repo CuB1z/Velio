@@ -3,11 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { AppShot } from './appShot'
 
-/**
- * Titular, una cifra concreta y la interfaz real debajo. Antes el visual era
- * un mapa a todo lo ancho; un mapa es la *salida* del producto, no el
- * producto, y la página entera acabó siendo mapas.
- */
+/** Headline, a concrete figure and the real interface below. */
 export function HeroShowcase({ authenticated }: { authenticated: boolean }) {
   const { t } = useTranslation()
 
@@ -33,7 +29,7 @@ export function HeroShowcase({ authenticated }: { authenticated: boolean }) {
         <p className="mt-6 text-sm text-muted">{t('landing.heroNote')}</p>
       </div>
 
-      {/* La interfaz real, recortada por arriba para que invite a bajar */}
+      {/* The real interface */}
       <div className="relative mx-auto mt-14 max-w-[1200px] px-4 sm:mt-20 sm:px-6">
         <div
           aria-hidden="true"

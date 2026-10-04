@@ -9,7 +9,7 @@ type Props = {
   className?: string
 }
 
-/** Bloque de error en línea. No hay sistema de toasts: el aviso sale donde ocurrió. */
+/** Inline error block. There are no toasts: the notice appears where the failure happened. */
 export function ErrorState({ error, onRetry, className }: Props) {
   const { t } = useTranslation()
   const describe = useApiErrorMessage()

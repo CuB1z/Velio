@@ -15,8 +15,8 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('vuelta de OAuth', () => {
-  it('adopta los tokens del fragmento y borra la URL', async () => {
+describe('OAuth callback', () => {
+  it('adopts the fragment tokens and clears the URL', async () => {
     window.history.pushState({}, '', '/oauth/callback#access_token=at&refresh_token=rt&token_type=bearer')
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       if (String(input).includes('/auth/me')) {
@@ -27,17 +27,17 @@ describe('vuelta de OAuth', () => {
 
     render(<App />)
 
-    // El fragmento solo trae tokens, así que el perfil se pide aparte.
+    // The fragment only carries tokens, so the profile is fetched separately.
     await waitFor(() => {
       expect(fetchSpy.mock.calls.some(([u]) => String(u).includes('/auth/me'))).toBe(true)
     })
     expect(localStorage.getItem('velio.refresh')).toBe('rt')
 
-    // Los tokens no deben quedarse en la barra ni en el historial.
+    // Tokens must not linger in the address bar or history.
     await waitFor(() => expect(window.location.hash).toBe(''))
   })
 
-  it('muestra el error que llega en el fragmento en vez de una página en blanco', async () => {
+  it('shows the fragment error instead of a blank page', async () => {
     window.history.pushState({}, '', '/oauth/callback#error=OAUTH_ERROR&message=estado+caducado')
     render(<App />)
 

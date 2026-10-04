@@ -44,7 +44,7 @@ export function SavedRoutesPage() {
     onError: (error) => setActionError(describe(error)),
   })
 
-  // La API no tiene búsqueda: esto filtra la página cargada, no el total.
+  // The API has no search: this filters the loaded page, not the full set.
   const visible = useMemo(() => {
     const rows = query.data?.data ?? []
     const needle = search.trim().toLowerCase()

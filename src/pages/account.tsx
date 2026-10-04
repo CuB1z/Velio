@@ -48,7 +48,7 @@ export function AccountPage() {
       setPasswordNotice(t('account.passwordChanged'))
       setCurrent('')
       setNext('')
-      // El backend revoca todas las sesiones, esta incluida.
+      // The backend revokes every session, this one included.
       window.setTimeout(() => void logout(), 1500)
     },
     onError: (error) => setPasswordError(describe(error)),

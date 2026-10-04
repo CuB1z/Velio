@@ -3,15 +3,10 @@ import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl'
 export type MapStyleId = 'map' | 'satellite'
 
 /**
- * Bases sin API key, a propósito: el proyecto no necesita credenciales que
- * gestionar ni rotar.
- *
- * - OpenFreeMap Positron / Dark: vectoriales, mundiales, gratuitas. Gris
- *   desaturado a propósito, para que el trazado sea lo único con color, pero
- *   con la red secundaria y las cartelas de vía que un planificador necesita
- *   poder leer al zoom de planificación.
- * - PNOA del IGN: ortofoto de máxima actualidad. Solo cubre España, que es
- *   exactamente el alcance del grafo de Valhalla del backend.
+ * Basemaps without API keys, so there are no credentials to manage.
+ * - OpenFreeMap Positron / Dark: global vector tiles, desaturated so the route
+ *   is the only colour.
+ * - IGN PNOA orthophoto: Spain only, matching the backend's Valhalla graph.
  */
 const BASE_LIGHT = 'https://tiles.openfreemap.org/styles/positron'
 const BASE_DARK = 'https://tiles.openfreemap.org/styles/dark'
@@ -41,7 +36,7 @@ const satelliteStyle: StyleSpecification = {
   layers: [{ id: 'pnoa', type: 'raster', source: 'pnoa' }],
 }
 
-/** El estilo "mapa" sigue al tema; el satélite es el mismo en claro y oscuro. */
+/** The "map" style follows the theme; satellite is the same in both. */
 export function styleFor(id: MapStyleId, dark: boolean): string | StyleSpecification {
   if (id === 'satellite') return satelliteStyle
   return dark ? BASE_DARK : BASE_LIGHT
@@ -91,25 +86,17 @@ export function applyBaseStyle(map: MapLibreMap, id: MapStyleId, dark: boolean):
   })
 }
 
-/** Encima de la ortofoto el trazado necesita filete oscuro; sobre la base clara, blanco. */
+/** The route needs a dark halo over the orthophoto or dark base, white on the light base. */
 export function overlayNeedsDarkHalo(id: MapStyleId, dark: boolean): boolean {
   return id === 'satellite' || dark
 }
 
-/**
- * Centro por defecto: la Puerta del Sol. Es donde cae el mapa cuando el
- * navegador no da posición (permiso denegado, sin GPS, o aún esperando);
- * con posición, la página encuadra la del usuario.
- */
+/** Default centre (Puerta del Sol) while the browser gives no position. */
 export const MADRID_CENTER: { lat: number; lon: number } = { lat: 40.4168, lon: -3.7038 }
 export const DEFAULT_CENTER: [number, number] = [MADRID_CENTER.lon, MADRID_CENTER.lat]
 export const DEFAULT_ZOOM = 11
 
-/**
- * Hueco que el panel de resultado tapa sobre el mapa, para que al encajar la
- * ruta no quede debajo. Vive aquí porque es la misma medida que usa el panel:
- * las tres páginas lo repetían a mano y al plegarlo se quedaba desfasado.
- */
+/** Fit padding that keeps the route clear of the result panel; shared with the panel's size. */
 export function mapFitPadding(hasResult: boolean, collapsed = false) {
   return { top: 48, right: 48, bottom: hasResult && !collapsed ? 440 : 48, left: 48 }
 }

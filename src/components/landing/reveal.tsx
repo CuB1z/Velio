@@ -5,9 +5,8 @@ import { cn } from '@/lib/cn'
 const supportsObserver = () => typeof IntersectionObserver !== 'undefined'
 
 /**
- * Aparece al entrar en pantalla, una vez. Sin IntersectionObserver (jsdom,
- * navegadores viejos) se muestra directamente: el revelado es un adorno, el
- * contenido no puede depender de él.
+ * Reveals once on entering the viewport. Without IntersectionObserver (jsdom,
+ * old browsers) it renders straight away: content must never depend on it.
  */
 export function Reveal({
   children,
@@ -16,7 +15,7 @@ export function Reveal({
 }: {
   children: ReactNode
   className?: string
-  /** Escalonado entre hermanos, en ms. */
+  /** Stagger between siblings, in ms. */
   delay?: number
 }) {
   const ref = useRef<HTMLDivElement>(null)

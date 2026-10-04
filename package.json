@@ -13,7 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
     "contract:pull": "node scripts/pullContract.mjs",
-    "contract:check": "node -e \"import('./scripts/checkContract.mjs').then(m=>{const p=[...m.compare(),...m.comparePaths()];if(p.length){console.error(p.join('\\n'));process.exit(1)}console.log('contrato alineado')})\""
+    "contract:check": "node -e \"import('./scripts/checkContract.mjs').then(m=>{const p=[...m.compare(),...m.comparePaths()];if(p.length){console.error(p.join('\\n'));process.exit(1)}console.log('contract aligned')})\""
   },
   "dependencies": {
     "@heroui/react": "3.2.4",

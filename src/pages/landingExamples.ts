@@ -1,8 +1,6 @@
 /**
- * Material real de la landing, generado por el motor tal cual (12 sep 2026):
- * tres circuitos con su perfil, y el par antes/despues del arreglo de
- * ida-y-vuelta en Algete. `shape` y `repeated` son coordenadas [lat, lon]
- * muestreadas para dibujar; `polyline` va vacio porque no hace falta.
+ * Unedited engine output for the landing: three loops with profiles plus the Algete out-and-back before/after pair.
+ * `shape` and `repeated` are sampled [lat, lon] points for drawing; `polyline` is left empty.
  */
 import type { ElevationPoint, LoopResult } from '@/types/api'
 

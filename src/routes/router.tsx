@@ -20,10 +20,10 @@ import { SavedRoutesPage } from '@/pages/savedRoutes'
 export function AppRouter() {
   return (
     <Routes>
-      {/* Portada pública. Con sesión abierta redirige al planificador. */}
+      {/* Public landing page. */}
       <Route path="/" element={<LandingPage />} />
 
-      {/* Acceso: quien ya tiene sesión no debería ver estas pantallas. */}
+      {/* Auth screens, hidden from signed-in users. */}
       <Route element={<RedirectIfAuthenticated />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -32,10 +32,10 @@ export function AppRouter() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
-      {/* La vuelta de OAuth entra sin sesión y la crea. */}
+      {/* The OAuth callback arrives without a session and creates it. */}
       <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
-      {/* Los endpoints de cálculo exigen Bearer: la app va entera tras el login. */}
+      {/* Routing endpoints require a Bearer token, so the whole app sits behind login. */}
       <Route element={<RequireAuth />}>
         <Route element={<AppShell />}>
           <Route path="loops" element={<LoopPlannerPage />} />

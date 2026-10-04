@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import en from './en'
 import es from './es'
 
-/** Rutas de todas las hojas del objeto, en orden. */
+/** Sorted paths of every leaf in the object. */
 function leafPaths(value: unknown, prefix = ''): string[] {
   if (typeof value !== 'object' || value === null) return [prefix]
   return Object.entries(value as Record<string, unknown>)
@@ -11,13 +11,13 @@ function leafPaths(value: unknown, prefix = ''): string[] {
     .sort()
 }
 
-describe('traducciones', () => {
-  it('es y en tienen exactamente las mismas claves', () => {
-    // Una clave suelta en un idioma sale en pantalla como "auth.loginTitle".
+describe('translations', () => {
+  it('es and en have exactly the same keys', () => {
+    // A key missing in one language renders as "auth.loginTitle".
     expect(leafPaths(en)).toEqual(leafPaths(es))
   })
 
-  it('ninguna cadena queda vacía', () => {
+  it('has no empty strings', () => {
     for (const [name, bundle] of [
       ['es', es],
       ['en', en],
@@ -35,7 +35,7 @@ describe('traducciones', () => {
     }
   })
 
-  it('las interpolaciones coinciden entre idiomas', () => {
+  it('interpolations match across languages', () => {
     const placeholders = (value: unknown): string[] =>
       typeof value === 'string' ? [...value.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort() : []
 

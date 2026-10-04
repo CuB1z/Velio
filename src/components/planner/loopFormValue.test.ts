@@ -3,14 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_LOOP_FORM, toLoopRequest } from './loopFormValue'
 
 describe('toLoopRequest', () => {
-  it('envía los dos filtros y ningún costing crudo', () => {
-    /*
-     * Regresión: el formulario mandaba `profile: 'safe'` junto a
-     * `costing: { bicycle_type: 'Hybrid' }`, y el costing crudo gana en el
-     * backend. El selector de estilo no cambiaba nada: siempre se enrutaba
-     * como híbrida. Ahora la bici *es* el bicycle_type, así que no hay dos
-     * sitios donde decir lo mismo.
-     */
+  it('sends both filters and no raw costing', () => {
+    // The bike is the bicycle_type; a raw costing would override it in the backend.
     const request = toLoopRequest({ ...DEFAULT_LOOP_FORM, bike: 'gravel', hills: 'hilly' })
 
     expect(request?.bike).toBe('gravel')
@@ -18,12 +12,12 @@ describe('toLoopRequest', () => {
     expect(request?.costing).toBeUndefined()
   })
 
-  it('omite el objetivo de desnivel cuando está apagado', () => {
+  it('omits the elevation target when it is off', () => {
     const request = toLoopRequest({ ...DEFAULT_LOOP_FORM, gainEnabled: false })
 
     expect(request?.gain_m).toBeUndefined()
     expect(request?.gain_tolerance).toBeUndefined()
-    // La preferencia de desnivel es independiente del objetivo exacto.
+    // The climbing preference is independent of the exact target.
     expect(request?.hills).toBe('rolling')
   })
 
@@ -32,7 +26,7 @@ describe('toLoopRequest', () => {
     expect(toLoopRequest({ ...DEFAULT_LOOP_FORM, alternatives: 3 })?.routes).toBe(4)
   })
 
-  it('no pide ruta sin origen', () => {
+  it('does not request a route without an origin', () => {
     expect(toLoopRequest({ ...DEFAULT_LOOP_FORM, origin: null })).toBeNull()
   })
 })

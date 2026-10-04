@@ -15,8 +15,8 @@ const GPX = `<?xml version="1.0" encoding="UTF-8"?>
   </trk>
 </gpx>`
 
-describe('lectura de GPX', () => {
-  it('extrae la traza y la codifica como polyline6', () => {
+describe('GPX parsing', () => {
+  it('extracts the track and encodes it as polyline6', () => {
     const track = parseGpx(GPX)
     expect(track).not.toBeNull()
     expect(track?.pointCount).toBe(3)
@@ -27,7 +27,7 @@ describe('lectura de GPX', () => {
     expect(decoded[0][1]).toBeCloseTo(40.5964, 5)
   })
 
-  it('rechaza lo que no trae puntos de traza', () => {
+  it('rejects input without track points', () => {
     expect(parseGpx('<gpx></gpx>')).toBeNull()
     expect(parseGpx('esto no es xml <<<')).toBeNull()
   })

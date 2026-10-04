@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useAuth } from '@/auth/useAuth'
 
-/** El backend responde 307 hacia Google, así que se navega en lugar de hacer fetch. */
+/** The backend answers with a 307 to Google, so navigate instead of fetching. */
 export function GoogleButton() {
   const { t } = useTranslation()
   const { oauthAuthorizeUrl } = useAuth()

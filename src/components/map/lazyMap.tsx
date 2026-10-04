@@ -1,13 +1,12 @@
 import { lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
 
-// Derivado del propio componente: una lista de props duplicada a mano se
-// queda atrás en cuanto MapView gana una.
+// Derived from the component so the props cannot drift out of sync.
 import type { MapViewProps } from './mapView'
 
 /**
- * maplibre-gl pesa cerca de un megabyte y solo hace falta en el planificador.
- * Cargándolo aparte, las pantallas de acceso no lo descargan.
+ * maplibre-gl weighs about a megabyte and is only needed in the planner;
+ * loading it separately keeps it off the auth screens.
  */
 const MapView = lazy(async () => ({ default: (await import('./mapView')).MapView }))
 

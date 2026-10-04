@@ -8,7 +8,7 @@ type Props = {
   className?: string
 }
 
-/** Primera, última y una ventana alrededor de la actual; el resto, elipsis. */
+/** First, last and a window around the current page; the rest become ellipses. */
 function pageList(page: number, total: number): (number | 'gap')[] {
   if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1)
 

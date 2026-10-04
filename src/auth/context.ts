@@ -17,11 +17,11 @@ export type AuthContextValue = {
   login: (payload: LoginRequest) => Promise<void>
   register: (payload: RegisterRequest) => Promise<User>
   logout: () => Promise<void>
-  /** Consume la sesión que devuelve el callback de OAuth. */
+  /** Consumes the session returned by the OAuth callback. */
   adoptSession: (session: AuthSession) => void
-  /** Adopta un par de tokens suelto (vuelta de OAuth por el fragmento). */
+  /** Adopts a bare token pair (OAuth return via the URL fragment). */
   adoptTokens: (tokens: Tokens) => Promise<void>
-  /** Relee /auth/me, p. ej. tras verificar el correo. */
+  /** Re-reads /auth/me, e.g. after verifying the email. */
   reloadUser: () => Promise<void>
   oauthAuthorizeUrl: (provider: OAuthProvider) => string
 }

@@ -8,18 +8,18 @@ type RequestOptions = {
   method?: Method
   body?: unknown
   query?: Record<string, string | number | boolean | undefined>
-  /** Añade el Bearer y activa el refresco automático ante un 401. */
+  /** Adds the Bearer token and enables automatic refresh on 401. */
   auth?: boolean
   signal?: AbortSignal
-  /** Devuelve el cuerpo como Blob en vez de JSON (export GPX/GeoJSON). */
+  /** Returns the body as a Blob instead of JSON (GPX/GeoJSON export). */
   blob?: boolean
 }
 
 type AuthHandlers = {
   getAccessToken: () => string | null
-  /** Rota el refresh token. Devuelve true si hay una sesión nueva utilizable. */
+  /** Rotates the refresh token. Returns true if a usable new session exists. */
   refresh: () => Promise<boolean>
-  /** La sesión ya no se puede recuperar: hay que echar al usuario. */
+  /** The session is unrecoverable: sign the user out. */
   onSessionLost: () => void
 }
 
@@ -30,9 +30,8 @@ export function setAuthHandlers(next: AuthHandlers | null): void {
 }
 
 /**
- * Un solo refresco en vuelo. Sin esto, cinco peticiones simultáneas con el
- * token caducado dispararían cinco rotaciones y el backend, que trata la
- * reutilización de un refresh token como robo, cerraría todas las sesiones.
+ * Single in-flight refresh: concurrent 401s would otherwise rotate in parallel, which the
+ * backend treats as refresh-token reuse (theft) and answers by revoking every session.
  */
 let inFlightRefresh: Promise<boolean> | null = null
 
@@ -77,7 +76,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
     if (cause instanceof DOMException && cause.name === 'AbortError') throw cause
     throw new ApiError({
       code: 'NETWORK_ERROR',
-      message: 'No se pudo contactar con el servidor.',
+      message: 'Could not reach the server.',
       status: 0,
     })
   }
@@ -86,7 +85,7 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   let response = await send(path, options)
 
-  // 401 con sesión: intentamos rotar una vez y repetir.
+  // 401 with a session: rotate once and retry.
   if (response.status === 401 && options.auth && handlers) {
     const recovered = await refreshOnce()
     if (recovered) {
@@ -105,7 +104,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return (text ? JSON.parse(text) : undefined) as T
 }
 
-/** Sondea /api/health, que cuelga fuera de /api/v1. */
+/** Pings /api/health, which lives outside /api/v1. */
 export async function health(): Promise<{ status: string; version: string }> {
   const base = API_BASE_URL.replace(/\/v\d+$/, '')
   const response = await fetch(`${base}/health`)

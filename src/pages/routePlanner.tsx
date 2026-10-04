@@ -34,8 +34,7 @@ export function RoutePlannerPage() {
   const { t } = useTranslation()
   const [waypoints, setWaypoints] = useState<LatLon[]>(DEFAULT_WAYPOINTS)
   const [focus, setFocus] = useState<{ center: [number, number]; key: number }>()
-  // El primer punto es donde está el usuario, si el navegador lo dice y aún
-  // no ha tocado la lista; el destino por defecto se mantiene.
+  // Browser position replaces the first point unless the user already edited the list.
   useInitialPosition((position) => {
     setWaypoints((current) => (current === DEFAULT_WAYPOINTS ? [position, ...current.slice(1)] : current))
     setFocus({ center: [position.lon, position.lat], key: Date.now() })
@@ -201,8 +200,7 @@ export function RoutePlannerPage() {
           markers={markers}
           fitKey={fitKey}
           focus={focus}
-          // El panel de resultado flota sobre el mapa: sin este hueco la
-          // ruta se encuadra centrada y queda detrás de él.
+          // The result panel floats over the map; without this padding the route is fitted behind it.
           fitPadding={mapFitPadding(variants.length > 0, resultCollapsed)}
           onMapClick={handleMapClick}
           isPicking={pickTarget !== null}

@@ -5,12 +5,12 @@ export type LoopFormValue = {
   origin: LatLon | null
   via: LatLon[]
   distanceKm: number
-  /** Con el objetivo apagado, el motor no persigue desnivel. */
+  /** With the target off, the engine does not chase elevation gain. */
   gainEnabled: boolean
   gainM: number
-  /** Con qué bici sales: el filtro de terreno. */
+  /** Which bike you ride: the terrain filter. */
   bike: BikeType
-  /** Cuánto desnivel buscar, aparte de la bici. */
+  /** How much climbing to look for, independent of the bike. */
   hills: HillsPreference
   waypointCount: number
   maxIterations: number
@@ -18,9 +18,9 @@ export type LoopFormValue = {
   includeProfile: boolean
 }
 
-/** Los valores por defecto son los del backend, para no pedir lo que ya asume. */
+/** Defaults match the backend's, so we never ask for what it already assumes. */
 export const DEFAULT_LOOP_FORM: LoopFormValue = {
-  // Madrid centro hasta que llegue la posición del navegador, si llega.
+  // Central Madrid until the browser position arrives, if it ever does.
   origin: MADRID_CENTER,
   via: [],
   distanceKm: 70,
@@ -51,9 +51,8 @@ export function toLoopRequest(value: LoopFormValue): LoopRequest | null {
     bike: value.bike,
     hills: value.hills,
     routes: value.alternatives > 0 ? value.alternatives + 1 : undefined,
-    // Sin `costing`: la bici ya es el `bicycle_type`. Enviarlo aparte era el
-    // bug que hacía que el selector no cambiase nada, porque el costing crudo
-    // gana siempre y sobrescribía la bici elegida.
+    // No `costing`: the bike already is the `bicycle_type`, and a raw costing
+    // always wins in the backend and would override it.
     include_profile: value.includeProfile,
   }
 }

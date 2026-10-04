@@ -1,10 +1,10 @@
 import type { CreateSavedRoute, Paginated, SavedRoute } from '@/types/api'
 import { request } from './client'
 
-/** El backend acepta hasta 200 por página; 50 es su valor por defecto. */
+/** The backend accepts up to 200 per page; 50 is its default. */
 export const MAX_PAGE_SIZE = 200
 
-/** El borrado en bloque acepta como mucho 50 ids por llamada. */
+/** Bulk delete accepts at most 50 ids per call. */
 export const MAX_BULK_DELETE = 50
 
 export function list(page = 1, limit = 12): Promise<Paginated<SavedRoute>> {
@@ -30,7 +30,7 @@ export function remove(id: string): Promise<void> {
   return request<void>(`/routes/saved/${id}`, { method: 'DELETE', auth: true })
 }
 
-/** Idempotente: los ids ajenos o inexistentes se ignoran en silencio. */
+/** Idempotent: foreign or unknown ids are silently ignored. */
 export async function removeMany(ids: string[]): Promise<void> {
   for (let i = 0; i < ids.length; i += MAX_BULK_DELETE) {
     const chunk = ids.slice(i, i + MAX_BULK_DELETE)

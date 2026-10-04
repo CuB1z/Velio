@@ -22,7 +22,7 @@ type Props = {
   requested?: number
   targetKm?: number
   targetGainM?: number
-  /** Mínimo impuesto por los puntos de paso, si los hay. */
+  /** Minimum imposed by the waypoints, if any. */
   minimumKm?: number
   onError?: (message: string) => void
   className?: string
@@ -49,15 +49,15 @@ export function RouteResultPanel({
   const points = result.profile ?? []
   const feasible = result.feasible
 
-  // La API dice que no llegó, pero no cuál de los dos objetivos falló. Se
-  // deduce comparando con las mismas tolerancias que se enviaron.
+  // The API says the target was missed but not which one; infer it with the
+  // same tolerances that were sent.
   const missedDistance =
     targetKm !== undefined && Math.abs(result.distance_km - targetKm) > targetKm * 0.05
   const missedGain =
     targetGainM !== undefined && Math.abs(result.gain_m - targetGainM) > targetGainM * 0.2
 
-  // Un punto de paso que no cabe en la distancia pedida es la causa habitual,
-  // y es la única que el usuario puede corregir.
+  // A waypoint that does not fit the requested distance is the usual cause,
+  // and the only one the user can fix.
   const viaTooFar = minimumKm !== undefined && targetKm !== undefined && minimumKm > targetKm
 
   const whyKey = viaTooFar

@@ -14,9 +14,8 @@ type Props = {
 }
 
 /**
- * Lista de trazados. Hace de leyenda del mapa: con dos o más series la
- * identidad no puede depender solo del color, así que cada fila lleva su
- * muestra junto al nombre.
+ * Route list that doubles as the map legend: each row shows its swatch next to
+ * the name, so identity never relies on color alone.
  */
 export function VariantList({ variants, selected, onSelect, className }: Props) {
   const { t } = useTranslation()

@@ -30,18 +30,18 @@ export function LoopPlannerPage() {
   const [pickTarget, setPickTarget] = useState<'origin' | number | null>(null)
   const [selected, setSelected] = useState(0)
   const [exportError, setExportError] = useState<string | null>(null)
-  // Por qué no tenemos la posición del usuario, si no la tenemos.
+  // Why the user's position is missing, if it is.
   const [positionNotice, setPositionNotice] = useState<PositionFailure | null>(null)
-  // Señal explícita de reencuadre: solo al llegar un resultado nuevo.
+  // Bumped to refit the map, only when a new result arrives.
   const [fitKey, setFitKey] = useState(0)
-  // Encuadre explícito del mapa sobre un punto (la posición del usuario).
+  // Centres the map on a point (the user's position).
   const [focus, setFocus] = useState<{ center: [number, number]; key: number }>()
   const abort = useRef<AbortController | null>(null)
 
   const mutation = useMutation({
     mutationFn: (value: LoopFormValue) => {
       const request = toLoopRequest(value)
-      if (!request) throw new Error('origen sin definir')
+      if (!request) throw new Error('origin not set')
       abort.current?.abort()
       abort.current = new AbortController()
       return createLoop(request, abort.current.signal)
@@ -107,8 +107,7 @@ export function LoopPlannerPage() {
     setFocus({ center: [position.lon, position.lat], key: Date.now() })
   }
 
-  // Al cargar: la posición del navegador si la da, y solo si el usuario no ha
-  // escrito ya otro origen mientras llegaba. Si no, se queda Madrid centro.
+  // On load, use the browser position unless the user already changed the origin.
   useInitialPosition(
     (position) => {
       setPositionNotice(null)
@@ -186,8 +185,7 @@ export function LoopPlannerPage() {
           markers={markers}
           fitKey={fitKey}
           focus={focus}
-          // El panel de resultado flota sobre el mapa: sin este hueco la
-          // ruta se encuadra centrada y queda detrás de él.
+          // The result panel floats over the map; without this padding the route is fitted behind it.
           fitPadding={mapFitPadding(variants.length > 0, resultCollapsed)}
           onMapClick={handleMapClick}
           isPicking={pickTarget !== null}
@@ -205,8 +203,7 @@ export function LoopPlannerPage() {
             defaultName={defaultName}
             requested={mutation.variables ? mutation.variables.alternatives + 1 : undefined}
             targetKm={form.distanceKm}
-            // Sin objetivo de desnivel no se muestra ninguno: enseñar "+900 m"
-            // cuando no se ha pedido hace que el resultado parezca un fallo.
+            // No gain target unless requested: an unasked-for "+900 m" reads as a failure.
             targetGainM={form.gainEnabled ? form.gainM : undefined}
             minimumKm={minimumLoopKm(form.origin, form.via)}
             onError={setExportError}

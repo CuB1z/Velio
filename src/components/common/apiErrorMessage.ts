@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 
 import { isApiError } from '@/api/errors'
 
-/** Traduce cualquier fallo a una frase útil, sin filtrar detalles del backend. */
+/** Turns any failure into a useful message without leaking backend details. */
 export function useApiErrorMessage(): (error: unknown) => string {
   const { t } = useTranslation()
 
@@ -17,7 +17,7 @@ export function useApiErrorMessage(): (error: unknown) => string {
 
     const key = `error.${error.code}`
     const message = t(key)
-    // i18next devuelve la clave cuando no existe: ahí cae al mensaje genérico.
+    // i18next returns the key when it is missing: fall back to the generic message.
     return message === key ? t('error.generic') : message
   }
 }

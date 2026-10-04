@@ -89,8 +89,7 @@ export function RegisterPage() {
           <PasswordRules password={password} email={email} />
         </div>
 
-        {/* `flex-row` explícito: .checkbox de HeroUI fija column y la utilidad
-            `flex` de Tailwind solo declara display. */}
+        {/* Explicit `flex-row`: HeroUI's .checkbox sets column and Tailwind's `flex` only sets display. */}
         <Checkbox
           isSelected={accepted}
           onChange={setAccepted}

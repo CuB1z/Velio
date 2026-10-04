@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-/** Ancho y alto reales del nodo. Los gráficos se dibujan en píxeles, no en un
- *  viewBox estirado, para que el texto no se deforme. */
+/** Rendered width and height of the node.
+ *  Charts draw in real pixels, not a stretched viewBox, so text isn't distorted. */
 export function useElementSize<T extends HTMLElement>(): {
   ref: (node: T | null) => void
   width: number

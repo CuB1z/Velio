@@ -1,7 +1,6 @@
 /**
- * Espejo de la política del backend. Se valida aquí solo para dar aviso
- * inmediato: la autoridad sigue siendo el servidor, que responde
- * 422 VALIDATION_ERROR.
+ * Mirror of the backend password policy, for instant feedback only.
+ * The server stays authoritative (422 VALIDATION_ERROR).
  */
 export type PasswordRule = {
   id: 'length' | 'lower' | 'upper' | 'digit' | 'notEmail'
