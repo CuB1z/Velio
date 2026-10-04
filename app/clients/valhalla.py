@@ -41,6 +41,11 @@ EXTRA_TRACE_ATTRIBUTES = [
     "traversability",
 ]
 
+# Costing used to describe a finished route (trace_attributes, locate
+# sampling). The most permissive bicycle type, not the rider's: map-matching
+# only snaps to edges the costing allows.
+TRACE_COSTING: dict = {"bicycle_type": "Mountain"}
+
 DEFAULT_BASE_URL = "http://localhost:8002"
 DEFAULT_TIMEOUT_S = 120.0
 
@@ -77,6 +82,27 @@ def build_route_payload(
     return payload
 
 
+class SnappedEdge(NamedTuple):
+    """The edge a coordinate snaps to via /locate, without routing to it."""
+
+    road_class: str
+    use: str
+    surface: str
+    distance_m: float
+    # Cars are not allowed; the only attribute that tells a car-free park road
+    # from a farm track.
+    car_free: bool = False
+
+    @classmethod
+    def unreachable(cls) -> "SnappedEdge":
+        """Nothing rideable near the point."""
+        return cls("", "", "", float("inf"), False)
+
+    @property
+    def reachable(self) -> bool:
+        return self.distance_m != float("inf")
+
+
 class ValhallaClient:
     """Async access to the routing, tracing and height endpoints."""
 
@@ -101,6 +127,58 @@ class ValhallaClient:
         if resp.status_code >= 400:
             raise RouteError(f"HTTP {resp.status_code}: {resp.text[:200]}")
         return resp.json()
+
+    async def locate(
+        self,
+        points: list[tuple[float, float]],
+        costing_options: dict | None = None,
+    ) -> list[SnappedEdge]:
+        """Snap each point to the nearest rideable edge, in one round trip.
+
+        Points with nothing rideable nearby come back as `unreachable`.
+        """
+        if not points:
+            return []
+
+        payload: dict = {
+            "locations": [{"lat": la, "lon": lo} for la, lo in points],
+            "costing": "bicycle",
+            "verbose": True,
+        }
+        if costing_options:
+            payload["costing_options"] = {"bicycle": dict(costing_options)}
+
+        try:
+            data = await self.post_json("/locate", payload)
+        except RouteError:
+            # Only a hint: callers fall back to their other criteria.
+            return [SnappedEdge.unreachable() for _ in points]
+
+        # /locate answers with a list, unlike the rest of the API.
+        entries: list[dict] = data if isinstance(data, list) else []
+        results: list[SnappedEdge] = []
+        for entry in entries:
+            edges = entry.get("edges") or []
+            if not edges:
+                results.append(SnappedEdge.unreachable())
+                continue
+            best = edges[0]
+            edge = best.get("edge", {})
+            classification = edge.get("classification", {})
+            access = edge.get("access") or {}
+            results.append(
+                SnappedEdge(
+                    road_class=str(classification.get("classification") or ""),
+                    use=str(classification.get("use") or ""),
+                    surface=str(classification.get("surface") or ""),
+                    distance_m=float(best.get("distance", 0.0)),
+                    # Absent means unknown, which must not be read as car-free.
+                    car_free=access.get("car") is False,
+                )
+            )
+        while len(results) < len(points):
+            results.append(SnappedEdge.unreachable())
+        return results
 
     @staticmethod
     def _stitch_trip(trip: dict) -> list[tuple[float, float]]:
@@ -148,8 +226,7 @@ class ValhallaClient:
     ) -> list[RouteResult]:
         """Bicycle route plus up to `count` Valhalla alternatives.
 
-        Servers without alternative support simply answer with the primary
-        trip, which degrades to a single-element list.
+        Servers without alternatives support yield a single-element list.
         """
         data = await self.post_json(
             "/route",

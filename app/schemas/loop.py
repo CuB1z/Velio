@@ -11,7 +11,7 @@ class Waypoint(BaseModel):
 
 
 class CostingOptions(BaseModel):
-    """Raw Valhalla bicycle costing overrides (win over `profile`)."""
+    """Raw Valhalla bicycle costing overrides (win over `bike`/`hills`)."""
 
     bicycle_type: Literal["Road", "Hybrid", "Cross", "Mountain"] | None = None
     use_roads: float | None = Field(default=None, ge=0, le=1)
@@ -28,7 +28,9 @@ class LoopCreateRequest(BaseModel):
     gain_tolerance: float = Field(default=0.20, gt=0, le=1.0)
     waypoint_count: int = Field(default=10, ge=3, le=50)
     max_iterations: int = Field(default=8, ge=1, le=50)
-    profile: Literal["fast", "safe", "fitness", "relaxed"] | None = None
+    # Rider-facing filters; traffic avoidance is always on.
+    bike: Literal["road", "city", "gravel", "mtb"] | None = None
+    hills: Literal["flat", "rolling", "hilly"] | None = None
     routes: int = Field(default=1, ge=1, le=5)
     costing: CostingOptions | None = None
     include_profile: bool = False
@@ -45,6 +47,7 @@ class Quality(BaseModel):
 class CyclingScore(BaseModel):
     distance: float
     safety: float
+    surface: float
     elevation: float
     overlap_penalty: float
     total: float

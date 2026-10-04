@@ -1,11 +1,18 @@
 """Point-to-point routing use case bridging the HTTP layer and Valhalla."""
 
-from app.clients.valhalla import RouteError, ValhallaClient, ValhallaError
+from app.clients.valhalla import (
+    TRACE_COSTING,
+    RouteError,
+    ValhallaClient,
+    ValhallaError,
+)
 from app.core.exceptions import RoutingError, ServiceUnavailableError
 from app.engine.analysis import Analysis, analyze_edges
+from app.engine.cycling_score import BALANCED_WEIGHTS
 from app.engine.dem import DemSource
 from app.engine.elevation import build_profile
 from app.engine.polyline import encode
+from app.engine.bikes import RIDING_WEIGHTS, costing_options_for
 from app.mappers.analysis import AnalysisMapper
 from app.schemas.route import RouteCreateRequest, RouteResponse
 
@@ -19,30 +26,35 @@ class RouteService:
 
     async def generate(self, data: RouteCreateRequest) -> RouteResponse:
         locations = [(w.lat, w.lon) for w in data.waypoints]
+        costing_options = costing_options_for(data.bike, data.hills, data.costing)
         try:
             if data.alternatives:
                 results = await self.valhalla.route_alternatives(
-                    locations, count=data.alternatives
+                    locations, count=data.alternatives, costing_options=costing_options
                 )
             else:
-                results = [await self.valhalla.route(locations)]
+                results = [
+                    await self.valhalla.route(
+                        locations, costing_options=costing_options
+                    )
+                ]
         except RouteError as exc:
             raise RoutingError(f"No route found: {exc}") from exc
         except ValhallaError as exc:
             raise ServiceUnavailableError(f"Valhalla unavailable: {exc}") from exc
 
         routes = [
-            await self._finalize(result, data.include_profile) for result in results
+            await self._finalize(result, data) for result in results
         ]
         primary = routes[0]
         primary.alternatives = routes[1:] or None
         return primary
 
     async def _finalize(
-        self, result, include_profile: bool
+        self, result, data: RouteCreateRequest
     ) -> RouteResponse:
         profile = build_profile(self.dem, result.coords)
-        analysis = await self._analyze(result.coords, result.distance_km)
+        analysis = await self._analyze(result.coords, result.distance_km, data.bike)
 
         response = RouteResponse(
             distance_km=result.distance_km,
@@ -54,14 +66,21 @@ class RouteService:
             score=AnalysisMapper.quality(analysis),
             cycling_score=AnalysisMapper.cycling_score(analysis),
         )
-        if include_profile:
+        if data.include_profile:
             response.profile = AnalysisMapper.profile_points(profile)
         return response
 
-    async def _analyze(self, coords, distance_km: float) -> Analysis:
+    async def _analyze(
+        self, coords, distance_km: float, bike: str | None = None
+    ) -> Analysis:
         """One pass over trace edges; optional metadata on failure."""
         try:
-            edges = await self.valhalla.trace_attributes(encode(coords))
+            edges = await self.valhalla.trace_attributes(encode(coords), TRACE_COSTING)
         except ValhallaError:
             return Analysis.unavailable()
-        return analyze_edges(edges, distance_km=distance_km)
+        return analyze_edges(
+            edges,
+            distance_km=distance_km,
+            weights=RIDING_WEIGHTS if bike else BALANCED_WEIGHTS,
+            bike=bike,
+        )

@@ -27,6 +27,7 @@ class AnalysisMapper:
             return None
         return CyclingScore(
             distance=rating.distance,
+            surface=round(rating.surface, 2),
             safety=rating.safety,
             elevation=rating.elevation,
             overlap_penalty=rating.overlap_penalty,

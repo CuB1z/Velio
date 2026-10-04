@@ -191,3 +191,55 @@ def test_geojson_format_returns_feature_collection(auth_headers):
     props = doc["features"][0]["properties"]
     assert props["distance_km"] == pytest.approx(74.0)
     assert props["duration_min"] > 0.0
+
+
+def _recording_valhalla(seen: dict):
+    class Recording(FakeValhalla):
+        async def route(self, locations, costing_options=None, avoid_locations=None):
+            seen["costing"] = costing_options
+            return await FakeValhalla.route(self, locations)
+
+    return Recording()
+
+
+def test_bike_choice_reaches_valhalla_costing(auth_headers):
+    """The bike picker must shape the route, not just decorate the form."""
+    seen: dict = {}
+    client = make_client(_recording_valhalla(seen), auth_headers)
+    resp = client.post("/api/v1/routes", json={**ROUTE_BODY, "bike": "road"})
+
+    assert resp.status_code == 200
+    assert seen["costing"]["use_roads"] == 0.3
+    assert seen["costing"]["avoid_bad_surfaces"] == 1.0
+    assert seen["costing"]["bicycle_type"] == "Road"
+
+
+def test_hills_filter_is_independent_of_the_bike(auth_headers):
+    seen: dict = {}
+    client = make_client(_recording_valhalla(seen), auth_headers)
+    resp = client.post(
+        "/api/v1/routes", json={**ROUTE_BODY, "bike": "gravel", "hills": "flat"}
+    )
+
+    assert resp.status_code == 200
+    assert seen["costing"]["bicycle_type"] == "Cross"
+    assert seen["costing"]["use_hills"] == 0.0
+
+
+def test_explicit_costing_wins_over_the_profile(auth_headers):
+    seen: dict = {}
+    client = make_client(_recording_valhalla(seen), auth_headers)
+    resp = client.post(
+        "/api/v1/routes",
+        json={**ROUTE_BODY, "bike": "road", "costing": {"use_roads": 0.9}},
+    )
+
+    assert resp.status_code == 200
+    assert seen["costing"]["use_roads"] == 0.9
+
+
+def test_no_riding_filters_leaves_valhalla_defaults(auth_headers):
+    seen: dict = {}
+    client = make_client(_recording_valhalla(seen), auth_headers)
+    assert client.post("/api/v1/routes", json=ROUTE_BODY).status_code == 200
+    assert seen["costing"] is None

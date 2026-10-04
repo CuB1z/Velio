@@ -12,8 +12,11 @@ from app.engine.loop import (
     find_peak,
     generate_loop,
     insert_by_bearing,
+    place_via_points,
+    ring_candidates,
     ring_waypoints,
     select_waypoints,
+    waypoint_rideability,
 )
 
 
@@ -293,3 +296,107 @@ def test_generate_loop_rejects_bad_target():
                 LoopRequest(origin=(40.0, -3.0), target_km=0),
             )
         )
+
+
+def test_via_points_near_the_origin_are_visited_on_the_way_out():
+    """Slotted between ring waypoints, a near via turns into an out and back."""
+    origin = (40.3765, -3.7592)
+    radius_m = 9070.0  # a 57 km loop
+    ring = ring_waypoints(*origin, radius_m, 8)
+    near = (40.398283, -3.757684)  # 2.4 km out: 27% of the radius
+
+    placed = place_via_points(ring, origin, (near,), radius_m)
+
+    # Leaving the origin, the near point comes before any ring waypoint.
+    assert placed[0] == near
+    assert placed[1:] == ring
+
+
+def test_via_points_out_on_the_ring_still_slot_in_by_bearing():
+    origin = (40.3765, -3.7592)
+    radius_m = 9070.0
+    ring = ring_waypoints(*origin, radius_m, 8)
+    far = destination_point(*origin, math.radians(100.0), radius_m)
+
+    placed = place_via_points(ring, origin, (far,), radius_m)
+
+    assert placed[0] != far
+    assert far in placed
+    # Its neighbours bracket it in bearing, so the loop stays convex.
+    index = placed.index(far)
+    assert index not in (0, len(placed) - 1)
+
+
+def test_near_via_points_are_ordered_nearest_first():
+    origin = (40.3765, -3.7592)
+    radius_m = 9070.0
+    ring = ring_waypoints(*origin, radius_m, 8)
+    nearer = (40.398283, -3.757684)
+    further = (40.425252, -3.733513)
+
+    placed = place_via_points(ring, origin, (further, nearer), radius_m)
+
+    assert placed[:2] == [nearer, further]
+
+
+class TestWaypointRideability:
+    """No costing can rescue a waypoint that only a dirt track reaches."""
+
+    def test_tarmac_beats_dirt(self):
+        paved = waypoint_rideability("road", "paved_smooth", 20.0)
+        dirt = waypoint_rideability("track", "dirt", 20.0)
+        assert paved > 0.9
+        assert dirt < 0.15
+        assert paved > dirt
+
+    def test_a_cycleway_is_the_best_place_to_be_sent(self):
+        cycleway = waypoint_rideability("cycleway", "paved", 20.0)
+        street = waypoint_rideability("road", "paved", 20.0)
+        assert cycleway > street
+
+    def test_a_point_off_the_network_is_discounted(self):
+        near = waypoint_rideability("road", "paved", 20.0)
+        far = waypoint_rideability("road", "paved", 400.0)
+        assert far < near * 0.5
+
+    def test_nothing_nearby_scores_zero(self):
+        assert waypoint_rideability("", "", float("inf")) == 0.0
+
+    def test_unknown_surfaces_stay_in_the_middle(self):
+        # Sparse attributes degrade to neutral instead of rejecting every candidate.
+        assert waypoint_rideability("road", "brand_new_enum", 20.0) == 0.5
+
+
+class TestRideabilityDrivesSelection:
+    def test_the_sector_picks_its_most_rideable_candidate(self):
+        origin = (40.5964, -3.6318)
+        request = LoopRequest(
+            origin=origin,
+            target_km=40.0,
+            waypoint_count=4,
+            candidates_per_sector=4,
+        )
+        _, candidates = ring_candidates(request, 6000.0)
+
+        # Third candidate of the first sector is the only good surface.
+        rideability = [0.0] * len(candidates)
+        rideability[2] = 1.0
+
+        chosen = select_waypoints(
+            request, 6000.0, 0.0, 0.0, _FlatDem(), rideability
+        )
+        assert chosen[0] == pytest.approx(candidates[2])
+
+    def test_without_the_hint_selection_is_unchanged(self):
+        origin = (40.5964, -3.6318)
+        request = LoopRequest(origin=origin, target_km=40.0, waypoint_count=4)
+        plain = select_waypoints(request, 6000.0, 0.0, 0.0, _FlatDem())
+        none_given = select_waypoints(
+            request, 6000.0, 0.0, 0.0, _FlatDem(), None
+        )
+        assert plain == none_given
+
+
+class _FlatDem:
+    def elevation(self, lat: float, lon: float) -> float:
+        return 100.0

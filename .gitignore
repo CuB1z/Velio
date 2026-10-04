@@ -26,3 +26,6 @@ data/*.osm.pbf
 test.db
 *.db
 !.env.example
+
+# Loop benchmark results (tools/bench_loops.py)
+bench-*.json

@@ -394,6 +394,41 @@ routed through and re-scaled until the requested distance and elevation gain
 are met; if the targets cannot be met from that origin the best-effort loop
 is returned with `feasible: false`.
 
+Ring candidates are checked against the road network before any of them is
+chosen, and the ones sitting on decent surface win. This matters more than the
+costing options do: a waypoint that only a farm track reaches drags the whole
+loop onto dirt whatever bike the rider picked.
+
+A road bike asks for paved surface strictly, and gives it up only where the
+terrain leaves no paved way round — better a loop on gravel than no loop at
+all.
+
+#### Out-and-back repair
+
+The controller that shapes the ring only ever looked at distance and climb,
+so in a valley or a sparse rural network it would converge on a loop that
+rides the same road out and back: good surface, no traffic, and a third of
+it ridden twice. That is the single thing that made generated loops feel
+wrong, and the quality score punished it (up to 5 points) without the
+generator ever learning from it.
+
+Now every candidate loop is traced, and when more than 15% of it repeats a
+road the service finds the ring waypoint that caused it — the one sitting
+*between* a road's first visit and its repeat — bans that ring sector, and
+regenerates. Up to three rounds, dropping two sectors per round, never below
+four. A repair is kept only when it repeats less **and** loses no ground on
+the distance and climb targets; a rejected round still tells the next one
+which sector to drop.
+
+Why drop the waypoint instead of forbidding the road: measured — the waypoint
+at the end of a valley is reachable by that road alone, so excluding the road
+makes the ring unroutable ("no path"). Removing the waypoint lets the loop skip
+the valley and the controller recovers the distance in the sectors that remain.
+
+Measured over three origins, two distances and three bikes, the mean quality
+score went from 5.4 to 7.0; the worst case (a 30 km road loop from farmland)
+from 1.3 to 7.5, with its repeated share dropping from 36% to 4%.
+
 Request:
 
 ```json
@@ -406,7 +441,8 @@ Request:
   "gain_tolerance": 0.20,
   "waypoint_count": 10,
   "max_iterations": 8,
-  "profile": "safe",
+  "bike": "road",
+  "hills": "rolling",
   "routes": 2,
   "costing": {"use_hills": 0.6},
   "include_profile": true
@@ -415,25 +451,96 @@ Request:
 
 Only `origin` and `distance_km` are required.
 
-- `profile`: named cycling profile mapped onto Valhalla costing options
+- `bike`: which bike you are on, which is what filters the terrain
   (see table below).
+- `hills`: how much climbing to go looking for — `flat`, `rolling` or
+  `hilly`. Independent of `bike`: any bike combines with any of the three.
 - `routes`: generate several distinct loops in one call; every extra loop
   bans the climbs used by the previous ones and is returned in the
   `alternatives` array of the primary loop.
 - `costing`: raw Valhalla bicycle overrides (`bicycle_type`, `use_roads`,
-  `use_hills`, `avoid_bad_surfaces`) applied on top of `profile`.
+  `use_hills`, `avoid_bad_surfaces`) applied on top of `bike` and `hills`.
 - `include_profile`: attach the resampled DEM elevation profile as
   `profile` (one point roughly every 10 m).
 
-Named riding profiles shape both the Valhalla costing and the scoring
-weights (distance / safety / elevation):
+#### Riding filters
 
-| `profile` | Intent |
+Two independent questions, because that is how a rider thinks about a ride:
+which bike is in the garage, and whether they feel like climbing today.
+
+`bike` is not a label. It is the strongest lever in the engine, and it is the
+only one that moves the surface mix. Measured over the same leg:
+
+| `bike` | Valhalla costing | Track | Cycleway | Road |
+|---|---|---|---|---|
+| `road` | `Road` + `avoid_bad_surfaces: 1.0` | 0.4% | 25% | 53% |
+| `city` | `road` + `use_roads: 0.0` | ≈0% | see below | least traffic |
+| `gravel` | `Cross` | 35% | 18% | 33% |
+| `mtb` | `Mountain` | 53% | 18% | 14% |
+
+`city` is the road bike that refuses traffic: same asphalt-only constraint,
+`use_roads` at zero. Measured on three cycleway-rich legs against `road`:
+busy roads 20.7% → 15.6%, cycleways 43.0% → 44.6%, 1.1% unpaved, +1%
+distance. The obvious `Hybrid` type was measured and rejected — it ignores
+`avoid_bad_surfaces` and rides 15% farm track.
+
+On loops the city bike rides **two passes**. Valhalla's `Hybrid` type is what
+a city bike is, and in the city it is the quietest thing the graph offers —
+measured on a 30 km loop from Usera against the asphalt-only costing: busy
+roads 14.0% → 11.6%, cycleways 22.5% → 24.9%, quiet streets 31% → 35.5%,
+score 7.61 → 9.13. But `Hybrid` ignores `avoid_bad_surfaces`, so outside the
+city it goes straight onto farm tracks (Algete: 51% dirt). So the service
+tries `Hybrid` first and keeps that loop only when at most 5% of it is on
+gravel, dirt, path or sand (compacted counts as firm: greenways are compacted);
+otherwise it answers with the asphalt-only costing above. In the city you get
+the quieter loop; in the country you never get the dirt.
+
+Measured on the full benchmark, described with the permissive tracing: `city`
+beats `road` on both Madrid loops (9.13 vs 7.61, 8.92 vs 7.65 — the 60 km one
+riding 15% of compacted greenway) and on all four sierra loops; it loses one
+farmland cell (Algete 60 km, 7.14 vs 8.47) to ring geometry. Mean traffic
+score 7.07 against 6.83 for `road`, same surface score.
+
+Where no paved loop of the requested length exists at all — a 30 km road loop
+from Algete is the example — the asphalt-only pass relaxes its surface
+constraint rather than answer nothing, and the result rides dirt. The score
+now says so (that loop reports 52% unpaved); it used to say 3%, see below.
+
+What was tried and rejected: steering the ring's waypoints onto `cycleway`
+edges made loops worse (Usera 30 km: cycleway share 22% → 8%; farmland: 20%
+dirt, because a rural OSM "cycleway" is often a track) — the infrastructure is
+fragmented, and a waypoint on an isolated stub drags the leg to it by whatever
+gets there. No costing invents cycleways that are not on the map; the `safety`
+axis of the score reports how much traffic each route actually carries.
+
+`bike` also picks the ranking the `surface` score is measured against, so the
+same dirt track scores 1.0/10 for a road bike and 8.5/10 for a gravel one.
+That is the point: the score answers "does this ground suit *my* bike", not
+"is this ground smooth".
+
+| `hills` | Meaning |
 |---|---|
-| `fast` | Time and distance first; bigger roads are acceptable |
-| `safe` | Quiet roads, cycle infrastructure and good surfaces |
-| `fitness` | Training rides: distance and climbing matter most |
-| `relaxed` | Easy spinning: little traffic and gentle terrain |
+| `flat` | Of several good loops, answer with the flattest |
+| `rolling` | Take the terrain as it comes |
+| `hilly` | Of several good loops, answer with the hilliest |
+
+`hills` is honoured by **choosing, not routing**. Three ways of routing for it
+were measured on this graph and none changed what a loop climbs: Valhalla's
+`use_hills` moved the climb by 2-12% between 0.0 and 1.0; biasing the ring
+toward low or high ground moved it the wrong way in the sierra (valley-bottom
+waypoints route over the passes between them); and a distance-scaled gain
+target simply failed and reported the loop infeasible. At loop scale the
+relief is what it is.
+
+What is monotone by construction is to generate three good loops instead of
+one and let the score's climbing axis pick: with `flat` it rewards little
+climbing per kilometre, with `hilly` a lot, on a scale where 25 m/km is a
+proper mountain ride. An explicit `gain_m` always wins over the preference,
+and with one set the controller does the work directly. Expect a `flat` or
+`hilly` request to take about three times as long as a `rolling` one.
+
+Traffic avoidance is not a setting. Every bike keeps `use_roads` low, because
+no rider asks for more cars.
 
 ### Export formats
 
@@ -482,6 +589,7 @@ Response:
   "cycling_score": {
     "distance": 10.0,
     "safety": 6.8,
+    "surface": 9.4,
     "elevation": 9.1,
     "overlap_penalty": 0.0,
     "total": 8.1
@@ -503,11 +611,32 @@ Response:
   steepest upward grade found.
 - `cycling_score`: multi-factor rating in 0-10 — `distance` rewards matching
   the requested length (0 at ±20%), `elevation` the requested climb (0 at
-  ±30%), `safety` is a length-weighted road friendliness measure (cycle
-  lanes and quiet roads add, primary roads with many lanes or truck traffic
-  subtract), `overlap_penalty` subtracts up to 5 points for repeated roads
-  above a 5% ratio, and `total` combines them with the weights of the
-  selected riding profile.
+  ±30%), `safety` measures **traffic**, and `surface` measures **whether the
+  ground suits your bike**.
+
+  Traffic and surface are separate axes on purpose: a park road closed to cars
+  is superb cycling on a dirt surface, and a smooth dual carriageway is awful
+  cycling on a perfect one. Rolling the two into one number is what made every
+  route score alike.
+
+  `safety` counts the share of the route where cars are not allowed at all —
+  which only `/locate` can answer, so the route is sampled — plus cycle lanes
+  and quiet road classes, minus primary roads, lanes and truck traffic. A
+  neutral road sits at 5, leaving room above a residential street for real
+  infrastructure.
+
+  `surface` is measured against the ranking of the `bike` that was requested,
+  so the same dirt track scores 1.0/10 for a road bike and 8.5/10 for a gravel
+  one. Without a `bike` it falls back to a neutral, bike-agnostic ranking.
+
+  `overlap_penalty` subtracts up to 5 points for repeated roads above a 5%
+  ratio, and `total` combines the four axes and subtracts the penalty.
+
+  All of these describe the route with a permissive costing, never with the
+  bike's own. Map-matching only snaps to edges the costing allows; measured,
+  tracing a 31 km loop with the road bike's `avoid_bad_surfaces: 1.0` matched
+  12 km of it and reported 0% dirt on a loop that is 60% dirt. The numbers
+  describe what is under the wheels, not what the bike would tolerate.
 - `profile`: resampled DEM elevation points (only with `include_profile`).
 - `alternatives`: the extra loops from `routes > 1`, each avoiding the
   climbs of the previous ones; `null` when only one loop was requested.
@@ -517,6 +646,9 @@ Response:
 ## POST /api/v1/routes
 
 Point-to-point bicycle route through ordered waypoints (2 to 20).
+
+Accepts the same `bike`, `hills` and `costing` as `/loops`: a rider who wants quiet
+roads wants them point to point too.
 
 ```bash
 curl -s -X POST localhost:8000/api/v1/routes \
@@ -535,7 +667,7 @@ Response:
   "duration_min": 214.6,
   "overlap_ratio": 0.0311,
   "score": {"comfort": 71.2, "paved_share": 0.83, "...": "..."},
-  "cycling_score": {"distance": 10.0, "safety": 7.4, "overlap_penalty": 0.0, "total": 8.4},
+  "cycling_score": {"distance": 10.0, "safety": 7.4, "surface": 9.1, "overlap_penalty": 0.0, "total": 8.4},
   "profile": [{"lat": 40.4168, "lon": -3.7038, "distance_m": 0.0, "elevation_m": 652.1, "grade_pct": null}],
   "alternatives": [{"distance_km": 78.90, "...": "..."}]
 }

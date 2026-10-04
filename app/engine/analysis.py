@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from .cycling_score import BALANCED_WEIGHTS, CyclingScore, Weights, cycling_score
 from .edges import RouteEdge
-from .overlap import overlap_ratio
+from .overlap import overlap_ratio, spur_intervals
 from .scoring import RouteScore, score_edges
 
 
@@ -14,6 +14,9 @@ class Analysis(NamedTuple):
     comfort: RouteScore | None
     overlap: float | None
     rating: CyclingScore | None
+    # Out-and-back stretches as (start, end) metres along the route, from a
+    # road's first visit to its repeat. Empty when unknown.
+    spurs_m: tuple[tuple[float, float], ...] = ()
 
     @classmethod
     def unavailable(cls) -> "Analysis":
@@ -29,6 +32,9 @@ def analyze_edges(
     gain_m: float | None = None,
     target_gain_m: float | None = None,
     weights: Weights = BALANCED_WEIGHTS,
+    traffic_free_share: float | None = None,
+    bike: str | None = None,
+    hills: str | None = None,
 ) -> Analysis:
     """Comfort, overlap ratio and cycling rating for one edge list.
 
@@ -39,6 +45,7 @@ def analyze_edges(
     return Analysis(
         comfort=score_edges(edges),
         overlap=ratio,
+        spurs_m=tuple(spur_intervals(edges)),
         rating=cycling_score(
             edges,
             distance_km=distance_km,
@@ -47,5 +54,8 @@ def analyze_edges(
             target_gain_m=target_gain_m,
             overlap_ratio=ratio,
             weights=weights,
+            traffic_free_share=traffic_free_share,
+            bike=bike,
+            hills=hills,
         ),
     )

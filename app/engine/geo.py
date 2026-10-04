@@ -34,3 +34,20 @@ def destination_point(
         math.cos(angular) - math.sin(lat_r) * math.sin(lat_p),
     )
     return math.degrees(lat_p), math.degrees(lon_p)
+
+
+def initial_bearing_deg(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """Compass bearing from `a` to `b` in [0, 360)."""
+    lat1, lon1 = math.radians(a[0]), math.radians(a[1])
+    lat2, lon2 = math.radians(b[0]), math.radians(b[1])
+    dlon = lon2 - lon1
+    x = math.sin(dlon) * math.cos(lat2)
+    y = math.cos(lat1) * math.sin(lat2) - (
+        math.sin(lat1) * math.cos(lat2) * math.cos(dlon)
+    )
+    return math.degrees(math.atan2(x, y)) % 360.0
+
+
+def angular_distance_deg(a: float, b: float) -> float:
+    """Smallest angle between two bearings, in [0, 180]."""
+    return abs((a - b + 180.0) % 360.0 - 180.0)

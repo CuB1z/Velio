@@ -32,6 +32,7 @@ def test_properties_carry_metrics():
     score = CyclingScore(
         distance=10.0,
         safety=7.5,
+        surface=9.0,
         elevation=10.0,
         overlap_penalty=0.0,
         total=8.5,

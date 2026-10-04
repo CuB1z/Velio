@@ -1,12 +1,24 @@
 """HTTP schemas for the point-to-point routing endpoint."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
-from app.schemas.loop import CyclingScore, ProfilePoint, Quality, Waypoint
+from app.schemas.loop import (
+    CostingOptions,
+    CyclingScore,
+    ProfilePoint,
+    Quality,
+    Waypoint,
+)
 
 
 class RouteCreateRequest(BaseModel):
     waypoints: list[Waypoint] = Field(min_length=2, max_length=20)
+    # Same rider-facing filters as the loop endpoint.
+    bike: Literal["road", "city", "gravel", "mtb"] | None = None
+    hills: Literal["flat", "rolling", "hilly"] | None = None
+    costing: CostingOptions | None = None
     include_profile: bool = False
     alternatives: int = Field(default=0, ge=0, le=2)
 

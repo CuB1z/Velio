@@ -42,3 +42,51 @@ def test_partial_repeat_inside_window_only():
     # Repeat confined to the excluded tail does not count.
     edges = [edge(10.0, "A"), edge(10.0, "B"), edge(9.0, "C"), edge(1.0, "A")]
     assert overlap_ratio(edges) == 0.0
+
+
+def test_repeated_spans_locate_the_second_visit():
+    """The repair needs *where*, not just how much."""
+    from app.engine.overlap import repeated_spans
+
+    edges = [
+        edge(2.0, "1"),
+        edge(2.0, "2"),
+        edge(2.0, "2"),  # back on way 2: repeated
+        edge(2.0, "1"),  # back on way 1: repeated
+    ]
+    spans = repeated_spans(edges, exclusion_m=0.0)
+    # Edges 2 and 3 touch, so way 2 merges into one visit; only way 1 repeats.
+    assert spans == [(6000.0, 8000.0)]
+
+
+def test_repeated_spans_are_empty_for_a_clean_loop():
+    from app.engine.overlap import repeated_spans
+
+    edges = [edge(2.0, str(i)) for i in range(1, 6)]
+    assert repeated_spans(edges, exclusion_m=0.0) == []
+
+
+def test_spur_interval_is_the_stretch_between_two_visits_to_a_road():
+    from app.engine.overlap import spur_intervals
+
+    edges = [
+        edge(2.0, "1"),
+        edge(2.0, "2"),
+        edge(2.0, "3"),
+        edge(2.0, "1"),  # back on way 1
+    ]
+    assert spur_intervals(edges, exclusion_m=0.0) == [(2000.0, 6000.0)]
+
+
+def test_nested_spurs_nest():
+    from app.engine.overlap import spur_intervals
+
+    edges = [
+        edge(1.0, "A"),
+        edge(1.0, "B"),
+        edge(1.0, "C"),  # turnaround
+        edge(1.0, "B"),
+        edge(1.0, "A"),
+    ]
+    spurs = sorted(spur_intervals(edges, exclusion_m=0.0))
+    assert spurs == [(1000.0, 4000.0), (2000.0, 3000.0)]
