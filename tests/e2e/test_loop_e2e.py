@@ -38,3 +38,42 @@ def test_generated_loop_meets_targets_and_scores(base_url, elevation_dir):
     score = score_edges(edges)
     assert 0.0 <= score.comfort <= 100.0
     assert score.total_km == pytest.approx(loop.distance_km, rel=0.15)
+
+
+CAMPAMENTO = (40.398, -3.775)
+
+
+def test_loops_stay_out_of_restricted_areas(base_url, elevation_dir):
+    from pathlib import Path
+
+    from app.engine.bikes import costing_options_for
+    from app.engine.loop import GOLDEN_ANGLE_DEG
+    from app.engine.restricted import RestrictedAreas
+
+    path = Path("data/restricted_areas.geojson")
+    if not path.is_file():
+        pytest.skip("restricted areas file not generated")
+    areas = RestrictedAreas.from_geojson(path)
+
+    async def run():
+        client = ValhallaClient(base_url)
+        try:
+            return [
+                await generate_loop(
+                    client,
+                    DemSource(elevation_dir),
+                    LoopRequest(
+                        origin=CAMPAMENTO,
+                        target_km=12.0,
+                        seed_offset_deg=GOLDEN_ANGLE_DEG * seed,
+                    ),
+                    costing_options=costing_options_for("mtb", "rolling"),
+                    restricted=areas,
+                )
+                for seed in range(6)
+            ]
+        finally:
+            await client.aclose()
+
+    for loop in asyncio.run(run()):
+        assert areas.metres_inside(loop.coords) <= 50.0
