@@ -185,6 +185,9 @@ export default {
     includeProfile: 'Elevation profile',
     generateLoop: 'Generate route',
     generateRoute: 'Plan the route',
+    progressSearching: 'Looking for loops · attempt {{seed}} of {{seeds}}',
+    progressFound: '{{found}} of {{requested}} loops ready · attempt {{seed}} of {{seeds}}',
+    progressFinishing: 'Ranking the loops…',
     generating: 'Calculating…',
   },
 

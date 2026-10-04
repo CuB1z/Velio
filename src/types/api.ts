@@ -171,6 +171,13 @@ export type LoopRequest = {
   include_profile?: boolean
 }
 
+export type LoopProgress = {
+  seed: number
+  seeds: number
+  iteration: number
+  distance_km: number | null
+}
+
 export type LoopResult = {
   distance_km: number
   gain_m: number

@@ -2,12 +2,13 @@ import { useMutation } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { createLoop } from '@/api/routing'
+import { streamLoop } from '@/api/routing'
 import { ErrorState } from '@/components/common/errorState'
 import { PlannerLayout } from '@/components/layout/plannerLayout'
 import { LazyMap } from '@/components/map/lazyMap'
 import type { MapMarker, RouteLayer } from '@/components/map/mapView'
 import { LoopForm } from '@/components/planner/loopForm'
+import { LoopProgress } from '@/components/planner/loopProgress'
 import {
   DEFAULT_LOOP_FORM,
   toLoopRequest,
@@ -20,7 +21,7 @@ import { positionFailure, useInitialPosition, type PositionFailure } from '@/hoo
 import { MADRID_CENTER, mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
-import type { AnyRouteResult, LatLon } from '@/types/api'
+import type { AnyRouteResult, LatLon, LoopProgress as Progress, LoopResult } from '@/types/api'
 
 export function LoopPlannerPage() {
   const { t } = useTranslation()
@@ -37,25 +38,43 @@ export function LoopPlannerPage() {
   // Centres the map on a point (the user's position).
   const [focus, setFocus] = useState<{ center: [number, number]; key: number }>()
   const abort = useRef<AbortController | null>(null)
+  const [found, setFound] = useState<LoopResult[]>([])
+  const [progress, setProgress] = useState<Progress | null>(null)
 
   const mutation = useMutation({
-    mutationFn: (value: LoopFormValue) => {
+    mutationFn: async (value: LoopFormValue) => {
       const request = toLoopRequest(value)
       if (!request) throw new Error('origin not set')
       abort.current?.abort()
       abort.current = new AbortController()
-      return createLoop(request, abort.current.signal)
-    },
-    onSuccess: () => {
-      setSelected(0)
+      let announced = 0
+      const result = await streamLoop(request, {
+        signal: abort.current.signal,
+        onProgress: setProgress,
+        onLoop: (loop) => {
+          announced += 1
+          setFound((current) => [...current, loop])
+          if (announced === 1) setFitKey((current) => current + 1)
+        },
+      })
       setFitKey((current) => current + 1)
+      return result
     },
+    onMutate: () => {
+      setFound([])
+      setProgress(null)
+      setSelected(0)
+    },
+    onSuccess: () => setSelected(0),
+    onSettled: () => setProgress(null),
   })
 
   const variants: AnyRouteResult[] = useMemo(
-    () => (mutation.data ? allVariants(mutation.data as AnyRouteResult) : []),
-    [mutation.data],
+    () => (mutation.data ? allVariants(mutation.data as AnyRouteResult) : (found as AnyRouteResult[])),
+    [mutation.data, found],
   )
+  const cancelled = mutation.error instanceof DOMException && mutation.error.name === 'AbortError'
+  const requestedLoops = mutation.variables ? mutation.variables.alternatives + 1 : 1
 
   const routes: RouteLayer[] = useMemo(
     () =>
@@ -158,7 +177,7 @@ export function LoopPlannerPage() {
             onPick={setPickTarget}
             onLocate={locate}
           />
-          {mutation.error ? <ErrorState error={mutation.error} /> : null}
+          {mutation.error && !cancelled ? <ErrorState error={mutation.error} /> : null}
           {exportError ? (
             <p className="text-sm text-danger" role="alert">
               {exportError}
@@ -193,21 +212,28 @@ export function LoopPlannerPage() {
         />
       }
       result={
-        variants.length > 0 && request ? (
-          <RouteResultPanel
-            variants={variants}
-            selected={selected}
-            onSelect={setSelected}
-            endpoint="loops"
-            request={request}
-            defaultName={defaultName}
-            requested={mutation.variables ? mutation.variables.alternatives + 1 : undefined}
-            targetKm={form.distanceKm}
-            // No gain target unless requested: an unasked-for "+900 m" reads as a failure.
-            targetGainM={form.gainEnabled ? form.gainM : undefined}
-            minimumKm={minimumLoopKm(form.origin, form.via)}
-            onError={setExportError}
-          />
+        variants.length > 0 || mutation.isPending ? (
+          <div className="flex flex-col gap-4">
+            {mutation.isPending ? (
+              <LoopProgress progress={progress} found={found.length} requested={requestedLoops} />
+            ) : null}
+            {variants.length > 0 && request ? (
+              <RouteResultPanel
+                variants={variants}
+                selected={selected}
+                onSelect={setSelected}
+                endpoint="loops"
+                request={request}
+                defaultName={defaultName}
+                requested={mutation.data ? requestedLoops : undefined}
+                targetKm={form.distanceKm}
+                // No gain target unless requested: an unasked-for "+900 m" reads as a failure.
+                targetGainM={form.gainEnabled ? form.gainM : undefined}
+                minimumKm={minimumLoopKm(form.origin, form.via)}
+                onError={setExportError}
+              />
+            ) : null}
+          </div>
         ) : undefined
       }
     />

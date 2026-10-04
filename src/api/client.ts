@@ -1,4 +1,5 @@
 import { ApiError, errorFromResponse } from './errors'
+import { parseSse, type SseEvent } from './sse'
 
 export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? '/api/v1'
 
@@ -82,18 +83,20 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
   }
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  let response = await send(path, options)
+async function sendWithRefresh(path: string, options: RequestOptions): Promise<Response> {
+  const response = await send(path, options)
 
   // 401 with a session: rotate once and retry.
   if (response.status === 401 && options.auth && handlers) {
     const recovered = await refreshOnce()
-    if (recovered) {
-      response = await send(path, options)
-    } else {
-      handlers.onSessionLost()
-    }
+    if (recovered) return send(path, options)
+    handlers.onSessionLost()
   }
+  return response
+}
+
+export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await sendWithRefresh(path, options)
 
   if (!response.ok) throw await errorFromResponse(response)
 
@@ -102,6 +105,19 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   const text = await response.text()
   return (text ? JSON.parse(text) : undefined) as T
+}
+
+/** Server-Sent Events; an answer that is not an event stream arrives as one `result` event. */
+export async function* stream(path: string, options: RequestOptions = {}): AsyncGenerator<SseEvent> {
+  const response = await sendWithRefresh(path, options)
+  if (!response.ok) throw await errorFromResponse(response)
+
+  const type = response.headers.get('content-type') ?? ''
+  if (!type.includes('text/event-stream') || !response.body) {
+    yield { event: 'result', data: await response.text() }
+    return
+  }
+  yield* parseSse(response.body)
 }
 
 /** Pings /api/health, which lives outside /api/v1. */

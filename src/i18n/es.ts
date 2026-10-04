@@ -186,6 +186,9 @@ export default {
     includeProfile: 'Perfil de elevación',
     generateLoop: 'Generar ruta',
     generateRoute: 'Trazar la ruta',
+    progressSearching: 'Buscando vueltas · intento {{seed}} de {{seeds}}',
+    progressFound: '{{found}} de {{requested}} vueltas listas · intento {{seed}} de {{seeds}}',
+    progressFinishing: 'Ordenando las vueltas…',
     generating: 'Calculando…',
   },
 
