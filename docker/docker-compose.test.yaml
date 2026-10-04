@@ -79,6 +79,12 @@ services:
       DB_NAME: cycling_router
       CORS_ORIGINS: '["*"]'
       MAIL_FROM: no-reply@localhost
+      # --env-file only feeds YAML interpolation: variables not declared here
+      # never reach the container.
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID:-}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET:-}
+      AUTH_REDIRECT_BASE: ${AUTH_REDIRECT_BASE:-http://localhost:8000}
+      OAUTH_SUCCESS_REDIRECT: ${OAUTH_SUCCESS_REDIRECT:-}
     ports:
       - "8000:8000"
     volumes:

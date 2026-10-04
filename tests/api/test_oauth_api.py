@@ -24,11 +24,7 @@ def _configure_google(monkeypatch):
 def _google_round_trip(
     email: str | None = None, *, email_verified: bool = True
 ) -> tuple[OAuthGateway, str]:
-    """Gateway for one fresh provider identity; returns (gateway, email).
-
-    The provider subject is unique per call so repeated runs against a
-    long-lived test database always exercise account creation.
-    """
+    """Fresh provider identity per call, so account creation is always exercised."""
     email = email or f"oauth-{uuid.uuid4().hex}@rider.dev"
     subject = uuid.uuid4().hex
 
@@ -145,8 +141,7 @@ def test_callback_links_and_activates_a_pending_local_account(
     assert resp.status_code == 200
     assert resp.json()["user"]["status"] == "active"
 
-    # The local password now works too: the account was activated, and the
-    # verification code that was mailed out became irrelevant.
+    # The local password now works: the account was activated without the OTP.
     logged = client.post(
         "/api/v1/auth/login", json={"email": email, "password": "Secret-123"}
     )
@@ -215,3 +210,72 @@ def uuid_hex_forged_state() -> str:
     import uuid
 
     return f"{uuid.uuid4().hex}.forged"
+
+
+# SPA redirect ---------------------------------------------------------------
+
+
+def test_callback_redirects_to_the_spa_with_tokens_in_the_fragment(monkeypatch):
+    """A SPA cannot read a JSON body it navigated to, so tokens ride the fragment."""
+    from urllib.parse import parse_qs, urlparse
+
+    _configure_google(monkeypatch)
+    monkeypatch.setattr(
+        settings, "oauth_success_redirect", "http://localhost:5173/oauth/callback"
+    )
+    gateway, _ = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
+    try:
+        state = create_state_token("google")
+        resp = _client().get(f"/api/v1/auth/google/callback?code=c&state={state}")
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+
+    assert resp.status_code == 303
+    parsed = urlparse(resp.headers["location"])
+    assert f"{parsed.scheme}://{parsed.netloc}{parsed.path}" == (
+        "http://localhost:5173/oauth/callback"
+    )
+    # The credentials live in the fragment, never in the query string.
+    assert parsed.query == ""
+    fragment = parse_qs(parsed.fragment)
+    assert fragment["access_token"][0]
+    assert fragment["refresh_token"][0]
+    assert fragment["token_type"] == ["bearer"]
+
+
+def test_callback_redirects_errors_to_the_spa_too(monkeypatch):
+    """A rejected round trip must not strand the user on a raw JSON page."""
+    from urllib.parse import parse_qs, urlparse
+
+    _configure_google(monkeypatch)
+    monkeypatch.setattr(
+        settings, "oauth_success_redirect", "http://localhost:5173/oauth/callback"
+    )
+    gateway, _ = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
+    try:
+        # A forged state is rejected before the provider is ever contacted.
+        resp = _client().get("/api/v1/auth/google/callback?code=c&state=forged")
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+
+    assert resp.status_code == 303
+    fragment = parse_qs(urlparse(resp.headers["location"]).fragment)
+    assert fragment["error"] == ["OAUTH_ERROR"]
+
+
+def test_callback_still_answers_json_when_no_spa_is_configured(monkeypatch):
+    """The redirect is opt-in: unset, the endpoint keeps its JSON contract."""
+    _configure_google(monkeypatch)
+    monkeypatch.setattr(settings, "oauth_success_redirect", None)
+    gateway, _ = _google_round_trip()
+    app.dependency_overrides[get_oauth_gateway] = lambda: gateway
+    try:
+        state = create_state_token("google")
+        resp = _client().get(f"/api/v1/auth/google/callback?code=c&state={state}")
+    finally:
+        app.dependency_overrides.pop(get_oauth_gateway, None)
+
+    assert resp.status_code == 200
+    assert resp.json()["tokens"]["access_token"]

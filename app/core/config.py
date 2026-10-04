@@ -94,6 +94,11 @@ class Settings(BaseSettings):
     auth_redirect_base: str = Field(
         default="http://localhost:8000", alias="AUTH_REDIRECT_BASE"
     )
+    # SPA URL the OAuth callback redirects to, with the result in the fragment.
+    # Unset, the callback answers JSON.
+    oauth_success_redirect: str | None = Field(
+        default=None, alias="OAUTH_SUCCESS_REDIRECT"
+    )
 
     # --- Email (optional, can be None for local dev) ---
     brevo_api_key: str | None = Field(default=None, alias="BREVO_API_KEY")

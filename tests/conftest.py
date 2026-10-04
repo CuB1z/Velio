@@ -1,9 +1,5 @@
-"""Shared test configuration.
-
-Environment is pinned BEFORE any app import so settings pick the test
-database; the schema comes from real Alembic migrations, run once per
-session exactly like production startup does.
-"""
+"""Shared test configuration: hermetic env pinned before any app import,
+schema built once per session by the real Alembic migrations."""
 
 import asyncio
 import os
@@ -11,10 +7,8 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # --- Hermetic environment ----------------------------------------------------
-# The ONE place where external touchpoints are forced to test doubles.
-# Pinned (never popped) BEFORE importing the app: pydantic-settings reads
-# os.environ first and would otherwise fall back to the developer's local
-# .env file, leaking real credentials or databases into the suite.
+# Pinned before the app import so pydantic-settings never falls back to the
+# developer's .env (real credentials or databases).
 HERMETIC_ENV = {
     "ENV": "dev",
     "OTP_TEST_MODE": "false",
@@ -51,9 +45,8 @@ def _reset_rate_limiter():
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "e2e: requires a running Valhalla service")
-    # pytest-asyncio is installed in the interpreter but this suite drives
-    # asyncio explicitly through asyncio.run(); silence its Python 3.16
-    # loop-policy deprecation on every test.
+    # The suite drives asyncio via asyncio.run(); silence pytest-asyncio's
+    # loop-policy deprecation.
     config._test_warning_filter = (
         "ignore:'asyncio.get_event_loop_policy' is deprecated:DeprecationWarning"
     )
@@ -94,6 +87,14 @@ from app.main import app
 PASSWORD = "Secret-123"
 
 
+def _pin_hermetic_settings() -> None:
+    """Pin settings an empty env var cannot mask (env_ignore_empty=True)."""
+    from app.core.config import settings
+
+    # JSON callback is the baseline; SPA-redirect tests opt in themselves.
+    settings.oauth_success_redirect = None
+
+
 def _require_hermetic_settings() -> None:
     """Fail loudly when a real external endpoint leaked into settings."""
     from app.core.config import settings
@@ -102,8 +103,11 @@ def _require_hermetic_settings() -> None:
     assert not settings.brevo_list_id, "a real Brevo list id leaked into tests"
     assert settings.database_url.startswith("sqlite"), "the test database leaked"
     assert settings.jwt_secret_key == HERMETIC_ENV["JWT_SECRET_KEY"]
+    # JSON callback is the baseline (see _pin_hermetic_settings).
+    assert not settings.oauth_success_redirect, "a real SPA redirect leaked into tests"
 
 
+_pin_hermetic_settings()
 _require_hermetic_settings()
 
 

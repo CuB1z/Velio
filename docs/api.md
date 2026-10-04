@@ -242,12 +242,37 @@ parameter is a signed anti-CSRF token valid for 10 minutes; forged or
 expired states answer `400 OAUTH_ERROR`. Providers without client
 credentials configured answer `503` on `authorize`.
 
+#### Handing the session back to a browser app
+
+A single page application cannot read a JSON body it was *navigated* to: the
+provider redirects the browser, so the response renders as a raw page. Set
+`OAUTH_SUCCESS_REDIRECT` and the callback sends the browser onward instead:
+
+```
+303 See Other
+Location: http://localhost:5173/oauth/callback#access_token=...&refresh_token=...&token_type=bearer
+```
+
+The credentials ride the **fragment**, which is never transmitted to a server,
+so they stay out of access logs, proxies and the `Referer` header. A rejected
+round trip redirects the same way with `#error=OAUTH_ERROR&message=...`, so a
+denied consent lands the rider back in the app rather than on an error page.
+Clients should consume the fragment and clear it from the address bar.
+
+The behaviour is opt-in: leave `OAUTH_SUCCESS_REDIRECT` unset (or empty) and the
+endpoint answers the session as JSON exactly as before.
+
+Note that `AUTH_REDIRECT_BASE` still points at **this API**, since that is the
+URI registered with the provider; `OAUTH_SUCCESS_REDIRECT` is where the API
+sends the browser afterwards.
+
 Environment additions:
 
 | Variable | Purpose |
 |---|---|
 | `OAUTH_GOOGLE_CLIENT_ID/SECRET` | Google OAuth app credentials |
 | `AUTH_REDIRECT_BASE` | Public base URL used to build the Google callback URI |
+| `OAUTH_SUCCESS_REDIRECT` | Optional. Where to send the browser after the callback, with the result in the URL fragment. Unset, the callback answers JSON |
 
 ### GDPR account deletion
 

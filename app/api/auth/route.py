@@ -1,13 +1,15 @@
-"""Authentication endpoints: local credentials, email verification and
-OAuth round trips.
+"""Auth endpoints: local credentials, email verification, OAuth and sessions.
 
-Services raise AppErrors directly; the central handler renders the
-shared error envelope, so no route translates exceptions here.
+Errors reach the central handler untranslated, except in the OAuth callback.
 """
 
 
+from urllib.parse import urlencode
+
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import RedirectResponse
+
+from app.core.config import settings
 
 from app.api.dependencies import (
     get_account_service,
@@ -16,7 +18,7 @@ from app.api.dependencies import (
     get_session_service,
     get_session_sid,
 )
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import AppError, NotFoundError
 from app.mappers.user import UserMapper
 from app.schemas.auth import (
     AuthSession,
@@ -175,6 +177,14 @@ async def oauth_authorize(
     return RedirectResponse(url, status_code=307)
 
 
+def _spa_redirect(target: str, params: dict[str, str]) -> RedirectResponse:
+    """Hand the outcome to a browser app through the URL fragment.
+
+    Fragments never reach a server, so tokens stay out of logs and Referer.
+    """
+    return RedirectResponse(f"{target}#{urlencode(params)}", status_code=303)
+
+
 @router.get("/{provider}/callback", response_model=AuthSession)
 async def oauth_callback(
     provider: str,
@@ -182,10 +192,36 @@ async def oauth_callback(
     state: str,
     request: Request,
     service: OAuthService = Depends(get_oauth_service),
-) -> AuthSession:
-    """Exchange the authorization code for this app's session tokens."""
-    return await service.oauth_login(
-        provider, code, state, user_agent=request.headers.get("user-agent")
+) -> AuthSession | RedirectResponse:
+    """Exchange the authorization code for this app's session tokens.
+
+    With OAUTH_SUCCESS_REDIRECT set, redirects there with the outcome in the
+    fragment (an SPA cannot read a JSON body it navigated to); otherwise
+    returns the session as JSON.
+    """
+    target = settings.oauth_success_redirect
+    user_agent = request.headers.get("user-agent")
+
+    try:
+        session = await service.oauth_login(
+            provider, code, state, user_agent=user_agent
+        )
+    except AppError as exc:
+        # A browser mid-navigation would be stranded on the raw JSON envelope.
+        if not target:
+            raise
+        return _spa_redirect(target, {"error": exc.error_code, "message": str(exc)})
+
+    if not target:
+        return session
+
+    return _spa_redirect(
+        target,
+        {
+            "access_token": session.tokens.access_token,
+            "refresh_token": session.tokens.refresh_token,
+            "token_type": "bearer",
+        },
     )
 
 
