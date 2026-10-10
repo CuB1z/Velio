@@ -8,6 +8,7 @@ import * as savedRoutesApi from '@/api/savedRoutes'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { ErrorState } from '@/components/common/errorState'
 import { TextInput } from '@/components/common/field'
+import { endpointMarkers } from '@/components/map/endpointMarkers'
 import { LazyMap } from '@/components/map/lazyMap'
 import type { MapMarker, RouteLayer } from '@/components/map/mapView'
 import { ElevationProfile } from '@/components/route/elevationProfile'
@@ -70,12 +71,10 @@ export function SavedRouteDetailPage() {
     [result],
   )
 
-  const markers: MapMarker[] = useMemo(() => {
-    if (!result) return []
-    const coordinates = decodePolyline(result.polyline)
-    if (coordinates.length < 2) return []
-    return [{ id: 'start', coordinate: coordinates[0], kind: 'start' as const }]
-  }, [result])
+  const markers: MapMarker[] = useMemo(
+    () => (result ? endpointMarkers(decodePolyline(result.polyline)) : []),
+    [result],
+  )
 
   if (query.isLoading) {
     return (

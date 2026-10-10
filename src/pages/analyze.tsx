@@ -7,6 +7,7 @@ import { analyze, elevation } from '@/api/routing'
 import { ErrorState } from '@/components/common/errorState'
 import { SegmentedControl } from '@/components/common/segmentedControl'
 import { PlannerLayout } from '@/components/layout/plannerLayout'
+import { endpointMarkers } from '@/components/map/endpointMarkers'
 import { LazyMap } from '@/components/map/lazyMap'
 import type { MapMarker, RouteLayer } from '@/components/map/mapView'
 import { SliderField } from '@/components/planner/sliderField'
@@ -59,13 +60,7 @@ export function AnalyzePage() {
     [coordinates],
   )
 
-  const markers: MapMarker[] = useMemo(
-    () =>
-      coordinates.length > 1
-        ? [{ id: 'start', coordinate: coordinates[0], kind: 'start' as const }]
-        : [],
-    [coordinates],
-  )
+  const markers: MapMarker[] = useMemo(() => endpointMarkers(coordinates), [coordinates])
 
   async function readFile(file: File) {
     setFileError(null)

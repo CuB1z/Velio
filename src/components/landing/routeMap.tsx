@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { ARROW_LAYOUT, routeArrowImage } from '@/components/map/routeArrow'
 import { useTheme } from '@/hooks/useTheme'
 import { status } from '@/lib/chartPalette'
 import { cn } from '@/lib/cn'
@@ -17,6 +18,7 @@ type Props = {
 const ROUTE = 'landing-route'
 const HIGHLIGHT = 'landing-highlight'
 const START = 'landing-start'
+const ARROWS = 'landing-arrows'
 const DRAW_MS = 2200
 const TRANSPARENT = 'rgba(0,0,0,0)'
 
@@ -126,6 +128,16 @@ export function RouteMap({ shape, highlight, tone = 'surface', padding = 36, cla
             paint: { 'line-color': status(mode, 'warning'), 'line-width': 5, 'line-dasharray': [1.4, 1.2] },
           })
         }
+        const arrow = routeArrowImage(instance, accent, halo)
+        if (arrow) {
+          instance.addLayer({
+            id: ARROWS,
+            type: 'symbol',
+            source: ROUTE,
+            layout: { ...ARROW_LAYOUT, 'icon-image': arrow },
+            paint: { 'icon-opacity': reduced ? 1 : 0, 'icon-opacity-transition': { duration: 400 } },
+          })
+        }
         instance.addSource(START, {
           type: 'geojson',
           data: { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: line[0] } },
@@ -171,6 +183,7 @@ export function RouteMap({ shape, highlight, tone = 'surface', padding = 36, cla
           const t = Math.min(1, (now - start) / DRAW_MS)
           paintProgress(1 - Math.pow(1 - t, 3))
           if (t < 1) frame = requestAnimationFrame(tick)
+          else if (instance.getLayer(ARROWS)) instance.setPaintProperty(ARROWS, 'icon-opacity', 1)
         }
         frame = requestAnimationFrame(tick)
       })

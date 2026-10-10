@@ -13,6 +13,7 @@ import { useTheme } from '@/hooks/useTheme'
 import { accent, categorical, ink, status } from '@/lib/chartPalette'
 import { applyBaseStyle, DEFAULT_CENTER, DEFAULT_ZOOM, type MapStyleId } from '@/lib/mapStyles'
 import { MapControls } from './mapControls'
+import { ARROW_LAYOUT, routeArrowImage } from './routeArrow'
 import type { LngLat } from '@/lib/polyline'
 import { boundsOf } from '@/lib/polyline'
 
@@ -21,6 +22,7 @@ const LAYER_CASING = 'velio-routes-casing'
 const LAYER_LINE = 'velio-routes-line'
 const LAYER_SELECTED_CASING = 'velio-routes-selected-casing'
 const LAYER_SELECTED_LINE = 'velio-routes-selected-line'
+const LAYER_SELECTED_ARROWS = 'velio-routes-selected-arrows'
 
 export type RouteLayer = {
   id: string
@@ -235,6 +237,22 @@ export function MapView({
           layout,
           paint: { 'line-color': colorExpression as never, 'line-width': 4.5 },
         })
+      }
+
+      const chosen = collection.features.find((feature) => feature.properties.selected === 1)
+      const arrow = chosen
+        ? routeArrowImage(instance, categorical(resolved, chosen.properties.colorIndex), surface)
+        : null
+      if (arrow && !instance.getLayer(LAYER_SELECTED_ARROWS)) {
+        instance.addLayer({
+          id: LAYER_SELECTED_ARROWS,
+          type: 'symbol',
+          source: ROUTES_SOURCE,
+          filter: ['==', ['get', 'selected'], 1],
+          layout: { ...ARROW_LAYOUT, 'icon-image': arrow },
+        })
+      } else if (arrow && instance.getLayoutProperty(LAYER_SELECTED_ARROWS, 'icon-image') !== arrow) {
+        instance.setLayoutProperty(LAYER_SELECTED_ARROWS, 'icon-image', arrow)
       }
     }
 
