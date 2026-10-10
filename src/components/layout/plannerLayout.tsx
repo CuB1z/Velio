@@ -28,7 +28,7 @@ export function PlannerLayout({
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
-      <aside className="order-2 shrink-0 border-border p-4 lg:order-1 lg:w-[380px] lg:overflow-y-auto lg:border-e lg:p-5">
+      <aside className="order-2 shrink-0 border-border p-4 lg:order-1 lg:w-[420px] lg:overflow-y-auto lg:border-e lg:py-5 lg:ps-5 lg:pe-2 lg:[scrollbar-gutter:stable]">
         {form}
       </aside>
 
