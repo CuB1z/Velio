@@ -238,6 +238,23 @@ Everything goes through `src/lib/format.ts`.
 - **The map limits navigation to Spain** (`maxBounds` in `mapView.tsx`),
   because that is what the backend graph covers.
 
+## End-to-end tests
+
+Playwright, in `e2e/`, two kinds:
+
+- `pnpm e2e` runs `e2e/mocked/` (desktop, plus `responsive.spec.ts` on a
+  Pixel 7) with the API mocked by `e2e/support/mockApi.ts`: landing, auth,
+  planners, saved routes, 429 countdowns. No backend needed.
+- `pnpm e2e:live` runs `e2e/live/` against a real backend through the Vite
+  proxy: sign up, verify, generate a loop, save, export GPX, analyse that GPX,
+  delete, sign out. It needs the backend test stack (`OTP_TEST_MODE` lets any
+  six digit code verify), started from `~/Dev/cycling-router` with
+  `docker compose --env-file .env -f docker/docker-compose.test.yaml up -d`.
+
+`E2E_BASE_URL` points either suite at another origin, e.g. the production
+image on `http://localhost:8088` (see [docs/deploy.md](docs/deploy.md)). The
+first run needs `pnpm exec playwright install chromium`.
+
 ## Deploy
 
 One container: the `Dockerfile` builds the SPA and serves it from nginx

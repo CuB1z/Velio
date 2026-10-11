@@ -1,0 +1,32 @@
+import { expect, test } from '@playwright/test'
+
+import { mockApi, signedIn } from '../support/mockApi'
+
+const overflow = (page: import('@playwright/test').Page) =>
+  page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+
+test('the landing fits the screen without horizontal scroll', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  expect(await overflow(page)).toBeLessThanOrEqual(0)
+})
+
+test('the login keeps only the form, without the product panel', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/login')
+  await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible()
+  await expect(page.getByText('Circuitos a tu medida, puntuados antes de salir.')).toBeHidden()
+  expect(await overflow(page)).toBeLessThanOrEqual(0)
+})
+
+test('the loop planner stacks the map over the form', async ({ page }) => {
+  await signedIn(page)
+  await page.goto('/loops')
+  const map = page.locator('.maplibregl-canvas')
+  const submit = page.getByRole('button', { name: 'Generar ruta' })
+  await expect(map).toBeVisible()
+  const [mapBox, submitBox] = await Promise.all([map.boundingBox(), submit.boundingBox()])
+  expect(mapBox && submitBox && mapBox.y < submitBox.y).toBe(true)
+  expect(await overflow(page)).toBeLessThanOrEqual(0)
+})

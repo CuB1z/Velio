@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test --project=mocked",
+    "e2e:live": "E2E_LIVE=1 playwright test --project=live",
     "preview": "vite preview",
     "contract:pull": "node scripts/pullContract.mjs",
     "contract:check": "node -e \"import('./scripts/checkContract.mjs').then(m=>{const p=[...m.compare(),...m.comparePaths()];if(p.length){console.error(p.join('\\n'));process.exit(1)}console.log('contract aligned')})\""
@@ -30,6 +32,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@tailwindcss/postcss": "4.3.1",
     "@tailwindcss/vite": "4.3.1",
     "@testing-library/jest-dom": "^7.0.1",
