@@ -21,7 +21,7 @@ describe('app bootstrap', () => {
     await waitFor(() => {
       expect(
         screen.getByRole('heading', {
-          name: /Dinos los kilómetros y el desnivel/,
+          name: /Circuitos a tu medida/,
           level: 1,
         }),
       ).toBeInTheDocument()
