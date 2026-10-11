@@ -10,6 +10,7 @@ import { PasswordRules } from '@/components/auth/passwordRules'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
+import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { isPasswordValid } from '@/lib/passwordPolicy'
 import { Divider } from './divider'
 
@@ -31,6 +32,7 @@ export function RegisterPage() {
     onSuccess: () => void navigate(`/verify?email=${encodeURIComponent(email)}`),
     onError: (cause) => setError(describe(cause)),
   })
+  const retryIn = useRetryAfter(mutation.error)
 
   const canSubmit = accepted && email.includes('@') && isPasswordValid(password, email)
 
@@ -106,9 +108,9 @@ export function RegisterPage() {
           variant="primary"
           fullWidth
           className="min-h-12"
-          isDisabled={!canSubmit || mutation.isPending}
+          isDisabled={!canSubmit || mutation.isPending || retryIn > 0}
         >
-          {t('auth.submitRegister')}
+          {retryIn > 0 ? t('common.retryIn', { seconds: retryIn }) : t('auth.submitRegister')}
         </Button>
 
         <Divider label={t('auth.or')} />

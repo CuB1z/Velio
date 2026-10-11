@@ -14,6 +14,7 @@ import { WaypointEditor } from '@/components/planner/waypointEditor'
 import { InsetGroup, InsetRow } from '@/components/common/insetGroup'
 import { RouteResultPanel } from '@/components/route/routeResultPanel'
 import { useInitialPosition } from '@/hooks/useInitialPosition'
+import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
@@ -73,6 +74,7 @@ export function RoutePlannerPage() {
       setFitKey((current) => current + 1)
     },
   })
+  const retryIn = useRetryAfter(mutation.error)
 
   const variants: AnyRouteResult[] = useMemo(
     () => (mutation.data ? allVariants(mutation.data as AnyRouteResult) : []),
@@ -167,9 +169,13 @@ export function RoutePlannerPage() {
               variant="primary"
               fullWidth
               className="min-h-11 text-[15px] font-semibold"
-              isDisabled={waypoints.length < 2 || mutation.isPending}
+              isDisabled={waypoints.length < 2 || mutation.isPending || retryIn > 0}
             >
-              {mutation.isPending ? t('planner.generating') : t('planner.generateRoute')}
+              {mutation.isPending
+                ? t('planner.generating')
+                : retryIn > 0
+                  ? t('common.retryIn', { seconds: retryIn })
+                  : t('planner.generateRoute')}
             </Button>
             {mutation.isPending ? (
               <Button variant="ghost" className="min-h-11" onPress={() => abort.current?.abort()}>

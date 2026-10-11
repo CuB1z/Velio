@@ -18,6 +18,7 @@ import { RouteResultPanel } from '@/components/route/routeResultPanel'
 import { formatDistance } from '@/lib/format'
 import { minimumLoopKm } from '@/lib/geo'
 import { positionFailure, useInitialPosition, type PositionFailure } from '@/hooks/useInitialPosition'
+import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { MADRID_CENTER, mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
@@ -74,6 +75,7 @@ export function LoopPlannerPage() {
     [mutation.data, found],
   )
   const cancelled = mutation.error instanceof DOMException && mutation.error.name === 'AbortError'
+  const retryIn = useRetryAfter(mutation.error)
   const requestedLoops = mutation.variables ? mutation.variables.alternatives + 1 : 1
 
   const routes: RouteLayer[] = useMemo(
@@ -173,6 +175,7 @@ export function LoopPlannerPage() {
             onSubmit={() => mutation.mutate(form)}
             onCancel={() => abort.current?.abort()}
             isBusy={mutation.isPending}
+            retryIn={retryIn}
             pickTarget={pickTarget}
             onPick={setPickTarget}
             onLocate={locate}

@@ -19,6 +19,7 @@ type Props = {
   value: LoopFormValue
   onChange: (value: LoopFormValue) => void
   onSubmit: () => void
+  retryIn?: number
   onCancel?: () => void
   isBusy?: boolean
   pickTarget: 'origin' | number | null
@@ -30,6 +31,7 @@ export function LoopForm({
   value,
   onChange,
   onSubmit,
+  retryIn = 0,
   onCancel,
   isBusy,
   pickTarget,
@@ -232,9 +234,13 @@ export function LoopForm({
           variant="primary"
           fullWidth
           className="min-h-11 text-[15px] font-semibold"
-          isDisabled={!value.origin || isBusy}
+          isDisabled={!value.origin || isBusy || retryIn > 0}
         >
-          {isBusy ? t('planner.generating') : t('planner.generateLoop')}
+          {isBusy
+            ? t('planner.generating')
+            : retryIn > 0
+              ? t('common.retryIn', { seconds: retryIn })
+              : t('planner.generateLoop')}
         </Button>
         {isBusy && onCancel ? (
           <Button variant="ghost" className="min-h-11" onPress={onCancel}>

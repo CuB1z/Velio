@@ -28,6 +28,7 @@ export default {
     remove: 'Quitar',
     rename: 'Renombrar',
     retry: 'Reintentar',
+    retryIn: 'Espera {{seconds}} s',
     save: 'Guardar',
   },
 
@@ -84,6 +85,7 @@ export default {
     verifyAttempts: 'Código incorrecto. Revísalo y vuelve a intentarlo.',
     verifyDone: 'Correo confirmado. Ya puedes entrar.',
     verifyOtherEmail: 'Usar otro correo',
+    checkingSession: 'Comprobando la sesión',
     panelTitle: 'Circuitos a tu medida, puntuados antes de salir.',
     panelBody: 'Kilómetros, desnivel, firme y tráfico, medidos sobre datos abiertos.',
     panelCaption: 'Perfil y puntuación reales de un circuito generado por el motor.',

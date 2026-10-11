@@ -27,6 +27,7 @@ export default {
     remove: 'Remove',
     rename: 'Rename',
     retry: 'Try again',
+    retryIn: 'Wait {{seconds}} s',
     save: 'Save',
   },
 
@@ -83,6 +84,7 @@ export default {
     verifyAttempts: 'Wrong code. Check it and try again.',
     verifyDone: 'Email confirmed. You can sign in now.',
     verifyOtherEmail: 'Use another email',
+    checkingSession: 'Checking your session',
     panelTitle: 'Loops cut to your distance, scored before you ride.',
     panelBody: 'Distance, climbing, surface and traffic, measured on open data.',
     panelCaption: 'Real profile and score of a loop the engine generated.',

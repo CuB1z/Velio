@@ -10,6 +10,7 @@ import { GoogleButton } from '@/components/auth/googleButton'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
+import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { Divider } from './divider'
 
 export function LoginPage() {
@@ -38,6 +39,7 @@ export function LoginPage() {
       setError(describe(cause))
     },
   })
+  const retryIn = useRetryAfter(mutation.error)
 
   return (
     <AuthLayout
@@ -92,9 +94,9 @@ export function LoginPage() {
           variant="primary"
           fullWidth
           className="min-h-12"
-          isDisabled={!email || !password || mutation.isPending}
+          isDisabled={!email || !password || mutation.isPending || retryIn > 0}
         >
-          {t('auth.submitLogin')}
+          {retryIn > 0 ? t('common.retryIn', { seconds: retryIn }) : t('auth.submitLogin')}
         </Button>
 
         <Divider label={t('auth.or')} />
