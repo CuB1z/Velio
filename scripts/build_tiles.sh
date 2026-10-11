@@ -9,13 +9,13 @@ SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 source "${SCRIPTS_DIR}/lib/common.sh"
 
-PBF="${1:-${ROOT_DIR}/data/spain.osm.pbf}"
+PBF="${1:-${ROOT_DIR}/data/coverage.osm.pbf}"
 VALHALLA_DIR="${ROOT_DIR}/valhalla"
 CONFIG_DIR="${VALHALLA_DIR}/config"
 TILES_DIR="${VALHALLA_DIR}/tiles"
 ELEVATION_DIR="${VALHALLA_DIR}/elevation"
 
-[[ -f "${PBF}" ]] || die "OSM extract not found: ${PBF}"
+[[ -f "${PBF}" ]] || die "OSM extract not found: ${PBF} (scripts/setup_valhalla.sh --regions builds it)"
 
 mkdir -p "${CONFIG_DIR}" "${TILES_DIR}" "${ELEVATION_DIR}"
 

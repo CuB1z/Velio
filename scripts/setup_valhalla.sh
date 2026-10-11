@@ -12,8 +12,8 @@ source "${SCRIPTS_DIR}/lib/common.sh"
 
 BASE_URL="${BASE_URL:-http://localhost:8002}"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-60}"
-REGION=""
-PBF="${ROOT_DIR}/data/spain.osm.pbf"
+REGIONS="${REGIONS:-spain,canary-islands,portugal,andorra}"
+PYTHON="${PYTHON:-${ROOT_DIR}/.venv/bin/python}"
 
 DO_BUILD=1
 DO_ELEVATION=1
@@ -24,9 +24,11 @@ usage() {
 Usage: scripts/setup_valhalla.sh [options]
 
 Options:
-  --region <key>   Download the OSM extract for <key> (see scripts/download_osm.sh --list)
-                   and build tiles from it. Without this flag, an existing
-                   data/spain.osm.pbf is required.
+  --regions <keys> Comma-separated regions from data/regions.json (default:
+                   spain,canary-islands,portugal,andorra). Downloads them, merges
+                   them into data/coverage.osm.pbf and builds the coverage
+                   polygons, restricted areas and tiles from that file.
+  --region <key>   Same as --regions with a single region
   --skip-build     Skip tile/config build
   --skip-elevation Skip elevation download
   --no-start       Do not start/restart docker service
@@ -36,14 +38,15 @@ Environment variables:
   BASE_URL         Valhalla base URL for validation (default: http://localhost:8002)
   PARALLELISM      Used by scripts/download_elevation.sh (default: 4)
   WAIT_TIMEOUT     Seconds to wait for Valhalla startup (default: 60)
+  PYTHON           Interpreter with the dev requirements (default: .venv/bin/python)
 EOF
 }
 
 while (( $# > 0 )); do
   case "$1" in
-    --region)
-      [[ -n "${2:-}" ]] || die "--region requires a value"
-      REGION="$2"
+    --regions|--region)
+      [[ -n "${2:-}" ]] || die "$1 requires a value"
+      REGIONS="$2"
       shift
       ;;
     --skip-build)     DO_BUILD=0 ;;
@@ -60,13 +63,28 @@ require docker curl jq
 log_step "Valhalla setup started"
 log_info "Root: ${ROOT_DIR}"
 
-if [[ -n "${REGION}" ]]; then
-  log_step "Downloading OSM extract for region '${REGION}'"
-  "${SCRIPTS_DIR}/download_osm.sh" "${REGION}"
-  PBF="${ROOT_DIR}/data/${REGION}.osm.pbf"
-fi
+IFS=',' read -r -a REGION_KEYS <<<"${REGIONS}"
+PBF="${ROOT_DIR}/data/coverage.osm.pbf"
 
 if (( DO_BUILD )); then
+  [[ -x "${PYTHON}" ]] || die "Python with the dev requirements not found: ${PYTHON} (set PYTHON)"
+
+  log_step "Downloading OSM extracts: ${REGIONS}"
+  "${SCRIPTS_DIR}/download_osm.sh" "${REGION_KEYS[@]}"
+
+  if (( ${#REGION_KEYS[@]} > 1 )); then
+    log_step "Merging ${#REGION_KEYS[@]} extracts into $(basename "${PBF}")"
+    inputs=()
+    for key in "${REGION_KEYS[@]}"; do inputs+=("data/${key}.osm.pbf"); done
+    (cd "${ROOT_DIR}" && "${PYTHON}" -m tools.merge_regions "${inputs[@]}" --out "data/$(basename "${PBF}")")
+  else
+    PBF="${ROOT_DIR}/data/${REGION_KEYS[0]}.osm.pbf"
+  fi
+
+  log_step "Building coverage polygons and restricted areas"
+  (cd "${ROOT_DIR}" && "${PYTHON}" -m tools.build_coverage "${REGION_KEYS[@]}")
+  (cd "${ROOT_DIR}" && "${PYTHON}" -m tools.extract_restricted_areas --pbf "data/$(basename "${PBF}")")
+
   log_step "Building config and routing tiles from $(basename "${PBF}")"
   "${SCRIPTS_DIR}/build_tiles.sh" "${PBF}"
 else
@@ -75,7 +93,13 @@ fi
 
 if (( DO_ELEVATION )); then
   log_step "Downloading elevation tiles"
+  count_hgt() { find "${ROOT_DIR}/valhalla/elevation" -name '*.hgt.gz' 2>/dev/null | wc -l; }
+  hgt_before="$(count_hgt)"
   "${SCRIPTS_DIR}/download_elevation.sh"
+  if (( DO_BUILD )) && (( $(count_hgt) > hgt_before )); then
+    log_step "New elevation tiles: rebuilding routing tiles to bake their grades in"
+    "${SCRIPTS_DIR}/build_tiles.sh" "${PBF}"
+  fi
 else
   log_warn "Elevation download skipped (--skip-elevation)"
 fi

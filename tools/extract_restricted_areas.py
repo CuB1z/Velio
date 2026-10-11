@@ -2,7 +2,7 @@
 OSM extract into the GeoJSON the loop engine loads at startup.
 
 Usage (from the repo root; needs `pip install osmium`):
-    python -m tools.extract_restricted_areas [--pbf data/spain.osm.pbf]
+    python -m tools.extract_restricted_areas [--pbf data/coverage.osm.pbf]
         [--out data/restricted_areas.geojson]
 """
 
@@ -93,7 +93,7 @@ def extract(pbf: Path, out: Path) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--pbf", type=Path, default=Path("data/spain.osm.pbf"))
+    parser.add_argument("--pbf", type=Path, default=Path("data/coverage.osm.pbf"))
     parser.add_argument(
         "--out", type=Path, default=Path("data/restricted_areas.geojson")
     )

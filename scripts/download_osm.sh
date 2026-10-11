@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
 # Download OSM PBF extracts listed in data/regions.json.
-# Files are saved as data/<region>.osm.pbf.
+# Files are saved as data/<region>.osm.pbf, with the region's Geofabrik
+# boundary polygon next to it as data/<region>.poly.
 # Usage:
 #   scripts/download_osm.sh --list              Show available regions
 #   scripts/download_osm.sh <region> [...]      Download one or more regions
@@ -37,11 +38,26 @@ fi
 
 mkdir -p "${DATA_DIR}"
 
+fetch() {
+  local url="$1" out="$2"
+  local tmp_file="${out}.part"
+  curl -fL --retry 3 --progress-bar -o "${tmp_file}" "${url}"
+  [[ -s "${tmp_file}" ]] || die "Download produced an empty file: ${url}"
+  mv "${tmp_file}" "${out}"
+}
+
 for region in "$@"; do
   url="$(jq -r --arg k "${region}" '.[$k].url // empty' "${REGIONS_FILE}")"
   [[ -n "${url}" ]] || die "Unknown region '${region}'. Use --list to see available regions."
+  poly_url="$(jq -r --arg k "${region}" '.[$k].poly // empty' "${REGIONS_FILE}")"
 
   outfile="${DATA_DIR}/${region}.osm.pbf"
+  polyfile="${DATA_DIR}/${region}.poly"
+
+  if [[ -n "${poly_url}" ]] && { [[ ! -s "${polyfile}" ]] || [[ "${FORCE:-0}" == "1" ]]; }; then
+    fetch "${poly_url}" "${polyfile}"
+    log_ok "${region}: boundary polygon downloaded"
+  fi
 
   if [[ -s "${outfile}" ]] && [[ "${FORCE:-0}" != "1" ]]; then
     log_warn "${region}: already downloaded ($(du -h "${outfile}" | cut -f1)), skipping (FORCE=1 to re-download)"
@@ -49,11 +65,6 @@ for region in "$@"; do
   fi
 
   log_step "Downloading ${region} -> ${outfile}"
-
-  tmp_file="${outfile}.part"
-  curl -fL --retry 3 --progress-bar -o "${tmp_file}" "${url}"
-  [[ -s "${tmp_file}" ]] || die "Download produced an empty file: ${url}"
-
-  mv "${tmp_file}" "${outfile}"
+  fetch "${url}" "${outfile}"
   log_ok "${region}: downloaded ($(du -h "${outfile}" | cut -f1))"
 done

@@ -3,14 +3,15 @@
 Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla/valhalla)
 and OpenStreetMap data. Goal: point-to-point and circular cycling routes,
 scored by road quality, surface, cycling infrastructure and elevation —
-starting with full Spain coverage.
+covering Spain and Portugal, islands included, plus Andorra.
 
 ## Status
 
 Working today:
 
-- Valhalla bicycle routing over a full-Spain graph (~2.1 GB tiles, built from
-  the Geofabrik Spain extract in ~8 minutes)
+- Valhalla bicycle routing over one graph for Spain, the Canary Islands,
+  Portugal (Azores and Madeira included) and Andorra (~2.7 GB tiles, built
+  from the merged Geofabrik extracts in ~13 minutes)
 - Per-edge road attributes via `/trace_attributes` (road class, surface,
   cycle lanes, etc.)
 - Elevation lookups via `/height` backed by Copernicus DEM GLO-30 tiles
@@ -33,10 +34,12 @@ Working today:
 ## Architecture
 
 ```
-OpenStreetMap PBF ──> build_tiles.sh ──> Valhalla tiles ──> valhalla_service (Docker :8002)
-Geofabrik catalog  ──> download_osm.sh
+Geofabrik catalog  ──> download_osm.sh ──> <region>.osm.pbf + <region>.poly
+Region extracts    ──> tools/merge_regions.py ──> data/coverage.osm.pbf
+Merged PBF         ──> build_tiles.sh ──> Valhalla tiles ──> valhalla_service (Docker :8002)
+Boundary polygons  ──> tools/build_coverage.py ──> data/coverage.geojson
 Copernicus DEM     ──> download_elevation.sh ──> .hgt.gz tiles ──> /height + app/engine
-OpenStreetMap PBF ──> tools/extract_restricted_areas.py ──> data/restricted_areas.geojson ──> loop engine
+Merged PBF         ──> tools/extract_restricted_areas.py ──> data/restricted_areas.geojson ──> loop engine
 ```
 
 The routing graph carries baked-in elevation (`mjolnir.use_elevation`), so
@@ -50,14 +53,18 @@ tiles directly for high-resolution profiles and metrics. Details in
 - Docker + Docker Compose
 - `curl` and `jq`
 - Python 3.12+ (elevation engine and tests)
-- ~5 GB free disk for the Spain dataset (PBF + tiles + elevation)
+- ~11 GB free disk to build the dataset (extracts, merged PBF, tiles,
+  elevation); the server keeps ~3.9 GB of it
+- ~8 GB of free RAM for the build (see
+  [docs/data.md](docs/data.md#resources))
 
 ## Quick start
 
 ```bash
-# One command from a fresh clone: downloads Spain OSM data, builds routing
-# tiles, downloads elevation, starts the container and validates endpoints
-./scripts/setup_valhalla.sh --region spain
+# One command from a fresh clone: downloads and merges the Spain, Canary
+# Islands, Portugal and Andorra extracts, builds routing tiles, downloads
+# elevation, starts the container and validates endpoints
+./scripts/setup_valhalla.sh
 
 # Verify
 ./scripts/smoke_test_height.sh
@@ -164,7 +171,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H "Authorization: Bearer $TOKEN" \
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.30.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.31.0"}
 
 # Prometheus metrics (closed unless METRICS_ENABLED=true; see docs/api.md)
 curl -s localhost:8000/metrics -H "Authorization: Bearer $METRICS_TOKEN" | head
@@ -227,7 +234,7 @@ answer `429` with a `Retry-After` header.
 | Script | Purpose |
 |---|---|
 | `scripts/download_osm.sh` | Download OSM extracts listed in `data/regions.json` |
-| `scripts/build_tiles.sh` | Build Valhalla config + routing tiles from an OSM PBF |
+| `scripts/build_tiles.sh` | Build Valhalla config + routing tiles from an OSM PBF (default `data/coverage.osm.pbf`) |
 | `scripts/download_elevation.sh` | Download elevation tiles covered by the graph |
 | `scripts/setup_valhalla.sh` | Orchestrate everything end to end |
 | `scripts/smoke_test_height.sh` | Validate the `/height` endpoint |

@@ -1,22 +1,38 @@
 {
   "andorra": {
     "name": "Andorra",
-    "url": "https://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+    "iso": "AD",
+    "url": "https://download.geofabrik.de/europe/andorra-latest.osm.pbf",
+    "poly": "https://download.geofabrik.de/europe/andorra.poly"
+  },
+  "canary-islands": {
+    "name": "Canary Islands",
+    "iso": "ES",
+    "url": "https://download.geofabrik.de/africa/canary-islands-latest.osm.pbf",
+    "poly": "https://download.geofabrik.de/africa/canary-islands.poly"
   },
   "france": {
     "name": "France",
-    "url": "https://download.geofabrik.de/europe/france-latest.osm.pbf"
+    "iso": "FR",
+    "url": "https://download.geofabrik.de/europe/france-latest.osm.pbf",
+    "poly": "https://download.geofabrik.de/europe/france.poly"
   },
   "italy": {
     "name": "Italy",
-    "url": "https://download.geofabrik.de/europe/italy-latest.osm.pbf"
+    "iso": "IT",
+    "url": "https://download.geofabrik.de/europe/italy-latest.osm.pbf",
+    "poly": "https://download.geofabrik.de/europe/italy.poly"
   },
   "portugal": {
     "name": "Portugal",
-    "url": "https://download.geofabrik.de/europe/portugal-latest.osm.pbf"
+    "iso": "PT",
+    "url": "https://download.geofabrik.de/europe/portugal-latest.osm.pbf",
+    "poly": "https://download.geofabrik.de/europe/portugal.poly"
   },
   "spain": {
     "name": "Spain",
-    "url": "https://download.geofabrik.de/europe/spain-latest.osm.pbf"
+    "iso": "ES",
+    "url": "https://download.geofabrik.de/europe/spain-latest.osm.pbf",
+    "poly": "https://download.geofabrik.de/europe/spain.poly"
   }
 }

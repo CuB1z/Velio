@@ -21,6 +21,13 @@ POINTS=(
   "Sierra Nevada|37.0944|-3.3870"
   "Pirineos|42.6656|0.0056"
   "Valencia Costa|39.4699|-0.3763"
+  "Tenerife|28.4874|-16.3159"
+  "Lisboa|38.7223|-9.1393"
+  "Porto|41.1579|-8.6291"
+  "Serra da Estrela|40.3217|-7.6114"
+  "Madeira|32.6669|-16.9241"
+  "Azores|37.7412|-25.6756"
+  "Andorra|42.5063|1.5218"
 )
 
 log_step "Valhalla elevation smoke test"

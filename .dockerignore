@@ -12,6 +12,7 @@ downloads
 valhalla
 data
 !data/restricted_areas.geojson
+!data/coverage.geojson
 *.md
 Dockerfile
 docker-compose.yaml
