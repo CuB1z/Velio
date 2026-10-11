@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/cn'
 import { formatDistance, formatPercent, formatRatio } from '@/lib/format'
-import type { AnyRouteResult, LoopRequest, RouteRequest } from '@/types/api'
+import type { AnyRouteResult, ElevationPoint, LoopRequest, RouteRequest } from '@/types/api'
 import { ElevationProfile } from './elevationProfile'
 import { ExportMenu } from './exportMenu'
 import { MetricTiles } from './metricTiles'
@@ -25,6 +25,7 @@ type Props = {
   /** Minimum imposed by the waypoints, if any. */
   minimumKm?: number
   onError?: (message: string) => void
+  onProfileHover?: (point: ElevationPoint | null) => void
   className?: string
 }
 
@@ -40,6 +41,7 @@ export function RouteResultPanel({
   targetGainM,
   minimumKm,
   onError,
+  onProfileHover,
   className,
 }: Props) {
   const { t } = useTranslation()
@@ -122,7 +124,7 @@ export function RouteResultPanel({
         {points.length > 1 ? (
           <div className="flex flex-col gap-1.5 @xl:col-span-2 @5xl:col-span-1">
             <span className="text-[13px] text-muted">{t('metric.elevationProfile')}</span>
-            <ElevationProfile profile={points} distanceKm={result.distance_km} height={96} />
+            <ElevationProfile profile={points} distanceKm={result.distance_km} height={96} onHover={onProfileHover} />
           </div>
         ) : null}
       </div>

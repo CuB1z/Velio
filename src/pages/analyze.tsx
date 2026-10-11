@@ -15,6 +15,7 @@ import { ElevationProfile } from '@/components/route/elevationProfile'
 import { SaveRouteDialog } from '@/components/route/saveRouteDialog'
 import { ScoreCard } from '@/components/route/scoreCard'
 import { SurfaceBar } from '@/components/route/surfaceBar'
+import { useProfileFocus } from '@/hooks/useProfileFocus'
 import { cn } from '@/lib/cn'
 import { formatBytes, formatDistance, formatPercent, formatRatio, formatSigned } from '@/lib/format'
 import { parseGpx } from '@/lib/gpx'
@@ -24,6 +25,7 @@ import type { AnalyzeResult, ElevationResult } from '@/types/api'
 
 export function AnalyzePage() {
   const { t } = useTranslation()
+  const { focusPoint, onProfileHover } = useProfileFocus()
   const [tab, setTab] = useState<'file' | 'polyline'>('file')
   const [encoded, setEncoded] = useState('')
   const [fileInfo, setFileInfo] = useState<{ name: string; points: number; size: number } | null>(null)
@@ -214,6 +216,7 @@ export function AnalyzePage() {
           onStyleChange={setStyleId}
           routes={routes}
           markers={markers}
+          focusPoint={focusPoint}
           fitKey={fitKey}
           // The result panel floats over the map; without this padding the route is fitted behind it.
           fitPadding={mapFitPadding(Boolean(result), resultCollapsed)}
@@ -260,6 +263,7 @@ export function AnalyzePage() {
               <ElevationProfile
                 profile={result.profile.profile}
                 distanceKm={result.profile.distance_km}
+                onHover={onProfileHover}
               />
             </div>
           </div>

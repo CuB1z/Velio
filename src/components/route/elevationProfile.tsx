@@ -17,6 +17,7 @@ type Props = {
   height?: number
   /** Total distance in km, to label the axis even when sampling trims the profile. */
   distanceKm: number
+  onHover?: (point: ElevationPoint | null) => void
 }
 
 type Sample = { x: number; y: number; point: ElevationPoint }
@@ -52,11 +53,12 @@ function niceTicks(min: number, max: number, count = 3): number[] {
   return ticks
 }
 
-export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
+export function ElevationProfile({ profile, height = 148, distanceKm, onHover }: Props) {
   const { t } = useTranslation()
   const { resolved } = useTheme()
   const { ref, width } = useElementSize<HTMLDivElement>()
   const [hover, setHover] = useState<Sample | null>(null)
+  const hovered = useRef<Sample | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
 
   const color = accent(resolved)
@@ -128,10 +130,19 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
         Math.abs(chart.samples[lo].x - x) <= Math.abs(chart.samples[hi].x - x)
           ? chart.samples[lo]
           : chart.samples[hi]
+      if (nearest === hovered.current) return
+      hovered.current = nearest
       setHover(nearest)
+      onHover?.(nearest.point)
     },
-    [chart],
+    [chart, onHover],
   )
+
+  const handleLeave = useCallback(() => {
+    hovered.current = null
+    setHover(null)
+    onHover?.(null)
+  }, [onHover])
 
   const summary = useMemo(() => {
     if (points.length === 0) return ''
@@ -167,7 +178,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
             aria-label={summary}
             className="block touch-none"
             onPointerMove={handleMove}
-            onPointerLeave={() => setHover(null)}
+            onPointerLeave={handleLeave}
           >
             <defs>
               <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -257,8 +268,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm }: Props) {
                 top: Math.max(0, hover.y - 34),
               }}
             >
-              <span className="text-muted">km </span>
-              {(hover.point.distance_m / 1000).toFixed(1)}
+              {formatDistance(hover.point.distance_m / 1000)}
               <span className="text-muted"> · </span>
               {formatElevation(hover.point.elevation_m)}
               {hover.point.grade_pct !== null ? (

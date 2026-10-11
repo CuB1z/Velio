@@ -15,6 +15,7 @@ import { InsetGroup, InsetRow } from '@/components/common/insetGroup'
 import { RouteResultPanel } from '@/components/route/routeResultPanel'
 import { useInitialPosition } from '@/hooks/useInitialPosition'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
+import { useProfileFocus } from '@/hooks/useProfileFocus'
 import { mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
@@ -33,6 +34,7 @@ const DEFAULT_WAYPOINTS: LatLon[] = [
 
 export function RoutePlannerPage() {
   const { t } = useTranslation()
+  const { focusPoint, onProfileHover } = useProfileFocus()
   const [waypoints, setWaypoints] = useState<LatLon[]>(DEFAULT_WAYPOINTS)
   const [focus, setFocus] = useState<{ center: [number, number]; key: number }>()
   // Browser position replaces the first point unless the user already edited the list.
@@ -204,6 +206,7 @@ export function RoutePlannerPage() {
           onStyleChange={setStyleId}
           routes={routes}
           markers={markers}
+          focusPoint={focusPoint}
           fitKey={fitKey}
           focus={focus}
           // The result panel floats over the map; without this padding the route is fitted behind it.
@@ -215,6 +218,7 @@ export function RoutePlannerPage() {
       result={
         variants.length > 0 ? (
           <RouteResultPanel
+            onProfileHover={onProfileHover}
             variants={variants}
             selected={selected}
             onSelect={setSelected}

@@ -19,6 +19,7 @@ import { formatDistance } from '@/lib/format'
 import { minimumLoopKm } from '@/lib/geo'
 import { positionFailure, useInitialPosition, type PositionFailure } from '@/hooks/useInitialPosition'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
+import { useProfileFocus } from '@/hooks/useProfileFocus'
 import { MADRID_CENTER, mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
@@ -26,6 +27,7 @@ import type { AnyRouteResult, LatLon, LoopProgress as Progress, LoopResult } fro
 
 export function LoopPlannerPage() {
   const { t } = useTranslation()
+  const { focusPoint, onProfileHover } = useProfileFocus()
   const [form, setForm] = useState<LoopFormValue>(DEFAULT_LOOP_FORM)
   const [styleId, setStyleId] = useState<MapStyleId>('map')
   const [resultCollapsed, setResultCollapsed] = useState(false)
@@ -205,6 +207,7 @@ export function LoopPlannerPage() {
           onStyleChange={setStyleId}
           routes={routes}
           markers={markers}
+          focusPoint={focusPoint}
           fitKey={fitKey}
           focus={focus}
           // The result panel floats over the map; without this padding the route is fitted behind it.
@@ -222,6 +225,7 @@ export function LoopPlannerPage() {
             ) : null}
             {variants.length > 0 && request ? (
               <RouteResultPanel
+                onProfileHover={onProfileHover}
                 variants={variants}
                 selected={selected}
                 onSelect={setSelected}

@@ -1,5 +1,7 @@
+import polyline from '@mapbox/polyline'
 import { expect, test } from '@playwright/test'
 
+import { LANDING_EXAMPLES } from '../../src/pages/landingExamples'
 import { json, LOOP, signedIn, sse } from '../support/mockApi'
 
 const visible = (locator: import('@playwright/test').Locator) => locator.filter({ visible: true }).first()
@@ -46,4 +48,25 @@ test('a point to point route with the default stops', async ({ page }) => {
   await page.goto('/routes')
   await page.getByRole('button', { name: 'Trazar la ruta' }).click()
   await expect(visible(page.getByText('31,2 km'))).toBeVisible()
+})
+
+test('hovering the elevation profile marks that point on the map', async ({ page }) => {
+  const sierra = LANDING_EXAMPLES[1]
+  const loop = { ...sierra.result, polyline: polyline.encode(sierra.shape, 6), profile: sierra.profile, alternatives: null }
+  await signedIn(page, { '**/api/v1/loops/stream': (route) => route.fulfill(sse(['result', loop])) })
+  await page.goto('/loops')
+  await page.getByRole('button', { name: 'Generar ruta' }).click()
+
+  const chart = visible(page.getByRole('img', { name: /Perfil de elevación/ }))
+  await expect(chart).toBeVisible()
+  const box = await chart.boundingBox()
+  if (!box) throw new Error('profile not laid out')
+  await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2)
+
+  const marker = page.locator('.maplibregl-marker', { hasText: ' km · ' })
+  await expect(marker).toBeVisible()
+  await expect(marker).toHaveText(/^\d+,\d\s*km · [\d.]+\s*m/)
+
+  await page.mouse.move(box.x + box.width * 0.6, box.y - 200)
+  await expect(marker).toHaveCount(0)
 })

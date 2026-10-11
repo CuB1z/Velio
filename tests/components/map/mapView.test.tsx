@@ -77,15 +77,26 @@ const fake = vi.hoisted(() => {
 
   class FakeMarker {
     static added = 0
-    setLngLat() {
+    static instances: FakeMarker[] = []
+    element: HTMLElement | undefined
+    lngLat: unknown = null
+    onMap = false
+    constructor(options?: { element?: HTMLElement }) {
+      this.element = options?.element
+      FakeMarker.instances.push(this)
+    }
+    setLngLat(lngLat: unknown) {
+      this.lngLat = lngLat
       return this
     }
     addTo() {
-      FakeMarker.added += 1
+      if (!this.onMap) FakeMarker.added += 1
+      this.onMap = true
       return this
     }
     remove() {
-      FakeMarker.added -= 1
+      if (this.onMap) FakeMarker.added -= 1
+      this.onMap = false
     }
   }
 
@@ -99,6 +110,7 @@ beforeEach(async () => {
   fake.FakeMap.instances = []
   fake.FakeMap.tilesLoadedOnCreate = true
   fake.FakeMarker.added = 0
+  fake.FakeMarker.instances = []
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
   await i18n.changeLanguage('es')
 })
@@ -173,4 +185,22 @@ it('waits while the style itself is still loading', () => {
   map.style._loaded = false
   map.fire('styledata')
   expect(map.sources.size).toBe(0)
+})
+
+it('moves a single focus marker with its label and hides it when the hover ends', () => {
+  const { rerender } = render(
+    <MapView styleId="map" focusPoint={{ coordinate: [-3.7, 40.4], label: '12,3 km · 1024 m · 8,5 %' }} />,
+  )
+  const [marker] = fake.FakeMarker.instances
+  expect(marker.lngLat).toEqual([-3.7, 40.4])
+  expect(marker.element?.textContent).toBe('12,3 km · 1024 m · 8,5 %')
+  expect(fake.FakeMarker.added).toBe(1)
+
+  rerender(<MapView styleId="map" focusPoint={{ coordinate: [-3.6, 40.5], label: '14,0 km · 1101 m · 9,2 %' }} />)
+  expect(fake.FakeMarker.instances).toHaveLength(1)
+  expect(marker.lngLat).toEqual([-3.6, 40.5])
+  expect(marker.element?.textContent).toBe('14,0 km · 1101 m · 9,2 %')
+
+  rerender(<MapView styleId="map" focusPoint={null} />)
+  expect(fake.FakeMarker.added).toBe(0)
 })

@@ -39,6 +39,8 @@ export type MapMarker = {
   label?: string
 }
 
+export type MapFocusPoint = { coordinate: LngLat; label?: string }
+
 export type MapViewProps = {
   /**
    * Point to move the view to. Applied when `key` changes, not the point, so
@@ -48,6 +50,7 @@ export type MapViewProps = {
   styleId: MapStyleId
   routes?: RouteLayer[]
   markers?: MapMarker[]
+  focusPoint?: MapFocusPoint | null
   /** Changing this value refits the view. A counter or the result id. */
   fitKey?: string | number
   /**
@@ -100,11 +103,44 @@ function markerElement(marker: MapMarker, dark: boolean): HTMLElement {
   return el
 }
 
+function focusElement(): { root: HTMLElement; label: HTMLElement } {
+  const root = document.createElement('div')
+  root.style.cssText = [
+    'position:relative',
+    'width:14px',
+    'height:14px',
+    'border-radius:999px',
+    'background:var(--accent)',
+    'border:3px solid var(--surface)',
+    'box-shadow:0 1px 6px rgba(0,0,0,.4)',
+    'pointer-events:none',
+  ].join(';')
+  const label = document.createElement('div')
+  label.style.cssText = [
+    'position:absolute',
+    'left:20px',
+    'top:50%',
+    'transform:translateY(-50%)',
+    'white-space:nowrap',
+    'padding:3px 8px',
+    'border-radius:999px',
+    'background:var(--surface)',
+    'color:var(--foreground)',
+    'font:600 11px/1.4 var(--font-sans, system-ui)',
+    'font-variant-numeric:tabular-nums',
+    'box-shadow:0 1px 6px rgba(0,0,0,.25)',
+  ].join(';')
+  root.append(label)
+  root.setAttribute('aria-hidden', 'true')
+  return { root, label }
+}
+
 export function MapView({
   styleId,
   routes = [],
   focus,
   markers = [],
+  focusPoint = null,
   fitKey,
   fitPadding,
   onMapClick,
@@ -116,6 +152,7 @@ export function MapView({
   const container = useRef<HTMLDivElement | null>(null)
   const map = useRef<MapLibreMap | null>(null)
   const markerRefs = useRef<Marker[]>([])
+  const focusMarker = useRef<{ marker: Marker; label: HTMLElement } | null>(null)
   const clickHandler = useRef(onMapClick)
   clickHandler.current = onMapClick
 
@@ -310,6 +347,30 @@ export function MapView({
       markerRefs.current = []
     }
   }, [markers, dark])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance) return
+    if (!focusPoint) {
+      focusMarker.current?.marker.remove()
+      return
+    }
+    if (!focusMarker.current) {
+      const { root, label } = focusElement()
+      focusMarker.current = { marker: new Marker({ element: root }), label }
+    }
+    const { marker, label } = focusMarker.current
+    label.textContent = focusPoint.label ?? ''
+    label.style.display = focusPoint.label ? '' : 'none'
+    marker.setLngLat(focusPoint.coordinate).addTo(instance)
+  }, [focusPoint])
+
+  useEffect(
+    () => () => {
+      focusMarker.current?.marker.remove()
+    },
+    [],
+  )
 
   // Fit only when fitKey changes, so it does not fight the user.
   useEffect(() => {

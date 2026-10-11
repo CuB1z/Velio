@@ -16,6 +16,7 @@ import { MetricTiles } from '@/components/route/metricTiles'
 import { ScoreCard } from '@/components/route/scoreCard'
 import { SurfaceBar } from '@/components/route/surfaceBar'
 import { dropdownTriggerClass } from '@/components/common/dropdownTrigger'
+import { useProfileFocus } from '@/hooks/useProfileFocus'
 import { downloadBlob, slugify } from '@/lib/download'
 import { toGeoJson, toGpx } from '@/lib/exportLocal'
 import { formatDate, formatPercent, formatRelative } from '@/lib/format'
@@ -25,6 +26,7 @@ import { readSavedResult } from '@/lib/savedRoute'
 
 export function SavedRouteDetailPage() {
   const { t } = useTranslation()
+  const { focusPoint, onProfileHover } = useProfileFocus()
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const client = useQueryClient()
@@ -179,6 +181,7 @@ export function SavedRouteDetailPage() {
               onStyleChange={setStyleId}
               routes={routes}
               markers={markers}
+              focusPoint={focusPoint}
               fitKey={route.id}
             />
           </div>
@@ -216,7 +219,7 @@ export function SavedRouteDetailPage() {
                 <span className="text-[13px] text-muted">
                   {t('metric.elevationProfile')}
                 </span>
-                <ElevationProfile profile={result.profile} distanceKm={result.distance_km} />
+                <ElevationProfile profile={result.profile} distanceKm={result.distance_km} onHover={onProfileHover} />
               </div>
             ) : null}
           </aside>
