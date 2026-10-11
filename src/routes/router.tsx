@@ -1,9 +1,8 @@
+import { lazy } from 'react'
 import { Route, Routes } from 'react-router-dom'
 
 import { RedirectIfAuthenticated, RequireAuth } from '@/auth/requireAuth'
 import { AppShell } from '@/components/layout/appShell'
-import { AccountPage } from '@/pages/account'
-import { AnalyzePage } from '@/pages/analyze'
 import { ForgotPasswordPage } from '@/pages/auth/forgotPassword'
 import { LoginPage } from '@/pages/auth/login'
 import { OAuthCallbackPage } from '@/pages/auth/oauthCallback'
@@ -11,11 +10,16 @@ import { RegisterPage } from '@/pages/auth/register'
 import { ResetPasswordPage } from '@/pages/auth/resetPassword'
 import { VerifyEmailPage } from '@/pages/auth/verifyEmail'
 import { LandingPage } from '@/pages/landing'
-import { LoopPlannerPage } from '@/pages/loopPlanner'
-import { NotFoundPage } from '@/pages/notFound'
-import { RoutePlannerPage } from '@/pages/routePlanner'
-import { SavedRouteDetailPage } from '@/pages/savedRouteDetail'
-import { SavedRoutesPage } from '@/pages/savedRoutes'
+
+const AccountPage = lazy(() => import('@/pages/account').then((m) => ({ default: m.AccountPage })))
+const AnalyzePage = lazy(() => import('@/pages/analyze').then((m) => ({ default: m.AnalyzePage })))
+const LoopPlannerPage = lazy(() => import('@/pages/loopPlanner').then((m) => ({ default: m.LoopPlannerPage })))
+const NotFoundPage = lazy(() => import('@/pages/notFound').then((m) => ({ default: m.NotFoundPage })))
+const RoutePlannerPage = lazy(() => import('@/pages/routePlanner').then((m) => ({ default: m.RoutePlannerPage })))
+const SavedRouteDetailPage = lazy(() =>
+  import('@/pages/savedRouteDetail').then((m) => ({ default: m.SavedRouteDetailPage })),
+)
+const SavedRoutesPage = lazy(() => import('@/pages/savedRoutes').then((m) => ({ default: m.SavedRoutesPage })))
 
 export function AppRouter() {
   return (

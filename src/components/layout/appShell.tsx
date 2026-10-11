@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { Spinner } from '@heroui/react'
+import { Suspense, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
 
@@ -84,7 +85,15 @@ export function AppShell() {
         </header>
 
         <main id="contenido" className="min-h-0 flex-1 overflow-auto">
-          <Outlet />
+          <Suspense
+            fallback={
+              <div className="flex h-full min-h-[60vh] items-center justify-center">
+                <Spinner aria-label={t('common.loading')} />
+              </div>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </main>
 
         {/* Mobile bottom bar */}
