@@ -33,7 +33,10 @@ export function UserMenu() {
         <Dropdown.Menu
           onAction={(key) => {
             if (key === 'account') void navigate('/account')
-            else if (key === 'logout') void logout()
+            else if (key === 'logout') {
+              void navigate('/')
+              void logout()
+            }
             else if (typeof key === 'string' && key.startsWith('lang:')) {
               void i18n.changeLanguage(key.slice(5))
             }
