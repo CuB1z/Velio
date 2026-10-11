@@ -238,6 +238,13 @@ Everything goes through `src/lib/format.ts`.
 - **The map limits navigation to Spain** (`maxBounds` in `mapView.tsx`),
   because that is what the backend graph covers.
 
+## Deploy
+
+One container: the `Dockerfile` builds the SPA and serves it from nginx
+(`nginx/velio.conf.template`), which proxies `/api` to the backend on the same
+origin. Deployed on Dokploy from `main`; DNS, backend env, Google console and
+the smoke test are in [docs/deploy.md](docs/deploy.md).
+
 ## Data licences
 
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright)
