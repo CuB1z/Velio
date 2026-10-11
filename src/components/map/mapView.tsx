@@ -175,7 +175,7 @@ export function MapView({
       instance.remove()
       map.current = null
     }
-    // Solo al montar: cambiar estilo o tema no debe recrear el mapa.
+    // Mount only: a style or theme change must not recreate the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -186,7 +186,7 @@ export function MapView({
     if (!instance) return
 
     const ensure = () => {
-      if (!instance.isStyleLoaded()) return
+      if (!instance.style?._loaded) return
 
       if (!instance.getSource(ROUTES_SOURCE)) {
         instance.addSource(ROUTES_SOURCE, { type: 'geojson', data: collection })
@@ -325,7 +325,7 @@ export function MapView({
       duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 600,
       maxZoom: 15,
     })
-    // routes cambia de identidad en cada render; fitKey es la señal deliberada.
+    // routes changes identity on every render; fitKey is the deliberate signal.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey])
 
@@ -337,7 +337,7 @@ export function MapView({
       zoom: Math.max(instance.getZoom(), 13),
       duration: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 600,
     })
-    // Solo cuando la página lo pide (key); ver el comentario del prop.
+    // Only when the page asks for it (key); see the prop comment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus?.key])
 
