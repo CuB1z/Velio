@@ -149,6 +149,7 @@ export default {
     editedOn: 'Editada {{date}}',
     selected: '{{count}} seleccionadas',
     selectedOne: '1 seleccionada',
+    perPage: 'Por página',
     renameTitle: 'Renombrar la ruta',
     recompute: 'Volver a calcular',
     deleteConfirmTitle: '¿Eliminar la ruta?',

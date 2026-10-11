@@ -148,6 +148,7 @@ export default {
     editedOn: 'Edited {{date}}',
     selected: '{{count}} selected',
     selectedOne: '1 selected',
+    perPage: 'Per page',
     renameTitle: 'Rename the route',
     recompute: 'Recalculate',
     deleteConfirmTitle: 'Delete the route?',

@@ -1,4 +1,5 @@
 import { Button, Modal, useOverlayState } from '@heroui/react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -18,6 +19,7 @@ export function SaveRouteDialog({ payload, defaultName, isDisabled, onSaved }: P
   const { t } = useTranslation()
   const describe = useApiErrorMessage()
   const state = useOverlayState()
+  const client = useQueryClient()
   const [name, setName] = useState(defaultName)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -31,6 +33,7 @@ export function SaveRouteDialog({ payload, defaultName, isDisabled, onSaved }: P
       const saved = await savedRoutes.save({ name: name.trim(), payload })
       setDone(true)
       state.close()
+      void client.invalidateQueries({ queryKey: ['savedRoutes'] })
       onSaved?.(saved.id)
     } catch (cause) {
       setError(describe(cause))

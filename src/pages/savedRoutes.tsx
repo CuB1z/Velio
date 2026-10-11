@@ -9,13 +9,15 @@ import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { ErrorState } from '@/components/common/errorState'
 import { Pager } from '@/components/common/pager'
 import { PageHeader } from '@/components/common/pageHeader'
+import { SegmentedControl } from '@/components/common/segmentedControl'
 import { RouteThumbnail } from '@/components/route/routeThumbnail'
 import { cn } from '@/lib/cn'
 import { formatDistance, formatDuration, formatRelative, formatScore, formatSigned } from '@/lib/format'
 import { readSavedResult, savedRouteKind } from '@/lib/savedRoute'
 import type { SavedRoute } from '@/types/api'
 
-const PAGE_SIZE = 12
+const PAGE_SIZES = ['12', '24', '48'] as const
+type PageSize = (typeof PAGE_SIZES)[number]
 
 export function SavedRoutesPage() {
   const { t } = useTranslation()
@@ -24,21 +26,23 @@ export function SavedRoutesPage() {
   const describe = useApiErrorMessage()
 
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<PageSize>(PAGE_SIZES[0])
   const [search, setSearch] = useState('')
   const [selection, setSelection] = useState<Set<string>>(new Set())
   const [actionError, setActionError] = useState<string | null>(null)
   const confirm = useOverlayState()
 
   const query = useQuery({
-    queryKey: ['savedRoutes', page],
-    queryFn: () => savedRoutesApi.list(page, PAGE_SIZE),
+    queryKey: ['savedRoutes', page, pageSize],
+    queryFn: () => savedRoutesApi.list(page, Number(pageSize)),
   })
 
   const remove = useMutation({
     mutationFn: (ids: string[]) => savedRoutesApi.removeMany(ids),
-    onSuccess: async () => {
+    onSuccess: async (_, ids) => {
       setSelection(new Set())
       confirm.close()
+      if (page > 1 && ids.length >= (query.data?.data.length ?? 0)) setPage(page - 1)
       await client.invalidateQueries({ queryKey: ['savedRoutes'] })
     },
     onError: (error) => setActionError(describe(error)),
@@ -152,13 +156,24 @@ export function SavedRoutesPage() {
         </ul>
       )}
 
-      {query.data ? (
-        <Pager
-          page={page}
-          totalPages={query.data.meta.total_pages}
-          onChange={setPage}
-          className="self-center"
-        />
+      {query.data && query.data.meta.total > Number(PAGE_SIZES[0]) ? (
+        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+          <Pager page={page} totalPages={query.data.meta.total_pages} onChange={setPage} />
+          <div className="flex items-center gap-3 sm:ms-auto">
+            <span className="text-sm text-muted">{t('saved.perPage')}</span>
+            <div className="w-44">
+              <SegmentedControl
+                label={t('saved.perPage')}
+                options={PAGE_SIZES.map((size) => ({ id: size, label: size }))}
+                value={pageSize}
+                onChange={(size) => {
+                  setPageSize(size)
+                  setPage(1)
+                }}
+              />
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {selection.size > 0 ? (
