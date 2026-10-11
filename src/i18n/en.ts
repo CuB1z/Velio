@@ -138,17 +138,21 @@ export default {
 
   saved: {
     title: 'Saved routes',
-    summary: 'Your routes, with their metrics.',
     searchPlaceholder: 'Search by name',
     newRoute: 'Plan a new one',
     empty: 'You have not saved any route yet',
     emptyHint: 'When you generate a loop you like, save it and it will show up here.',
+    emptyRoute: 'Plan point to point',
     emptyAction: 'Plan a loop',
     kindLoop: 'Loop',
     kindRoute: 'Point to point',
     savedOn: 'Saved on {{date}}',
     editedOn: 'Edited {{date}}',
     selected: '{{count}} selected',
+    select: 'Select',
+    selectHint: 'Tap the routes you want to delete',
+    selectAll: 'Select all',
+    noMatches: 'No route on this page has that name.',
     selectedOne: '1 selected',
     perPage: 'Per page',
     renameTitle: 'Rename the route',
@@ -157,6 +161,14 @@ export default {
     deleteConfirmBody: 'It is gone for good. This cannot be undone.',
     deleteManyConfirmBody: '{{count}} routes will be deleted for good. This cannot be undone.',
     unreadable: 'This route cannot be shown: the geometry is missing.',
+    stats: {
+      label: 'Your routes at a glance',
+      routes: 'Saved routes',
+      distance: 'Total distance',
+      gain: 'Total climbing',
+      score: 'Average score',
+      pageOnly: 'Totals for this page.',
+    },
   },
 
   planner: {

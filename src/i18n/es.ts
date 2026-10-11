@@ -139,17 +139,21 @@ export default {
 
   saved: {
     title: 'Rutas guardadas',
-    summary: 'Tus trazados, con sus métricas.',
     searchPlaceholder: 'Buscar por nombre',
     newRoute: 'Trazar una nueva',
     empty: 'Aún no has guardado ninguna ruta',
     emptyHint: 'Cuando generes un circuito que te guste, guárdalo y aparecerá aquí.',
+    emptyRoute: 'Trazar punto a punto',
     emptyAction: 'Trazar un circuito',
     kindLoop: 'Circuito',
     kindRoute: 'Punto a punto',
     savedOn: 'Guardada el {{date}}',
     editedOn: 'Editada {{date}}',
     selected: '{{count}} seleccionadas',
+    select: 'Seleccionar',
+    selectHint: 'Toca las rutas que quieras eliminar',
+    selectAll: 'Seleccionar todas',
+    noMatches: 'Ninguna ruta de esta página tiene ese nombre.',
     selectedOne: '1 seleccionada',
     perPage: 'Por página',
     renameTitle: 'Renombrar la ruta',
@@ -158,6 +162,14 @@ export default {
     deleteConfirmBody: 'Se borra para siempre. Esto no se puede deshacer.',
     deleteManyConfirmBody: 'Se eliminarán {{count}} rutas para siempre. Esto no se puede deshacer.',
     unreadable: 'Esta ruta no se puede mostrar: faltan datos del trazado.',
+    stats: {
+      label: 'Resumen de tus rutas',
+      routes: 'Rutas guardadas',
+      distance: 'Distancia total',
+      gain: 'Desnivel acumulado',
+      score: 'Nota media',
+      pageOnly: 'Totales de esta página.',
+    },
   },
 
   planner: {

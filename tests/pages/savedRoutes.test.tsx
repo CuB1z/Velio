@@ -80,8 +80,9 @@ it('goes back a page when a bulk delete empties the current one', async () => {
   const calls = serve(rows)
   render(<App />)
 
-  await screen.findByRole('checkbox', { name: 'Ruta 1' })
+  await screen.findByRole('link', { name: 'Ruta 1' })
   await userEvent.click(screen.getByRole('button', { name: '2' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Seleccionar' }))
   await userEvent.click(await screen.findByRole('checkbox', { name: 'Ruta 13' }))
   await userEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
   const dialog = await screen.findByRole('dialog')
@@ -89,7 +90,7 @@ it('goes back a page when a bulk delete empties the current one', async () => {
 
   await waitFor(() => expect(calls).toContain('DELETE /api/v1/routes/saved?ids=r13'))
   await waitFor(() => expect(listCalls(calls).at(-1)).toBe('GET /api/v1/routes/saved?page=1&limit=12'))
-  expect(await screen.findByRole('checkbox', { name: 'Ruta 1' })).toBeInTheDocument()
+  expect(await screen.findByRole('link', { name: 'Ruta 1' })).toBeInTheDocument()
 })
 
 it('changing the page size reloads from the first page', async () => {
@@ -97,9 +98,35 @@ it('changing the page size reloads from the first page', async () => {
   const calls = serve(rows)
   render(<App />)
 
-  await screen.findByRole('checkbox', { name: 'Ruta 1' })
+  await screen.findByRole('link', { name: 'Ruta 1' })
   await userEvent.click(screen.getByRole('button', { name: '24' }))
 
   await waitFor(() => expect(listCalls(calls).at(-1)).toBe('GET /api/v1/routes/saved?page=1&limit=24'))
-  expect(await screen.findByRole('checkbox', { name: 'Ruta 24' })).toBeInTheDocument()
+  expect(await screen.findByRole('link', { name: 'Ruta 24' })).toBeInTheDocument()
+})
+
+it('sums the routes up, says when a search matches nothing and selects in selection mode', async () => {
+  const rows = [route('a', 'Sierra de domingo'), route('b', 'Girona clásica'), route('c', 'Usera por carril bici')]
+  serve(rows)
+  render(<App />)
+
+  const stats = await screen.findByRole('region', { name: 'Resumen de tus rutas' })
+  expect(within(stats).getByText('Rutas guardadas').nextSibling).toHaveTextContent('3')
+  expect(within(stats).getByText('Distancia total').nextSibling).toHaveTextContent('91,2 km')
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+
+  await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar por nombre' }), 'Bilbao')
+  expect(await screen.findByText('Ninguna ruta de esta página tiene ese nombre.')).toBeInTheDocument()
+  await userEvent.clear(screen.getByRole('searchbox', { name: 'Buscar por nombre' }))
+
+  await userEvent.click(screen.getByRole('button', { name: 'Seleccionar' }))
+  expect(screen.getByText('Toca las rutas que quieras eliminar')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Eliminar' })).toBeDisabled()
+  await userEvent.click(screen.getByRole('checkbox', { name: 'Girona clásica' }))
+  expect(screen.getByText('1 seleccionada')).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('button', { name: 'Seleccionar todas' }))
+  expect(screen.getByText('3 seleccionadas')).toBeInTheDocument()
+
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
 })

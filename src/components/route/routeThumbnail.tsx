@@ -7,13 +7,14 @@ import { boundsOf, decodePolyline } from '@/lib/polyline'
 
 type Props = {
   polyline: string
+  kind?: 'loop' | 'route'
   className?: string
   width?: number
   height?: number
 }
 
 /** Route silhouette without a map: in a card grid the shape is enough. */
-export function RouteThumbnail({ polyline, className, width = 320, height = 140 }: Props) {
+export function RouteThumbnail({ polyline, kind = 'loop', className, width = 320, height = 160 }: Props) {
   const { resolved } = useTheme()
   const palette = ink(resolved)
 
@@ -31,7 +32,7 @@ export function RouteThumbnail({ polyline, className, width = 320, height = 140 
     const cosLat = Math.cos(((minLat + maxLat) / 2) * (Math.PI / 180))
     const dataWidth = spanLng * cosLat
     const dataHeight = spanLat
-    const pad = 12
+    const pad = 20
     const scale = Math.min((width - pad * 2) / dataWidth, (height - pad * 2) / dataHeight)
     const offsetX = (width - dataWidth * scale) / 2
     const offsetY = (height - dataHeight * scale) / 2
@@ -47,6 +48,7 @@ export function RouteThumbnail({ polyline, className, width = 320, height = 140 
       d: `M${points.join(' L')}`,
       start: coordinates[0],
       startPoint: points[0].split(' ').map(Number) as [number, number],
+      endPoint: points[points.length - 1].split(' ').map(Number) as [number, number],
     }
   }, [polyline, width, height])
 
@@ -61,8 +63,16 @@ export function RouteThumbnail({ polyline, className, width = 320, height = 140 
       className={cn('block h-full w-full', className)}
       role="img"
       aria-hidden="true"
-      style={{ background: palette.surface }}
     >
+      <path
+        d={path.d}
+        fill="none"
+        stroke={accent(resolved)}
+        strokeOpacity={0.16}
+        strokeWidth={9}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <path
         d={path.d}
         fill="none"
@@ -71,13 +81,23 @@ export function RouteThumbnail({ polyline, className, width = 320, height = 140 
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {kind === 'route' ? (
+        <circle
+          cx={path.endPoint[0]}
+          cy={path.endPoint[1]}
+          r={4.5}
+          fill={accent(resolved)}
+          stroke={palette.surface}
+          strokeWidth={2}
+        />
+      ) : null}
       <circle
         cx={path.startPoint[0]}
         cy={path.startPoint[1]}
-        r={4}
+        r={4.5}
         fill={status(resolved, 'good')}
         stroke={palette.surface}
-        strokeWidth={1.5}
+        strokeWidth={2}
       />
     </svg>
   )
