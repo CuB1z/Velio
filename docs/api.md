@@ -16,6 +16,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/api/health` | — | Service status and version |
+| GET | `/metrics` | Bearer `METRICS_TOKEN` when set | Prometheus exposition; `404` unless `METRICS_ENABLED=true` |
 | POST | `/api/v1/auth/register` | — | Create a pending local account; a verification code is emailed |
 | POST | `/api/v1/auth/verify` | — | Confirm the emailed six digit code and activate the account |
 | POST | `/api/v1/auth/resend-verification` | — | Re-issue and resend the verification code (always 202) |
@@ -67,6 +68,8 @@ Everything is environment-driven (or `.env`):
 | `RATE_LIMIT_BACKEND` | `memory` | `memory` (in-process) or `redis` (ZSET sliding window with native TTL bans); `memory` is fine for single-process local dev |
 | `REDIS_URL` | — | Redis connection URL (e.g. `redis://redis:6379/0`); required when `RATE_LIMIT_BACKEND=redis` |
 | `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
+| `METRICS_ENABLED` | `false` | Opens `GET /metrics`; closed, it answers `404` |
+| `METRICS_TOKEN` | — | When set, `/metrics` requires `Authorization: Bearer <token>` (Prometheus `authorization.credentials`) |
 
 Migrations run through Alembic (`start.sh` executes
 `alembic -c migrations/alembic.ini upgrade head` before the API boots).
@@ -383,8 +386,27 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.22.1"}
+{"status": "ok", "version": "0.30.0"}
 ```
+
+---
+
+## GET /metrics
+
+Prometheus text exposition (`text/plain; version=0.0.4`) from
+`prometheus-fastapi-instrumentator`: request counters and latency histograms
+per route template (`http_requests_total`, `http_request_duration_seconds`,
+…). `/metrics` and `/api/health` are not instrumented, skip the rate limits and
+log at DEBUG, so a scraper polling every few seconds stays out of the budgets
+and the INFO log.
+
+```bash
+curl -s localhost:8000/metrics -H "Authorization: Bearer $METRICS_TOKEN" | head
+```
+
+Closed by default (`404`). Whether the endpoint is reachable from the public
+internet or only from an internal scraper is an infrastructure decision outside
+this repository; `METRICS_TOKEN` is the app-side guard for the public case.
 
 ---
 
