@@ -52,14 +52,14 @@ export function VerifyEmailPage() {
           verify.mutate()
         }}
       >
-        <div className="flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
+        <div className="flex size-12 items-center justify-center self-center rounded-xl bg-accent-soft text-accent">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
             <path d="M3 6.5h18v11H3v-11Z" />
             <path d="m3 7 9 6 9-6" />
           </svg>
         </div>
 
-        <div>
+        <div className="mb-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight">{t('auth.verifyTitle')}</h1>
           <p className="mt-2 text-sm text-muted">{t('auth.verifySubtitle', { email })}</p>
         </div>
@@ -73,13 +73,15 @@ export function VerifyEmailPage() {
           </Alert>
         ) : null}
 
-        <InputOTP value={code} onChange={setCode} maxLength={6} aria-label={t('auth.verifyCode')}>
-          <InputOTP.Group>
-            {[0, 1, 2, 3, 4, 5].map((index) => (
-              <InputOTP.Slot key={index} index={index} />
-            ))}
-          </InputOTP.Group>
-        </InputOTP>
+        <div className="flex justify-center">
+          <InputOTP value={code} onChange={setCode} maxLength={6} aria-label={t('auth.verifyCode')} className="w-fit">
+            <InputOTP.Group>
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <InputOTP.Slot key={index} index={index} />
+              ))}
+            </InputOTP.Group>
+          </InputOTP>
+        </div>
 
         {error ? (
           <p className="text-sm text-danger" role="alert">
@@ -97,7 +99,7 @@ export function VerifyEmailPage() {
           {t('auth.verifySubmit')}
         </Button>
 
-        <div className="flex items-center justify-between gap-3 text-xs text-muted">
+        <div className="flex items-center justify-center gap-3 text-xs text-muted">
           {cooldown.left > 0 ? (
             <span className="tnum">{t('auth.verifyResendIn', { seconds: cooldown.left })}</span>
           ) : (

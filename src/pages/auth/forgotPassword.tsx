@@ -39,7 +39,7 @@ export function ForgotPasswordPage() {
           mutation.mutate()
         }}
       >
-        <div>
+        <div className="mb-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight">{t('auth.forgotTitle')}</h1>
           <p className="mt-2 text-sm text-muted">{t('auth.forgotSubtitle')}</p>
         </div>

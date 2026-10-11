@@ -58,7 +58,7 @@ export function LoginPage() {
           mutation.mutate()
         }}
       >
-        <div>
+        <div className="mb-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight">{t('auth.loginTitle')}</h1>
           <p className="mt-2 text-sm text-muted">{t('auth.loginSubtitle')}</p>
         </div>

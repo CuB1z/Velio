@@ -10,9 +10,9 @@ export function GoogleButton() {
 
   return (
     <Button
-      variant="secondary"
+      variant="outline"
       fullWidth
-      className="min-h-12"
+      className="min-h-12 bg-surface"
       onPress={() => {
         window.location.href = oauthAuthorizeUrl('google')
       }}

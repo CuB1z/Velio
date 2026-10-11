@@ -53,7 +53,7 @@ export function RegisterPage() {
           mutation.mutate()
         }}
       >
-        <div>
+        <div className="mb-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight">{t('auth.registerTitle')}</h1>
           <p className="mt-2 text-sm text-muted">{t('auth.registerSubtitle')}</p>
         </div>
@@ -95,7 +95,7 @@ export function RegisterPage() {
           onChange={setAccepted}
           className="flex flex-row items-start gap-3"
         >
-          <Checkbox.Control className="mt-0.5">
+          <Checkbox.Control className="mt-0.5 [--field-border:color-mix(in_oklch,var(--muted)_70%,transparent)]">
             <Checkbox.Indicator />
           </Checkbox.Control>
           <Checkbox.Content className="text-xs text-muted">{t('auth.terms')}</Checkbox.Content>

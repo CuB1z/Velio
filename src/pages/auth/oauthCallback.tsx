@@ -58,7 +58,7 @@ export function OAuthCallbackPage() {
 
   return (
     <AuthLayout>
-      <div className="flex flex-col items-start gap-5">
+      <div className="flex flex-col items-center gap-5 text-center">
         {error ? (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">{t('error.title')}</h1>

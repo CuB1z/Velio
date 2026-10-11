@@ -46,7 +46,7 @@ export function ResetPasswordPage() {
           mutation.mutate()
         }}
       >
-        <div>
+        <div className="mb-3 text-center">
           <h1 className="text-3xl font-semibold tracking-tight">{t('auth.resetTitle')}</h1>
           <p className="mt-2 text-sm text-muted">{t('auth.resetSubtitle', { email })}</p>
         </div>
@@ -62,13 +62,15 @@ export function ResetPasswordPage() {
           />
         )}
 
-        <InputOTP value={code} onChange={setCode} maxLength={6} aria-label={t('auth.verifyCode')}>
-          <InputOTP.Group>
-            {[0, 1, 2, 3, 4, 5].map((index) => (
-              <InputOTP.Slot key={index} index={index} />
-            ))}
-          </InputOTP.Group>
-        </InputOTP>
+        <div className="flex justify-center">
+          <InputOTP value={code} onChange={setCode} maxLength={6} aria-label={t('auth.verifyCode')} className="w-fit">
+            <InputOTP.Group>
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <InputOTP.Slot key={index} index={index} />
+              ))}
+            </InputOTP.Group>
+          </InputOTP>
+        </div>
 
         <div className="flex flex-col gap-3">
           <PasswordInput

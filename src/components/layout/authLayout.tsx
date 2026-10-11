@@ -3,17 +3,24 @@ import { useTranslation } from 'react-i18next'
 
 import { Link } from 'react-router-dom'
 
+import { ProfileCell } from '@/components/landing/profileCell'
+import { Reveal } from '@/components/landing/reveal'
+import { ScoreCard } from '@/components/route/scoreCard'
+import { formatDistance, formatSigned } from '@/lib/format'
+import { LANDING_EXAMPLES } from '@/pages/landingExamples'
 import { VelioLogo } from './logo'
 import { ThemeToggle } from './themeToggle'
 
 type Props = { children: ReactNode; footer?: ReactNode }
 
+const SIERRA = LANDING_EXAMPLES[1]
+
 export function AuthLayout({ children, footer }: Props) {
   const { t } = useTranslation()
 
   return (
-    <div className="flex h-full bg-background text-foreground">
-      <div className="flex w-full flex-col p-6 sm:p-10 lg:w-[560px] lg:shrink-0">
+    <div className="flex min-h-full bg-background text-foreground [--field-background:var(--surface)]">
+      <div className="flex w-full flex-col px-4 py-6 sm:px-10 sm:py-8 lg:w-1/2">
         <div className="flex items-center justify-between">
           <Link to="/" aria-label="Velio" className="inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             <VelioLogo height={26} />
@@ -21,50 +28,38 @@ export function AuthLayout({ children, footer }: Props) {
           <ThemeToggle />
         </div>
 
-        <div className="flex flex-1 items-center py-10">
-          <div className="w-full max-w-sm">{children}</div>
+        <div className="flex flex-1 flex-col items-center justify-center py-12">
+          <div className="w-full max-w-[400px]">
+            {children}
+            {footer ? <p className="mt-8 text-center text-sm text-muted">{footer}</p> : null}
+          </div>
         </div>
-
-        {footer ? <div className="text-sm text-muted">{footer}</div> : null}
       </div>
 
-      {/* Decorative panel: contour lines, no tiles or network requests. */}
-      <div className="relative hidden flex-1 overflow-hidden bg-accent lg:block" aria-hidden="true">
-        <svg
-          className="absolute inset-0 size-full"
-          viewBox="0 0 600 900"
-          preserveAspectRatio="xMidYMid slice"
-          fill="none"
-        >
-          <g stroke="var(--accent-foreground)" strokeOpacity="0.22" strokeWidth="1.5">
-            <path d="M-40 300C60 220 180 200 280 250s180 60 280 10" />
-            <path d="M-40 350C60 270 180 250 280 300s180 60 280 10" />
-            <path d="M-40 400C60 320 180 300 280 350s180 60 280 10" />
-            <path d="M-40 460C70 380 200 360 300 415s190 55 300 5" />
-            <path d="M-40 530C70 450 200 430 300 485s190 55 300 5" />
-            <path d="M-40 610C80 530 210 510 310 565s180 50 290 0" />
-            <path d="M-40 700C80 620 210 600 310 655s180 50 290 0" />
-          </g>
-          <g stroke="var(--accent-foreground)" strokeOpacity="0.5" strokeWidth="3" strokeLinecap="round">
-            <path d="M110 760C150 660 230 690 300 590s150-120 210-90" />
-          </g>
-          <circle cx="110" cy="760" r="9" fill="var(--accent-foreground)" fillOpacity="0.9" />
-        </svg>
+      <div className="hidden p-4 ps-0 lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-1/2">
+        <div className="flex size-full flex-col overflow-hidden rounded-3xl bg-accent p-12 text-accent-foreground">
+          <h2 className="max-w-[680px] text-4xl font-semibold tracking-tight text-balance">{t('auth.panelTitle')}</h2>
+          <p className="mt-4 max-w-[520px] text-lg text-pretty opacity-90">{t('auth.panelBody')}</p>
 
-        <div className="absolute inset-x-12 bottom-12 text-accent-foreground">
-          <p className="max-w-md text-2xl font-semibold leading-snug tracking-tight text-pretty">
-            {t('auth.heroClaim')}
-          </p>
-          {/* Figures live in the translation: their unit and decimal separator
-              change with the locale. */}
-          <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-            {(['Area', 'Dem', 'Speed'] as const).map((stat) => (
-              <div key={stat}>
-                <dt className="tnum text-xl font-semibold">{t(`auth.heroStat${stat}Value`)}</dt>
-                <dd className="mt-0.5 text-xs opacity-80">{t(`auth.heroStat${stat}`)}</dd>
+          <div className="flex flex-1 flex-col justify-center py-10">
+            <Reveal>
+              <div className="w-[88%] -rotate-1 rounded-2xl bg-surface p-6 text-foreground shadow-raised">
+                <div className="mb-3 flex items-baseline justify-between gap-4">
+                  <span className="font-semibold">{SIERRA.place}</span>
+                  <span className="tnum text-sm text-muted">
+                    {formatDistance(SIERRA.result.distance_km)} · {formatSigned(SIERRA.result.gain_m)}
+                  </span>
+                </div>
+                <ProfileCell height={190} />
               </div>
-            ))}
-          </dl>
+            </Reveal>
+            <Reveal delay={150} className="-mt-12 ms-auto w-[64%]">
+              <div className="rotate-2 rounded-2xl bg-surface p-6 text-foreground shadow-raised">
+                <ScoreCard score={SIERRA.result.cycling_score} hideElevation />
+              </div>
+            </Reveal>
+          </div>
+          <p className="text-sm opacity-80">{t('auth.panelCaption')}</p>
         </div>
       </div>
     </div>

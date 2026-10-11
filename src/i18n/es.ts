@@ -84,13 +84,9 @@ export default {
     verifyAttempts: 'Código incorrecto. Revísalo y vuelve a intentarlo.',
     verifyDone: 'Correo confirmado. Ya puedes entrar.',
     verifyOtherEmail: 'Usar otro correo',
-    heroClaim: 'Rutas en bici sobre datos abiertos, medidas de verdad.',
-    heroStatDem: 'Modelo de elevación',
-    heroStatArea: 'Cobertura',
-    heroStatSpeed: 'Un circuito en',
-    heroStatAreaValue: '505.990 km²',
-    heroStatDemValue: '30 m',
-    heroStatSpeedValue: '1,4 s',
+    panelTitle: 'Circuitos a tu medida, puntuados antes de salir.',
+    panelBody: 'Kilómetros, desnivel, firme y tráfico, medidos sobre datos abiertos.',
+    panelCaption: 'Perfil y puntuación reales de un circuito generado por el motor.',
   },
 
   account: {

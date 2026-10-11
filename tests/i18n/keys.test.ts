@@ -33,9 +33,6 @@ const RUNTIME_KEYS = [
   'map.position.unavailable',
   'map.position.timeout',
   'map.position.unsupported',
-  'auth.heroStatAreaValue',
-  'auth.heroStatDemValue',
-  'auth.heroStatSpeedValue',
 ]
 
 function walk(dir: string, out: string[] = []): string[] {

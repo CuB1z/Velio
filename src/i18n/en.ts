@@ -83,13 +83,9 @@ export default {
     verifyAttempts: 'Wrong code. Check it and try again.',
     verifyDone: 'Email confirmed. You can sign in now.',
     verifyOtherEmail: 'Use another email',
-    heroClaim: 'Cycling routes on open data, properly measured.',
-    heroStatDem: 'Elevation model',
-    heroStatArea: 'Coverage',
-    heroStatSpeed: 'A loop in',
-    heroStatAreaValue: '505,990 km²',
-    heroStatDemValue: '30 m',
-    heroStatSpeedValue: '1.4 s',
+    panelTitle: 'Loops cut to your distance, scored before you ride.',
+    panelBody: 'Distance, climbing, surface and traffic, measured on open data.',
+    panelCaption: 'Real profile and score of a loop the engine generated.',
   },
 
   account: {
