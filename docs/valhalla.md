@@ -4,31 +4,36 @@ How Valhalla is built, configured and run in this project.
 
 ## Overview
 
-Valhalla is the routing engine. It converts the OpenStreetMap extract into a
-pre-built graph (tiles) and serves routing requests over HTTP. The runtime does
+Valhalla is the routing engine. It converts the merged OpenStreetMap extract
+into a pre-built graph (tiles) and serves routing requests over HTTP. The runtime does
 not need the `.osm.pbf` — only the generated tiles and config.
 
 ```
-data/spain.osm.pbf
+data/<region>.osm.pbf  (spain, canary-islands, portugal, andorra)
+        │  tools/merge_regions.py
+        ▼
+data/coverage.osm.pbf
         │
         ▼
 valhalla_build_admins + valhalla_build_tiles     (scripts/build_tiles.sh)
         │
         ▼
-valhalla/tiles/  (~2.1 GB, 1836 tiles for Spain)
+valhalla/tiles/  (~2.7 GB, 2107 tiles)
         │
         ▼
 valhalla_service  (Docker, port 8002)
 ```
 
-Current build stats for Spain:
+Current build stats (2026-10-11, Spain + Canary Islands + Portugal + Andorra):
 
 | Metric | Value |
 |---|---|
-| OSM PBF | ~1.4 GB |
-| Routing tiles | ~2.1 GB |
-| Tiles generated | 1836 |
-| Build time | ~7 min 30 s |
+| Merged OSM PBF | 1.98 GB |
+| Routing tiles | ~2.7 GB |
+| Tiles generated | 2107 |
+| Build time | ~13 min (`build_tiles.sh`, 6 threads) |
+
+Sizes, timings and RAM for every step are in [data.md](data.md#resources).
 
 Docker image: `ghcr.io/valhalla/valhalla:3.8.2` (pinned in all scripts).
 
@@ -45,17 +50,14 @@ Runs four containerized steps in order:
      has no CLI flag for it); bakes grades into the graph so the bicycle
      costing can weigh slopes
 2. **Timezones** — `valhalla_build_timezones` -> `config/timezones.sqlite`.
-3. **Administrative areas** — `valhalla_build_admins` from the PBF ->
+3. **Administrative areas** — `valhalla_build_admins` from the merged PBF ->
    `config/admins.sqlite`.
-4. **Routing tiles** — `valhalla_build_tiles` from the PBF -> `tiles/`, then
+4. **Routing tiles** — `valhalla_build_tiles` from the merged PBF -> `tiles/`, then
    `valhalla_build_extract` packs them into `tiles.tar`.
 
-Requires `data/spain.osm.pbf` and a populated `valhalla/elevation/`
-(`download_elevation.sh`) — without elevation tiles the build still succeeds
-but edges carry no grades.
-
-The script is currently hardcoded to `data/spain.osm.pbf`; the intent is to
-make it accept multiple PBFs so several countries share one routing space.
+Takes the PBF as its only argument (default `data/coverage.osm.pbf`) and
+needs a populated `valhalla/elevation/` (`download_elevation.sh`): without
+elevation tiles the build still succeeds but edges carry no grades.
 
 ## Runtime (`docker-compose.yaml`)
 
@@ -74,12 +76,20 @@ is required at runtime.
 
 End-to-end setup used after a fresh clone or a data refresh:
 
-1. Build config + tiles (`build_tiles.sh`)
-2. Download elevation tiles (`download_elevation.sh`)
-3. `docker compose up -d --force-recreate valhalla` and wait for readiness
-4. Validate `/status` and `/height` with real coordinates
+1. Download the regions' extracts and boundary polygons (`download_osm.sh`)
+2. Merge them into `data/coverage.osm.pbf` (`tools/merge_regions.py`; skipped
+   for a single region)
+3. Write `data/coverage.geojson` (`tools/build_coverage.py`) and
+   `data/restricted_areas.geojson` (`tools/extract_restricted_areas.py`)
+4. Build config + tiles (`build_tiles.sh`)
+5. Download elevation tiles (`download_elevation.sh`) and, when that added
+   files, build the tiles again so their grades are baked in
+6. `docker compose up -d --force-recreate valhalla` and wait for readiness
+7. Validate `/status` and `/height` with real coordinates
 
-Flags: `--skip-build`, `--skip-elevation`, `--no-start`.
+Flags: `--regions <keys>` (default `spain,canary-islands,portugal,andorra`),
+`--region <key>`, `--skip-build`, `--skip-elevation`, `--no-start`. The
+Python steps use `.venv/bin/python` unless `PYTHON` points elsewhere.
 
 ## HTTP API
 
@@ -141,5 +151,6 @@ tiles. See [elevation.md](elevation.md).
 
 ## Known limitations
 
-- `build_tiles.sh` builds one PBF per graph; merging several regions into a
-  single routing space is planned but not implemented yet.
+- The merge keeps every extract except the largest in memory (6.4 GB peak
+  for Portugal, the Canaries and Andorra next to Spain), so adding another
+  large country needs more RAM or a different merge strategy.

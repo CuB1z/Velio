@@ -38,8 +38,8 @@ valhalla/elevation/
 └── ...
 ```
 
-Current size for Spain coverage: ~1 GB, 173 tiles
-(`valhalla/elevation/`).
+Current size for Spain, the Canary Islands, Portugal and Andorra: ~1.2 GB,
+205 tiles (`valhalla/elevation/`).
 
 This directory is the **single elevation store**: Valhalla reads it at runtime,
 and the elevation engine uses the same files for its own DEM lookups. It is

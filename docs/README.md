@@ -61,7 +61,10 @@ tests/
 
 data/                     Source datasets (gitignored, re-downloadable)
 ├── regions.json          Catalog of downloadable OSM extracts (versioned)
-└── spain.osm.pbf         OSM extract for Spain (~1.4 GB)
+├── <region>.osm.pbf      One OSM extract per region, with <region>.poly
+├── coverage.osm.pbf      The region extracts merged into one file
+├── coverage.geojson      Covered regions' boundaries (versioned)
+└── restricted_areas.geojson  Military areas and airfields (versioned)
 
 scripts/
 ├── download_osm.sh         Download OSM extracts listed in data/regions.json
@@ -87,14 +90,15 @@ deployment checklist.
 ## Quick start
 
 ```bash
-# Full setup from a fresh clone: download Spain, build tiles,
-# download elevation, start container, validate
-./scripts/setup_valhalla.sh --region spain
+# Full setup from a fresh clone: download and merge the regions, build
+# tiles, download elevation, start container, validate
+./scripts/setup_valhalla.sh                   # spain,canary-islands,portugal,andorra
+./scripts/setup_valhalla.sh --regions spain   # a single region
 
 # Individual steps
 ./scripts/download_osm.sh --list  # see available regions (data/regions.json)
 ./scripts/download_osm.sh spain   # download an OSM extract only
-./scripts/build_tiles.sh          # rebuild config + routing tiles from data/spain.osm.pbf
+./scripts/build_tiles.sh          # rebuild config + routing tiles from data/coverage.osm.pbf
 ./scripts/download_elevation.sh   # download elevation tiles only
 docker compose up -d valhalla     # start the service
 
