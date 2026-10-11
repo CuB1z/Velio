@@ -32,6 +32,8 @@ export function RequireAuth() {
 export function RedirectIfAuthenticated() {
   const { t } = useTranslation()
   const { status } = useAuth()
+  const location = useLocation()
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname
 
   if (status === 'loading') {
     return (
@@ -42,7 +44,7 @@ export function RedirectIfAuthenticated() {
   }
 
   if (status === 'authenticated') {
-    return <Navigate to="/loops" replace />
+    return <Navigate to={from ?? '/loops'} replace />
   }
 
   return <Outlet />
