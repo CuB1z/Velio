@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "velio"
-    app_version: str = "0.29.0"
+    app_version: str = "0.30.0"
     debug: bool = False
     environment: str = Field(
         default="dev",
@@ -117,6 +117,10 @@ class Settings(BaseSettings):
     def otp_test_mode_active(self) -> bool:
         """Test mode requires BOTH the flag and a dev environment."""
         return self.otp_test_mode and self.is_dev
+
+    # --- Metrics ---
+    metrics_enabled: bool = Field(default=False, alias="METRICS_ENABLED")
+    metrics_token: str | None = Field(default=None, alias="METRICS_TOKEN")
 
     # --- Rate limiting ---
     rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")

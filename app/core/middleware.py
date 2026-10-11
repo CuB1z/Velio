@@ -21,7 +21,9 @@ from app.core.ratelimit import GLOBAL_RPM, WINDOW_S, client_ip, limiter
 logger = logging.getLogger(__name__)
 
 HEALTH_PATH = "/api/health"
-RATE_LIMIT_SKIP_PREFIXES = ("/docs", "/redoc", "/openapi.json")
+METRICS_PATH = "/metrics"
+QUIET_PATHS = (HEALTH_PATH, METRICS_PATH)
+RATE_LIMIT_SKIP_PREFIXES = ("/docs", "/redoc", "/openapi.json", METRICS_PATH)
 
 
 class DbTransactionMiddleware:
@@ -83,7 +85,7 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
         finally:
             duration_ms = round((time.perf_counter() - started) * 1000, 1)
             level = (
-                logging.DEBUG if request.url.path == HEALTH_PATH else logging.INFO
+                logging.DEBUG if request.url.path in QUIET_PATHS else logging.INFO
             )
             logger.log(
                 level,

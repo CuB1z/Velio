@@ -6,7 +6,8 @@ from app.api.router import api_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.lifespan import lifespan
-from app.core.middleware import setup_middlewares
+from app.core.metrics import setup_metrics
+from app.core.middleware import HEALTH_PATH, setup_middlewares
 
 app = FastAPI(
     title=settings.app_name,
@@ -19,5 +20,6 @@ app = FastAPI(
 )
 
 setup_middlewares(app)
+setup_metrics(app, excluded=(HEALTH_PATH,))
 register_exception_handlers(app)
 app.include_router(api_router)
