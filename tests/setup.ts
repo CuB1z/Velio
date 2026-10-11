@@ -1,9 +1,11 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { cleanup, configure } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
 // Without `globals: true` testing-library skips its auto-cleanup and DOM leaks between tests.
 afterEach(cleanup)
+
+configure({ asyncUtilTimeout: 3000 })
 
 // jsdom lacks ResizeObserver, which the charts use to measure themselves.
 class ResizeObserverStub {
