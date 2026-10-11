@@ -1,6 +1,8 @@
 """E2E: loop generation against live Valhalla, plus quality scoring."""
 
 import asyncio
+import json
+import urllib.request
 
 import pytest
 
@@ -38,6 +40,38 @@ def test_generated_loop_meets_targets_and_scores(base_url, elevation_dir):
     score = score_edges(edges)
     assert 0.0 <= score.comfort <= 100.0
     assert score.total_km == pytest.approx(loop.distance_km, rel=0.15)
+
+
+PORTO = (41.1496, -8.6109)
+
+
+def _graph_reaches(base_url, point):
+    body = json.dumps(
+        {"locations": [{"lat": point[0], "lon": point[1]}], "costing": "bicycle"}
+    ).encode()
+    request = urllib.request.Request(
+        f"{base_url}/locate", body, {"Content-Type": "application/json"}
+    )
+    with urllib.request.urlopen(request, timeout=10) as response:
+        return bool(json.load(response)[0]["edges"])
+
+
+def test_loop_from_porto_is_feasible(base_url, elevation_dir):
+    if not _graph_reaches(base_url, PORTO):
+        pytest.skip("routing graph does not cover Portugal")
+    request = LoopRequest(origin=PORTO, target_km=30.0)
+
+    async def run():
+        client = ValhallaClient(base_url)
+        try:
+            return await generate_loop(client, DemSource(elevation_dir), request)
+        finally:
+            await client.aclose()
+
+    loop = asyncio.run(run())
+
+    assert not loop.infeasible
+    assert loop.distance_ok
 
 
 CAMPAMENTO = (40.398, -3.775)
