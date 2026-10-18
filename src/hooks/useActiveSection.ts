@@ -35,7 +35,11 @@ export function useActiveSection(ids: readonly string[], ratio = 0.4): string | 
       for (const section of sections) {
         if (section.getBoundingClientRect().top < line) current = section
       }
-      setActive((atBottom ? sections[sections.length - 1] : current).id)
+      const target = sections.find((section) => `#${section.id}` === window.location.hash)
+      const targetTop = target?.getBoundingClientRect().top ?? -Infinity
+      const targetVisible = targetTop >= top - 1 && targetTop < top + height
+      const bottom = target && targetVisible ? target : sections[sections.length - 1]
+      setActive((atBottom ? bottom : current).id)
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)

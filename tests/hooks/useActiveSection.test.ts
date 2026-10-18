@@ -17,6 +17,7 @@ function mount(tops: number[], container?: HTMLElement) {
 
 afterEach(() => {
   document.body.innerHTML = ''
+  window.history.replaceState(null, '', window.location.pathname)
 })
 
 it('activates the last section whose top crossed the reading line', async () => {
@@ -60,4 +61,21 @@ it('activates the last section at the bottom of a scroll container', async () =>
 
   const { result } = renderHook(() => useActiveSection(IDS))
   await waitFor(() => expect(result.current).toBe('c'))
+})
+
+it('keeps the clicked section at the bottom when it is still in view', async () => {
+  const container = document.createElement('main')
+  container.style.overflowY = 'auto'
+  Object.defineProperties(container, {
+    clientHeight: { value: 800 },
+    scrollHeight: { value: 3000 },
+    scrollTop: { value: 2200, writable: true },
+  })
+  container.getBoundingClientRect = () => ({ top: 0 }) as DOMRect
+  document.body.append(container)
+  mount([-1400, 120, 500], container)
+  window.history.replaceState(null, '', '#b')
+
+  const { result } = renderHook(() => useActiveSection(IDS))
+  await waitFor(() => expect(result.current).toBe('b'))
 })
