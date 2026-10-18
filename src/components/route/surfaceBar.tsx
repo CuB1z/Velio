@@ -31,16 +31,14 @@ export function SurfaceBar({ score, distanceKm, className }: Props) {
   return (
     <div className={cn('flex flex-col gap-3', className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-[13px] text-muted">
-          {t('metric.surface')}
-        </span>
+        <span className="eyebrow">{t('metric.surface')}</span>
         <span className="text-sm">
-          <span className="tnum font-semibold">{formatScore(score.comfort, 0)}</span>
+          <span className="code font-semibold">{formatScore(score.comfort, 0)}</span>
           <span className="text-muted"> / 100 · {t(comfortLabelKey(score.comfort))}</span>
         </span>
       </div>
 
-      <div className="flex h-2 gap-0.5 overflow-hidden rounded-full" role="presentation">
+      <div className="flex h-1 gap-[3px] overflow-hidden" role="presentation">
         {segments.map((segment) => (
           <div
             key={segment.key}
@@ -48,7 +46,6 @@ export function SurfaceBar({ score, distanceKm, className }: Props) {
               flexGrow: Math.max(segment.share, 0.02),
               background: surfaceColor(resolved, segment.key),
             }}
-            className="first:rounded-l-full last:rounded-r-full"
           />
         ))}
       </div>
@@ -58,13 +55,13 @@ export function SurfaceBar({ score, distanceKm, className }: Props) {
           <li key={segment.key} className="flex items-center gap-2 text-xs">
             <span
               aria-hidden="true"
-              className="size-2.5 shrink-0 rounded-sm"
+              className="size-2 shrink-0 rounded-full"
               style={{ background: surfaceColor(resolved, segment.key) }}
             />
             <span className="text-foreground">
               {t(`surface.${segment.key}`, { defaultValue: segment.key.replace(/_/g, ' ') })}
             </span>
-            <span className="tnum text-muted">
+            <span className="code text-muted">
               {formatDistance(segment.km)} · {formatRatio(segment.share, 0)}
             </span>
           </li>

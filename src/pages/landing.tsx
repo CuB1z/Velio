@@ -6,13 +6,18 @@ import { useAuth } from '@/auth/useAuth'
 import { Bento, BentoCell, BentoLabel } from '@/components/landing/bento'
 import { CountUp } from '@/components/landing/countUp'
 import { Faq } from '@/components/landing/faq'
-import { HeroStage } from '@/components/landing/heroStage'
 import { Reveal } from '@/components/landing/reveal'
+import { Ridge } from '@/components/landing/ridge'
+import { Showcase } from '@/components/landing/showcase'
 import { TaglineReveal } from '@/components/landing/taglineReveal'
 import { VelioLogo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/layout/themeToggle'
+import { SurfaceBar } from '@/components/route/surfaceBar'
 import { formatDistance, formatRatio } from '@/lib/format'
-import { LANDING_REPAIR } from './landingExamples'
+import { LANDING_EXAMPLES, LANDING_REPAIR } from './landingExamples'
+
+const SIERRA = LANDING_EXAMPLES[1]
+const ALGETE = LANDING_EXAMPLES[2]
 
 const STATS = [
   { value: 30, decimals: 0, suffix: ' m', label: 'landing.statDem' },
@@ -33,11 +38,13 @@ const DATA_SOURCES = [
 
 const BIKES = ['road', 'city', 'gravel', 'mtb'] as const
 const STEPS = [1, 2, 3] as const
+const DEVICES = ['Garmin Edge', 'Wahoo Elemnt', 'Komoot']
 
 const fluid = 'transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]'
-const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2'
-const pill = `inline-flex min-h-12 items-center justify-center rounded-full px-6 text-base font-semibold ${fluid} ${focus}`
-const sectionTitle = 'text-4xl font-semibold tracking-tight text-balance sm:text-5xl'
+const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+const pill = `inline-flex min-h-12 items-center justify-center rounded-full px-7 text-base font-semibold ${fluid} ${focus}`
+const primaryPill = `${pill} bg-foreground text-background hover:opacity-90`
+const sectionTitle = 'text-4xl font-semibold leading-none tracking-[-0.03em] text-balance sm:text-5xl'
 const footerLink = 'inline-flex min-h-10 items-center text-sm text-muted transition-colors duration-150 hover:text-foreground'
 
 export function LandingPage() {
@@ -54,11 +61,11 @@ export function LandingPage() {
   ]
 
   return (
-    <div className="min-h-full bg-background text-foreground">
+    <div className="min-h-full overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
-        <div className="mx-auto flex items-center gap-2 rounded-full bg-surface/80 p-2 ps-5 shadow-card ring-1 ring-border backdrop-blur-xl md:w-max">
-          <Link to="/" aria-label="Velio" className={`flex items-center rounded-md ${focus} focus-visible:outline-accent`}>
-            <VelioLogo height={22} decorative />
+        <div className="mx-auto flex items-center gap-2 rounded-full bg-overlay/70 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
+          <Link to="/" aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
+            <VelioLogo height={20} decorative />
           </Link>
 
           <nav className="ms-6 hidden items-center md:flex">
@@ -66,7 +73,7 @@ export function LandingPage() {
               <a
                 key={anchor.href}
                 href={anchor.href}
-                className="inline-flex min-h-10 items-center rounded-full px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-secondary hover:text-foreground"
+                className="inline-flex min-h-10 items-center rounded-full px-3 text-sm font-medium text-muted transition-colors duration-150 hover:text-foreground"
               >
                 {anchor.label}
               </a>
@@ -78,14 +85,14 @@ export function LandingPage() {
             {authenticated ? null : (
               <Link
                 to="/login"
-                className="hidden min-h-10 items-center rounded-full px-3 text-sm font-semibold transition-colors duration-150 hover:bg-surface-secondary sm:inline-flex"
+                className="hidden min-h-10 items-center rounded-full px-3 text-sm font-medium transition-colors duration-150 hover:text-muted sm:inline-flex"
               >
                 {t('landing.signIn')}
               </Link>
             )}
             <Link
               to={primary.to}
-              className={`inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground hover:opacity-90 ${fluid} ${focus} focus-visible:outline-accent`}
+              className={`inline-flex min-h-10 items-center rounded-full bg-foreground px-4 text-sm font-semibold text-background hover:opacity-90 ${fluid} ${focus}`}
             >
               {authenticated ? t('landing.openApp') : t('landing.getStarted')}
             </Link>
@@ -94,115 +101,155 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="px-4 pt-20 sm:px-6 sm:pt-24">
-          <div className="mx-auto max-w-[680px] text-center">
-            <h1 className="text-hero text-4xl font-semibold tracking-tight whitespace-pre-line text-balance sm:text-5xl">
+        <section className="px-4 pt-10 sm:px-6 sm:pt-14">
+          <div className="mx-auto flex max-w-[860px] flex-col items-center gap-5 text-center">
+            <span className="eyebrow">{t('landing.heroEyebrow')}</span>
+            <h1 className="text-hero text-4xl font-semibold leading-[1] tracking-[-0.03em] whitespace-pre-line text-balance sm:text-5xl lg:text-6xl">
               {t('landing.heroTitle')}
             </h1>
-            <p className="mt-6 text-lg text-muted text-pretty sm:text-xl">{t('landing.heroBody')}</p>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link to={primary.to} className={`${pill} bg-accent text-accent-foreground hover:opacity-90 focus-visible:outline-accent`}>
+            <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.heroBody')}</p>
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-1">
+              <Link to={primary.to} className={primaryPill}>
                 {primary.label}
               </Link>
-              <a href="#como-funciona" className={`${pill} text-accent hover:bg-accent-soft focus-visible:outline-accent`}>
+              <a href="#producto" className={`inline-flex items-center gap-2 text-base font-medium ${focus} rounded-md`}>
                 {t('landing.heroSecondary')}
+                <ArrowIcon />
               </a>
             </div>
-            <p className="mt-6 text-sm text-muted">{t('landing.heroNote')}</p>
+            <p className="eyebrow">{t('landing.heroNote')}</p>
           </div>
 
-          <Reveal className="mx-auto mt-16 max-w-6xl sm:mt-20">
-            <HeroStage />
+          <Reveal className="mx-auto mt-6 max-w-[1400px] sm:mt-8">
+            <Ridge example={SIERRA} />
           </Reveal>
         </section>
 
-        <section className="px-4 py-24 sm:px-6 lg:py-32">
+        <section className="px-4 py-24 sm:px-6 lg:py-40">
           <TaglineReveal
             text={t('landing.tagline')}
-            className="mx-auto max-w-[680px] text-4xl font-semibold tracking-tight sm:text-5xl"
+            className="mx-auto max-w-[1040px] text-4xl font-medium leading-[1.04] tracking-[-0.03em] sm:text-6xl"
           />
         </section>
 
-        <section id="funciones" className="bg-surface-secondary px-4 py-24 sm:px-6 lg:py-32">
+        <section id="producto" className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
-            <Reveal className="max-w-[680px]">
-              <h2 className={sectionTitle}>{t('landing.benefitsTitle')}</h2>
-              <p className="mt-4 text-lg text-muted text-pretty">{t('landing.benefitsBody')}</p>
+            <Reveal className="flex max-w-[720px] flex-col gap-4">
+              <span className="eyebrow">{t('landing.showcaseEyebrow')}</span>
+              <h2 className={sectionTitle}>{t('landing.benefitsBody')}</h2>
+            </Reveal>
+            <Reveal className="mt-12">
+              <Showcase example={SIERRA} />
+            </Reveal>
+          </div>
+        </section>
+
+        <section id="funciones" className="px-4 pb-24 sm:px-6 lg:pb-40">
+          <div className="mx-auto max-w-6xl">
+            <Reveal className="flex max-w-[720px] flex-col gap-4">
+              <span className="eyebrow">{t('landing.benefitsTitle')}</span>
+              <h2 className={sectionTitle}>{t('landing.benefitsHeadline')}</h2>
             </Reveal>
 
             <Reveal className="mt-12">
               <Bento>
-                <BentoCell span={7} className="flex flex-col gap-6 p-8">
-                  <BentoLabel title={t('landing.bikesTitle')} body={t('landing.bikesBody')} />
-                  <ul className="grid gap-3 sm:grid-cols-2">
-                    {BIKES.map((bike) => (
-                      <li key={bike} className="rounded-xl bg-surface-secondary p-4">
-                        <p className="font-semibold">{t(`bike.${bike}`)}</p>
-                        <p className="mt-1 text-sm text-muted text-pretty">{t(`bike.${bike}Hint`)}</p>
-                      </li>
-                    ))}
-                  </ul>
+                <BentoCell span={8} glow>
+                  <div className="relative flex flex-col gap-6">
+                    <div
+                      role="presentation"
+                      className="grid max-w-[560px] grid-cols-4 gap-1 rounded-full bg-surface-secondary p-1"
+                    >
+                      {BIKES.map((bike, index) => (
+                        <span
+                          key={bike}
+                          className={
+                            index === 0
+                              ? 'rounded-full bg-foreground px-4 py-2.5 text-center text-sm font-semibold text-background'
+                              : 'rounded-full px-4 py-2.5 text-center text-sm font-medium text-muted'
+                          }
+                        >
+                          {t(`bike.${bike}`)}
+                        </span>
+                      ))}
+                    </div>
+                    <ul className="grid gap-x-6 gap-y-3 text-sm text-muted sm:grid-cols-2">
+                      {BIKES.map((bike) => (
+                        <li key={bike}>
+                          <span className="font-medium text-foreground">{t(`bike.${bike}`)}.</span>{' '}
+                          {t(`bike.${bike}Hint`)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <BentoLabel eyebrow={t('bike.label')} title={t('landing.bikesTitle')} body={t('landing.bikesBody')} />
                 </BentoCell>
 
-                <BentoCell span={5} tone="ink" className="flex flex-col justify-between gap-8 p-8">
-                  <BentoLabel title={t('landing.repairTitle')} body={t('landing.repairBody')} tone="ink" />
-                  <div>
-                    <p className="tnum flex items-baseline gap-3 text-5xl font-semibold tracking-tight">
-                      <span className="text-ink-muted line-through decoration-2">
-                        {formatRatio(LANDING_REPAIR.before.overlap, 0)}
-                      </span>
-                      <span aria-hidden="true" className="text-3xl text-ink-muted">
-                        →
-                      </span>
-                      <span className="text-ink-accent">{formatRatio(LANDING_REPAIR.after.overlap, 0)}</span>
-                    </p>
-                    <p className="mt-3 text-sm text-ink-muted text-pretty">
+                <BentoCell span={4}>
+                  <p className="code flex items-center gap-4 pt-6 text-5xl font-medium tracking-[-0.04em]">
+                    <span className="text-muted line-through">{formatRatio(LANDING_REPAIR.before.overlap, 0)}</span>
+                    <ArrowIcon className="text-muted" />
+                    <span className="text-accent">{formatRatio(LANDING_REPAIR.after.overlap, 0)}</span>
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <BentoLabel eyebrow={t('landing.repairEyebrow')} title={t('landing.repairTitle')} body={t('landing.repairBody')} />
+                    <p className="text-sm text-muted text-pretty">
                       {t('landing.repairFigure', { distance: formatDistance(LANDING_REPAIR.before.distance_km) })}
                     </p>
                   </div>
                 </BentoCell>
 
-                <BentoCell span={5} tone="accent" className="flex flex-col justify-between gap-8 p-8">
-                  <h3 className="text-lg font-semibold tracking-tight">{t('landing.accuracyTitle')}</h3>
-                  <div>
-                    <p className="text-5xl font-semibold tracking-tight">
+                <BentoCell span={4}>
+                  <div className="flex flex-col gap-3 pt-6">
+                    <p className="code text-6xl font-medium tracking-[-0.04em]">
                       <CountUp value={0.62} decimals={2} suffix=" m" />
                     </p>
-                    <p className="mt-3 text-pretty opacity-90">{t('landing.accuracyBody')}</p>
+                    <span className="eyebrow">{t('landing.accuracyUnit')}</span>
                   </div>
+                  <BentoLabel eyebrow={t('landing.accuracyEyebrow')} title={t('landing.accuracyTitle')} body={t('landing.accuracyBody')} />
                 </BentoCell>
 
-                <BentoCell span={7} className="flex flex-col justify-between gap-8 p-8">
-                  <BentoLabel title={t('landing.exportTitle')} body={t('landing.exportBody')} />
-                  <div className="flex flex-wrap gap-2">
-                    {['GPX', 'GeoJSON'].map((format) => (
-                      <span key={format} className="rounded-full bg-accent-soft px-4 py-2 text-sm font-semibold text-accent">
-                        {format}
-                      </span>
-                    ))}
+                <BentoCell span={4}>
+                  <SurfaceBar score={ALGETE.result.score} distanceKm={ALGETE.result.distance_km} className="pt-2" />
+                  <BentoLabel eyebrow={t('metric.surface')} title={t('landing.surfaceTitle')} body={t('landing.surfaceBody')} />
+                </BentoCell>
+
+                <BentoCell span={4}>
+                  <div className="flex flex-col gap-4 pt-2">
+                    <div className="flex flex-wrap gap-2">
+                      {['GPX', 'GeoJSON'].map((format) => (
+                        <span key={format} className="rounded-full bg-accent-soft px-4 py-2 text-sm font-semibold text-accent-soft-foreground">
+                          {format}
+                        </span>
+                      ))}
+                    </div>
+                    <ul className="code flex flex-col gap-1.5 text-xs text-muted">
+                      {DEVICES.map((device) => (
+                        <li key={device} className="flex justify-between gap-4">
+                          <span className="text-foreground">{device}</span>
+                          <span>{t('landing.compatible')}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
+                  <BentoLabel eyebrow={t('landing.exportEyebrow')} title={t('landing.exportTitle')} body={t('landing.exportBody')} />
                 </BentoCell>
               </Bento>
             </Reveal>
           </div>
         </section>
 
-        <section id="como-funciona" className="px-4 py-24 sm:px-6 lg:py-32">
+        <section id="como-funciona" className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
-            <Reveal className="max-w-[680px]">
+            <Reveal className="max-w-[720px]">
               <h2 className={sectionTitle}>{t('landing.stepsTitle')}</h2>
             </Reveal>
-            <ol className="mt-12 grid gap-4 lg:grid-cols-3">
+            <ol className="mt-12 grid gap-10 border-t border-border pt-10 lg:grid-cols-3">
               {STEPS.map((step, index) => (
                 <li key={step}>
-                  <Reveal delay={index * 100} className="h-full">
-                    <div className="flex h-full flex-col gap-4 rounded-2xl bg-surface p-8 shadow-card">
-                      <span className="flex size-10 items-center justify-center rounded-full bg-accent text-base font-semibold text-accent-foreground">
-                        {step}
-                      </span>
-                      <h3 className="text-xl font-semibold tracking-tight text-balance">{t(`landing.step${step}Title`)}</h3>
-                      <p className="text-muted text-pretty">{t(`landing.step${step}Body`)}</p>
-                    </div>
+                  <Reveal delay={index * 100} className="flex h-full flex-col gap-4">
+                    <span className="eyebrow text-accent">0{step}</span>
+                    <h3 className="text-2xl font-semibold tracking-tight text-balance">{t(`landing.step${step}Title`)}</h3>
+                    <p className="text-muted text-pretty">{t(`landing.step${step}Body`)}</p>
                   </Reveal>
                 </li>
               ))}
@@ -210,19 +257,19 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="datos" className="bg-ink px-4 py-24 text-white sm:px-6 lg:py-32">
+        <section id="datos" className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
-            <Reveal className="max-w-[680px]">
-              <h2 className={sectionTitle}>{t('landing.dataTitle')}</h2>
-              <p className="mt-4 text-lg text-ink-muted text-pretty">{t('landing.dataBody')}</p>
+            <Reveal className="flex max-w-[720px] flex-col gap-4">
+              <span className="eyebrow">{t('landing.dataTitle')}</span>
+              <h2 className={sectionTitle}>{t('landing.dataBody')}</h2>
             </Reveal>
 
             <Reveal>
-              <dl className="mt-12 grid gap-8 border-y border-white/10 py-10 sm:grid-cols-2 lg:grid-cols-4">
+              <dl className="mt-12 grid gap-10 border-y border-border py-10 sm:grid-cols-2 lg:grid-cols-4">
                 {STATS.map((stat) => (
-                  <div key={stat.label} className="flex flex-col-reverse gap-2">
-                    <dt className="text-sm text-ink-muted">{t(stat.label)}</dt>
-                    <dd className="text-5xl font-semibold tracking-tight">
+                  <div key={stat.label} className="flex flex-col-reverse gap-3">
+                    <dt className="eyebrow">{t(stat.label)}</dt>
+                    <dd className="code text-5xl font-medium leading-none tracking-[-0.04em] sm:text-6xl">
                       <CountUp value={stat.value} decimals={stat.decimals} suffix={stat.suffix} />
                     </dd>
                   </div>
@@ -231,18 +278,18 @@ export function LandingPage() {
             </Reveal>
 
             <Reveal>
-              <ul className="mt-12 grid gap-8 sm:grid-cols-3">
+              <ul className="mt-12 grid gap-10 sm:grid-cols-3">
                 {DATA_SOURCES.map((source) => (
-                  <li key={source.key}>
+                  <li key={source.key} className="flex flex-col gap-2">
                     <a
                       href={source.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="font-semibold text-ink-accent underline-offset-4 hover:underline"
+                      className="text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
                     >
                       {source.label}
                     </a>
-                    <p className="mt-2 text-ink-muted text-pretty">{t(`landing.data${source.key}Body`)}</p>
+                    <p className="text-muted text-pretty">{t(`landing.data${source.key}Body`)}</p>
                   </li>
                 ))}
               </ul>
@@ -250,9 +297,10 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="preguntas" className="px-4 py-24 sm:px-6 lg:py-32">
-          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,0.6fr)_minmax(0,1fr)] lg:gap-16">
-            <Reveal>
+        <section id="preguntas" className="px-4 pb-24 sm:px-6 lg:pb-40">
+          <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,0.5fr)_minmax(0,1fr)] lg:gap-16">
+            <Reveal className="flex flex-col gap-4">
+              <span className="eyebrow">{t('landing.navFaq')}</span>
               <h2 className={sectionTitle}>{t('landing.faqTitle')}</h2>
             </Reveal>
             <Reveal delay={100}>
@@ -261,29 +309,34 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section className="px-4 pb-24 sm:px-6 lg:pb-32">
-          <Reveal className="mx-auto max-w-6xl">
-            <div className="rounded-3xl bg-accent px-6 py-16 text-center text-accent-foreground sm:px-12 lg:py-24">
-              <h2 className={`mx-auto max-w-[680px] ${sectionTitle}`}>{t('landing.ctaTitle')}</h2>
-              <p className="mx-auto mt-4 max-w-[560px] text-lg text-pretty opacity-90">{t('landing.ctaBody')}</p>
-              <div className="mt-8 flex justify-center">
-                <Link
-                  to={primary.to}
-                  className={`${pill} bg-accent-foreground text-accent hover:opacity-90 focus-visible:outline-accent-foreground`}
-                >
-                  {primary.label}
-                </Link>
-              </div>
-            </div>
+        <section className="relative overflow-hidden px-4 pb-24 sm:px-6 lg:pb-40">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-[200px] left-1/2 h-[600px] w-[1200px] -translate-x-1/2"
+            style={{
+              background:
+                'radial-gradient(50% 50% at 50% 100%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 70%)',
+            }}
+          />
+          <Reveal className="relative mx-auto flex max-w-[800px] flex-col items-center gap-6 text-center">
+            <span className="eyebrow">{t('landing.ctaEyebrow')}</span>
+            <h2 className="text-5xl font-semibold leading-[0.98] tracking-[-0.035em] text-balance sm:text-7xl">
+              {t('landing.ctaTitle')}
+            </h2>
+            <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.ctaBody')}</p>
+            <Link to={primary.to} className={primaryPill}>
+              {primary.label}
+            </Link>
+            <span className="eyebrow">{t('landing.ctaNote')}</span>
           </Reveal>
         </section>
       </main>
 
-      <footer className="border-t border-separator bg-surface-secondary">
+      <footer className="border-t border-border">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
           <div className="flex flex-col items-start gap-4">
             <Link to="/" aria-label="Velio">
-              <VelioLogo height={24} decorative />
+              <VelioLogo height={20} decorative />
             </Link>
             <p className="max-w-xs text-sm text-muted">{t('landing.footerRights')}</p>
           </div>
@@ -320,7 +373,7 @@ export function LandingPage() {
           </FooterColumn>
         </div>
 
-        <div className="border-t border-separator">
+        <div className="border-t border-border">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 text-sm text-muted sm:px-6">
             <span>© {new Date().getFullYear()} Velio</span>
             <ThemeToggle />
@@ -334,8 +387,27 @@ export function LandingPage() {
 function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
     <nav aria-label={title} className="flex flex-col items-start">
-      <h2 className="mb-2 text-sm font-semibold text-foreground">{title}</h2>
+      <h2 className="eyebrow mb-3">{title}</h2>
       {children}
     </nav>
+  )
+}
+
+function ArrowIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M5 12h14m-6-6 6 6-6 6" />
+    </svg>
   )
 }

@@ -3,10 +3,12 @@ import { useMemo } from 'react'
 import { useTheme } from '@/hooks/useTheme'
 import { accent, ink, status } from '@/lib/chartPalette'
 import { cn } from '@/lib/cn'
-import { boundsOf, decodePolyline } from '@/lib/polyline'
+import { boundsOf, decodePolyline, type LngLat } from '@/lib/polyline'
 
 type Props = {
-  polyline: string
+  polyline?: string
+  /** Already decoded points, for callers that never had a polyline. */
+  coordinates?: LngLat[]
   kind?: 'loop' | 'route'
   className?: string
   width?: number
@@ -14,12 +16,19 @@ type Props = {
 }
 
 /** Route silhouette without a map: in a card grid the shape is enough. */
-export function RouteThumbnail({ polyline, kind = 'loop', className, width = 320, height = 160 }: Props) {
+export function RouteThumbnail({
+  polyline = '',
+  coordinates: given,
+  kind = 'loop',
+  className,
+  width = 320,
+  height = 160,
+}: Props) {
   const { resolved } = useTheme()
   const palette = ink(resolved)
 
   const path = useMemo(() => {
-    const coordinates = decodePolyline(polyline)
+    const coordinates = given ?? decodePolyline(polyline)
     const bounds = boundsOf(coordinates)
     if (!bounds || coordinates.length < 2) return null
 
@@ -50,7 +59,7 @@ export function RouteThumbnail({ polyline, kind = 'loop', className, width = 320
       startPoint: points[0].split(' ').map(Number) as [number, number],
       endPoint: points[points.length - 1].split(' ').map(Number) as [number, number],
     }
-  }, [polyline, width, height])
+  }, [polyline, given, width, height])
 
   if (!path) {
     return <div className={cn('bg-surface-secondary', className)} aria-hidden="true" />

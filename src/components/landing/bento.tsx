@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn'
 /** Bento grid: cells of different sizes in a shared frame, with uniform gap and radius. */
 export function Bento({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('grid grid-cols-1 gap-4 sm:grid-cols-6 lg:grid-cols-12', className)}>
+    <div className={cn('grid grid-cols-1 gap-5 sm:grid-cols-6 lg:grid-cols-12', className)}>
       {children}
     </div>
   )
@@ -14,13 +14,14 @@ export function Bento({ children, className }: { children: ReactNode; className?
 export function BentoCell({
   children,
   span = 4,
-  tone = 'surface',
+  glow = false,
   className,
 }: {
   children: ReactNode
   /** Columns spanned in the 12-column grid (always full width on mobile). */
   span?: 3 | 4 | 5 | 6 | 7 | 8 | 12
-  tone?: 'surface' | 'parchment' | 'ink' | 'accent'
+  /** A faint accent light in the top-left corner, for the lead cell. */
+  glow?: boolean
   className?: string
 }) {
   const spans: Record<number, string> = {
@@ -32,29 +33,36 @@ export function BentoCell({
     8: 'sm:col-span-6 lg:col-span-8',
     12: 'sm:col-span-6 lg:col-span-12',
   }
-  const tones = {
-    surface: 'bg-surface',
-    parchment: 'bg-surface-secondary',
-    ink: 'bg-ink text-white',
-    accent: 'bg-accent text-accent-foreground',
-  }
   return (
-    <div className={cn('overflow-hidden rounded-2xl shadow-card', spans[span], tones[tone], className)}>
+    <div
+      className={cn(
+        'relative flex flex-col justify-between gap-8 overflow-hidden rounded-3xl bg-surface p-8 ring-1 ring-border',
+        spans[span],
+        className,
+      )}
+    >
+      {glow ? (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-[20%] -top-[60%] h-[140%] w-[70%]"
+          style={{
+            background:
+              'radial-gradient(50% 50% at 50% 50%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 70%)',
+          }}
+        />
+      ) : null}
       {children}
     </div>
   )
 }
 
-/** Shared cell header: small label and a sentence. */
-export function BentoLabel({ title, body, tone }: { title: string; body?: string; tone?: 'ink' }) {
+/** Shared cell footer: a mono eyebrow, the title and one sentence. */
+export function BentoLabel({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
   return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
-      {body ? (
-        <p className={cn('leading-relaxed text-pretty', tone === 'ink' ? 'text-ink-muted' : 'text-muted')}>
-          {body}
-        </p>
-      ) : null}
+    <div className="relative flex flex-col gap-2">
+      <span className="eyebrow">{eyebrow}</span>
+      <h3 className="text-2xl font-semibold tracking-tight">{title}</h3>
+      {body ? <p className="leading-relaxed text-muted text-pretty">{body}</p> : null}
     </div>
   )
 }
