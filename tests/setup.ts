@@ -16,6 +16,10 @@ class ResizeObserverStub {
 
 globalThis.ResizeObserver ??= ResizeObserverStub as unknown as typeof ResizeObserver
 
+// jsdom lacks pointer capture, which the planner sheet's drag handle uses.
+Element.prototype.setPointerCapture ??= () => {}
+Element.prototype.releasePointerCapture ??= () => {}
+
 // matchMedia is queried by the theme and reduced-motion checks.
 globalThis.matchMedia ??= ((query: string) => ({
   matches: false,

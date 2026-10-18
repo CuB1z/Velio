@@ -300,6 +300,17 @@ h1, h2, h3 {
   outline: none;
 }
 
+/* Planner on mobile: the bottom sheet covers the map's foot, so the attribution moves up. */
+@media (width < 64rem) {
+  .planner-map .maplibregl-ctrl-bottom-right {
+    top: 0;
+    bottom: auto;
+    left: 0;
+    right: auto;
+    max-width: calc(100% - 15rem);
+  }
+}
+
 /* Motion curves: enter decelerates, exit accelerates, move is continuous.
    Durations are not a Tailwind namespace: classes use duration-150/300. */
 @theme inline {

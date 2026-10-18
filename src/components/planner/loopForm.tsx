@@ -228,7 +228,7 @@ export function LoopForm({
         </InsetGroup>
       </details>
 
-      <div className="sticky bottom-0 z-10 mt-auto flex gap-2 bg-background py-4">
+      <div className="sticky bottom-0 z-10 mt-auto flex gap-2 bg-overlay py-4 lg:bg-background">
         <Button
           type="submit"
           variant="primary"

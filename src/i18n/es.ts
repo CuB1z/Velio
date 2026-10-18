@@ -225,6 +225,9 @@ export default {
     viaTooFar:
       'Tu punto de paso no cabe en la distancia pedida: un circuito que pase por él necesita al menos {{minimum}}. Sube la distancia o quita el punto.',
     viaTooFarAction: 'Subir a {{distance}}',
+    sheetFold: 'Plegar el panel',
+    sheetExpand: 'Desplegar el panel',
+    sheetShow: 'Mostrar el panel',
     loopEyebrow: 'Circuito',
     loopTitle: 'Vuelve a tu puerta',
     routeEyebrow: 'Punto a punto',

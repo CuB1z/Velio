@@ -42,6 +42,36 @@ describe('PlannerLayout', () => {
   })
 })
 
+describe('PlannerLayout on mobile', () => {
+  function Sheet({ withResult }: { withResult: boolean }) {
+    return <PlannerLayout form={<p>formulario</p>} map={<p>mapa</p>} result={withResult ? <p>métricas</p> : undefined} />
+  }
+
+  it('opens with the form and drops to the peek when a result arrives', () => {
+    const { rerender } = render(<Sheet withResult={false} />)
+    expect(screen.getByRole('button', { name: 'Plegar el panel' })).toHaveAttribute('aria-expanded', 'true')
+
+    rerender(<Sheet withResult />)
+    expect(screen.getByRole('button', { name: 'Desplegar el panel' })).toBeInTheDocument()
+    expect(screen.getByText('formulario').parentElement).toHaveClass('max-lg:hidden')
+  })
+
+  it('taps between full and peek and hides with the arrow keys', async () => {
+    render(<Sheet withResult={false} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Plegar el panel' }))
+    const handle = screen.getByRole('button', { name: 'Desplegar el panel' })
+
+    handle.focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(screen.getByRole('button', { name: 'Mostrar el panel' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByText('formulario').closest('.panel-scroll')).toHaveClass('max-lg:hidden')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Mostrar el panel' }))
+    await userEvent.keyboard('{ArrowUp}')
+    expect(screen.getByRole('button', { name: 'Plegar el panel' })).toHaveAttribute('aria-expanded', 'true')
+  })
+})
+
 describe('mapFitPadding', () => {
   it('stops reserving space when the panel is collapsed', () => {
     // Reserving the gap while collapsed squeezes the route into the top half.

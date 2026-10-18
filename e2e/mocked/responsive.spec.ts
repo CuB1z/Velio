@@ -20,15 +20,34 @@ test('the login keeps only the form, without the product panel', async ({ page }
   expect(await overflow(page)).toBeLessThanOrEqual(0)
 })
 
-test('the loop planner stacks the map over the form', async ({ page }) => {
+test('the loop planner puts the form in a sheet over a full-screen map', async ({ page }) => {
   await signedIn(page)
   await page.goto('/es/loops')
   const map = page.locator('.maplibregl-canvas')
   const submit = page.getByRole('button', { name: 'Generar ruta' })
   await expect(map).toBeVisible()
-  const [mapBox, submitBox] = await Promise.all([map.boundingBox(), submit.boundingBox()])
-  expect(mapBox && submitBox && mapBox.y < submitBox.y).toBe(true)
+  await expect(submit).toBeInViewport()
+  const viewport = page.viewportSize()!
+  const mapBox = await map.boundingBox()
+  expect(mapBox && mapBox.height > viewport.height * 0.8).toBe(true)
   expect(await overflow(page)).toBeLessThanOrEqual(0)
+
+  await page.getByRole('button', { name: 'Plegar el panel' }).click()
+  await expect(submit).toBeHidden()
+
+  const handle = page.getByRole('button', { name: 'Desplegar el panel' })
+  const box = (await handle.boundingBox())!
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 120, { steps: 6 })
+  await page.mouse.up()
+  const hidden = page.getByRole('button', { name: 'Mostrar el panel' })
+  await expect(hidden).toHaveAttribute('aria-expanded', 'false')
+  expect((await hidden.boundingBox())!.y).toBeGreaterThan(viewport.height * 0.8)
+
+  await hidden.click()
+  await page.getByRole('button', { name: 'Desplegar el panel' }).click()
+  await expect(submit).toBeInViewport()
 })
 
 test('the settings keep the section nav in reach while scrolling', async ({ page }) => {

@@ -224,6 +224,9 @@ export default {
     viaTooFar:
       'Your stop does not fit in the distance you asked for: a loop through it needs at least {{minimum}}. Raise the distance or drop the stop.',
     viaTooFarAction: 'Raise to {{distance}}',
+    sheetFold: 'Fold the panel',
+    sheetExpand: 'Expand the panel',
+    sheetShow: 'Show the panel',
     loopEyebrow: 'Loop',
     loopTitle: 'Back to your door',
     routeEyebrow: 'Point to point',
