@@ -7,11 +7,14 @@ type DocumentHead = {
   noindex?: boolean
 }
 
+const MANAGED = 'link[rel="canonical"], link[rel="alternate"][hreflang], meta[name="robots"]'
+
 export function useDocumentHead(head: DocumentHead): void {
   const key = JSON.stringify(head)
 
   useEffect(() => {
     const { description, canonical, alternates = {}, noindex } = JSON.parse(key) as DocumentHead
+    for (const stale of document.head.querySelectorAll(MANAGED)) stale.remove()
     const added: Element[] = []
     const add = (tag: string, attrs: Record<string, string>) => {
       const element = document.createElement(tag)

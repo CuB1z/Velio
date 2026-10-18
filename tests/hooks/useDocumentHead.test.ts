@@ -47,3 +47,20 @@ it('updates and restores an existing description', () => {
   expect(meta.content).toBe('before')
   meta.remove()
 })
+
+it('replaces head tags left by a prerendered page', () => {
+  document.head.insertAdjacentHTML(
+    'beforeend',
+    '<link rel="canonical" href="https://velio.test/"><link rel="alternate" hreflang="es" href="https://velio.test/es"><meta name="robots" content="noindex">',
+  )
+
+  const { unmount } = renderHook(() =>
+    useDocumentHead({ canonical: 'https://velio.test/es', alternates: { en: 'https://velio.test/' } }),
+  )
+
+  expect(links()).toEqual(['canonical https://velio.test/es', 'alternate en https://velio.test/'])
+  expect(document.head.querySelector('meta[name="robots"]')).toBeNull()
+
+  unmount()
+  expect(links()).toEqual([])
+})
