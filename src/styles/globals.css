@@ -142,11 +142,19 @@
   .button {
     border-radius: 9999px;
   }
+  /* Primary actions are foreground-on-background; the accent is for data. */
+  .button--primary {
+    background-color: var(--foreground);
+    color: var(--background);
+  }
+  .button--primary:hover {
+    background-color: color-mix(in srgb, var(--foreground) 86%, var(--background));
+  }
   .button--primary:disabled,
   .button--primary[aria-disabled='true'] {
     opacity: 1;
-    background-color: color-mix(in oklch, var(--accent) 16%, transparent);
-    color: color-mix(in oklch, var(--accent) 75%, var(--foreground));
+    background-color: color-mix(in srgb, var(--foreground) 14%, transparent);
+    color: color-mix(in srgb, var(--foreground) 60%, var(--background));
   }
   .switch {
     flex-direction: row;

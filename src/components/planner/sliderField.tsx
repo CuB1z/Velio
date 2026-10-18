@@ -34,16 +34,16 @@ export function SliderField({
   hint,
 }: Props) {
   return (
-    <div className="flex flex-col gap-4.5">
+    <div className="flex flex-col gap-3">
       <Slider
         value={value}
         onChange={(next) => onChange(Array.isArray(next) ? next[0] : next)}
         minValue={min}
         maxValue={max}
         step={step}
-        className="gap-x-3 gap-y-4.5"
+        className="items-end gap-x-3 gap-y-4"
       >
-        <Label className="text-[15px] text-foreground">{label}</Label>
+        <Label className="eyebrow">{label}</Label>
         {unit ? (
           <EditableValue
             label={label}
@@ -55,14 +55,14 @@ export function SliderField({
             unit={unit}
           />
         ) : (
-          <Slider.Output className="tnum text-[15px] font-medium">{display}</Slider.Output>
+          <Slider.Output className="code text-3xl font-medium tracking-tight">{display}</Slider.Output>
         )}
-        <Slider.Track className="h-1 rounded-full">
-          <Slider.Fill className="rounded-full" />
-          <Slider.Thumb className="size-6 border border-border bg-surface data-[dragging=true]:bg-surface" />
+        <Slider.Track className="h-0.5 rounded-full bg-border">
+          <Slider.Fill className="rounded-full bg-foreground" />
+          <Slider.Thumb className="size-4 border-0 bg-foreground data-[dragging=true]:bg-foreground" />
         </Slider.Track>
       </Slider>
-      {hint ? <span className="text-[12px] text-muted">{hint}</span> : null}
+      {hint ? <span className="eyebrow">{hint}</span> : null}
     </div>
   )
 }
@@ -101,7 +101,7 @@ function EditableValue({
   }
 
   return (
-    <span className="tnum flex items-baseline gap-1 text-[15px] font-medium">
+    <span className="code flex items-baseline gap-1.5 text-3xl font-medium tracking-tight">
       <input
         type="text"
         inputMode="decimal"
@@ -118,7 +118,7 @@ function EditableValue({
         }}
         className="w-[5ch] rounded-md bg-transparent text-right outline-none focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-accent"
       />
-      <span className="text-muted">{unit}</span>
+      <span className="text-sm text-muted">{unit}</span>
     </span>
   )
 }

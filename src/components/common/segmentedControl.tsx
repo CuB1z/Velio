@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn'
 export type SegmentOption<T extends string> = { id: T; label: string }
 
 /**
- * Segmented control: a track with a white pill over the active option.
+ * Segmented control: a pill track with the active option in foreground.
  * Options are `aria-pressed` buttons.
  */
 export function SegmentedControl<T extends string>({
@@ -23,7 +23,7 @@ export function SegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={label}
-      className={cn('grid gap-0.5 rounded-[9px] bg-surface-tertiary p-0.5', className)}
+      className={cn('grid gap-1 rounded-full bg-surface-secondary p-1', className)}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((option) => {
@@ -36,12 +36,11 @@ export function SegmentedControl<T extends string>({
             aria-pressed={isSelected}
             data-selected={isSelected}
             className={cn(
-              'min-h-11 truncate rounded-[7px] px-2 text-[13px] transition-colors duration-150 ease-enter md:min-h-8',
+              'min-h-11 truncate rounded-full px-3 text-sm transition-colors duration-150 ease-enter md:min-h-9',
               'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
               isSelected
-                ? // White in light mode; in dark, one step above the track.
-                  'bg-surface font-semibold text-foreground shadow-sm dark:bg-surface-hover'
-                : 'text-muted hover:bg-surface/60 hover:text-foreground',
+                ? 'bg-foreground font-semibold text-background'
+                : 'font-medium text-muted hover:text-foreground',
             )}
           >
             {option.label}

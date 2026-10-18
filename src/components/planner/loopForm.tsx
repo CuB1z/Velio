@@ -137,7 +137,7 @@ export function LoopForm({
           />
         </InsetRow>
         <InsetRow stacked>
-          <span className="text-[15px]">{t('hills.label')}</span>
+          <span className="eyebrow">{t('hills.label')}</span>
           <HillsSegments hills={value.hills} onChange={(hills) => patch({ hills })} />
         </InsetRow>
         <InsetRow>
@@ -178,12 +178,12 @@ export function LoopForm({
       </InsetGroup>
 
       {/* -------------------------------------------------------- advanced */}
-      <details className="group flex flex-col gap-1.5">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-xl bg-surface px-4 text-[15px] shadow-card marker:hidden">
+      <details className="group flex flex-col border-t border-border">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between text-sm font-medium marker:hidden">
           {t('planner.advanced')}
           <ChevronIcon className="text-muted transition-transform group-open:rotate-180" />
         </summary>
-        <InsetGroup className="mt-1.5">
+        <InsetGroup className="border-t-0 pt-1">
           <InsetRow stacked>
             <div className="grid grid-cols-2 gap-3">
               <NumberFieldRow

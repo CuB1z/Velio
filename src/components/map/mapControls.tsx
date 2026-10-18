@@ -37,10 +37,10 @@ export function MapControls({
         options={STYLES.map(({ id, labelKey }) => ({ id, label: t(labelKey) }))}
         value={styleId}
         onChange={onStyleChange}
-        className="pointer-events-auto bg-surface-tertiary/90 shadow-card backdrop-blur-xl [&>button]:px-3.5"
+        className="pointer-events-auto bg-overlay/85 ring-1 ring-border backdrop-blur-xl [&>button]:px-3.5"
       />
 
-      <div className="pointer-events-auto flex flex-col overflow-hidden rounded-xl bg-overlay/95 shadow-card backdrop-blur-xl">
+      <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full bg-overlay/85 ring-1 ring-border backdrop-blur-xl">
         <Tooltip>
           <Tooltip.Trigger>
             <Button
@@ -80,7 +80,7 @@ export function MapControls({
               isIconOnly
               aria-label={t('map.fitRoute')}
               onPress={onFit}
-              className="pointer-events-auto size-11 rounded-xl bg-overlay/95 shadow-card backdrop-blur-xl"
+              className="pointer-events-auto size-11 rounded-full bg-overlay/85 ring-1 ring-border backdrop-blur-xl"
             >
               <FitIcon />
             </Button>
@@ -97,7 +97,7 @@ export function MapControls({
               isIconOnly
               aria-label={t('map.locate')}
               onPress={onLocate}
-              className="pointer-events-auto size-11 rounded-xl bg-overlay/95 shadow-card backdrop-blur-xl"
+              className="pointer-events-auto size-11 rounded-full bg-overlay/85 ring-1 ring-border backdrop-blur-xl"
             >
               <LocateIcon />
             </Button>

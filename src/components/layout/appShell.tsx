@@ -34,28 +34,28 @@ export function AppShell() {
           Own surface and border so it reads as chrome, not content. */}
       <nav
         aria-label={t('app.name')}
-        className="hidden w-[84px] shrink-0 flex-col items-center border-e border-border bg-surface py-4 md:flex"
+        className="hidden w-[72px] shrink-0 flex-col items-center border-e border-border bg-background py-4 md:flex"
       >
         <NavLink
           to="/loops"
           aria-label={t('app.name')}
-          className="mb-5 flex size-10 items-center justify-center rounded-xl text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="mb-4 flex size-10 items-center justify-center rounded-xl text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
-          <VelioMark height={26} decorative />
+          <VelioMark height={22} decorative />
         </NavLink>
 
-        <ul className="flex flex-1 flex-col items-center gap-1.5">
+        <ul className="flex flex-1 flex-col items-center gap-1">
           {NAV.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
                 className={({ isActive }) =>
                   cn(
-                    'flex w-[68px] flex-col items-center gap-1 rounded-2xl px-1 py-2.5',
+                    'flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-2',
                     'text-[11px] font-medium leading-tight transition-colors duration-150',
                     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
                     isActive
-                      ? 'bg-accent-soft text-accent-soft-foreground'
+                      ? 'bg-surface-hover text-foreground'
                       : 'text-muted hover:bg-surface-hover hover:text-foreground',
                   )
                 }
@@ -75,7 +75,7 @@ export function AppShell() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile-only header: on desktop the rail takes over */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-3 md:hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3 md:hidden">
           <NavLink to="/" className="flex items-center" aria-label={t('app.name')}>
             <VelioLogo height={24} decorative />
           </NavLink>
@@ -100,7 +100,7 @@ export function AppShell() {
         {/* Mobile bottom bar */}
         <nav
           aria-label={t('app.name')}
-          className="flex shrink-0 items-stretch border-t border-border bg-surface md:hidden"
+          className="flex shrink-0 items-stretch border-t border-border bg-background md:hidden"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           {NAV.map((item) => (
@@ -110,7 +110,7 @@ export function AppShell() {
               className={({ isActive }) =>
                 cn(
                   'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors',
-                  isActive ? 'text-accent' : 'text-muted',
+                  isActive ? 'text-foreground' : 'text-muted',
                 )
               }
             >
