@@ -10,7 +10,7 @@ export function Faq() {
       {QUESTIONS.map((key) => (
         <Accordion.Item key={key} id={key} className="border-0 bg-transparent">
           <Accordion.Heading>
-            <Accordion.Trigger className="min-h-16 gap-6 px-0 py-6 text-xl font-medium tracking-tight">
+            <Accordion.Trigger className="min-h-16 gap-6 px-0 py-6 text-xl font-medium tracking-tight transition-colors hover:bg-transparent! hover:text-muted data-[hovered=true]:bg-transparent!">
               {t(`landing.faq.${key}.q`)}
               <Accordion.Indicator />
             </Accordion.Trigger>

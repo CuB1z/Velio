@@ -63,7 +63,7 @@ export function LandingPage() {
   return (
     <div className="min-h-full overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
-        <div className="mx-auto flex items-center gap-2 rounded-full bg-overlay/70 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
+        <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
           <Link to="/" aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
             <VelioLogo height={20} decorative />
           </Link>
@@ -101,14 +101,14 @@ export function LandingPage() {
       </header>
 
       <main>
-        <section className="px-4 pt-10 sm:px-6 sm:pt-14">
-          <div className="mx-auto flex max-w-[860px] flex-col items-center gap-5 text-center">
+        <section className="px-4 pt-14 sm:px-6 sm:pt-20">
+          <div className="mx-auto flex max-w-[860px] flex-col items-center gap-6 text-center">
             <span className="eyebrow">{t('landing.heroEyebrow')}</span>
             <h1 className="text-hero text-4xl font-semibold leading-[1] tracking-[-0.03em] whitespace-pre-line text-balance sm:text-5xl lg:text-6xl">
               {t('landing.heroTitle')}
             </h1>
             <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.heroBody')}</p>
-            <div className="flex flex-wrap items-center justify-center gap-6 pt-1">
+            <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
               <Link to={primary.to} className={primaryPill}>
                 {primary.label}
               </Link>
@@ -120,7 +120,7 @@ export function LandingPage() {
             <p className="eyebrow">{t('landing.heroNote')}</p>
           </div>
 
-          <Reveal className="mx-auto mt-6 max-w-[1400px] sm:mt-8">
+          <Reveal className="mx-auto mt-12 max-w-[1400px] sm:mt-16">
             <Ridge example={SIERRA} />
           </Reveal>
         </section>
