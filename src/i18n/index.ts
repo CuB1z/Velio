@@ -9,17 +9,30 @@ export type Language = (typeof LANGUAGES)[number]
 
 const STORAGE_KEY = 'velio.lang'
 
-function detect(): Language {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'es' || stored === 'en') return stored
-  } catch {
-    // no localStorage: fall back to the browser language
-  }
-  return navigator.language?.toLowerCase().startsWith('en') ? 'en' : 'es'
+export function isLanguage(value: string | null | undefined): value is Language {
+  return LANGUAGES.includes(value as Language)
 }
 
-const initial = detect()
+export function resolveLanguage(
+  pathname: string,
+  stored: string | null,
+  navigatorLanguage: string | undefined,
+): Language {
+  const prefix = pathname.split('/')[1]
+  if (isLanguage(prefix)) return prefix
+  if (isLanguage(stored)) return stored
+  return navigatorLanguage?.toLowerCase().startsWith('en') ? 'en' : 'es'
+}
+
+function readStored(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+const initial = resolveLanguage(location.pathname, readStored(), navigator.language)
 
 void i18n.use(initReactI18next).init({
   resources: {
@@ -28,6 +41,7 @@ void i18n.use(initReactI18next).init({
   },
   lng: initial,
   fallbackLng: 'es',
+  initAsync: false,
   interpolation: { escapeValue: false },
 })
 
