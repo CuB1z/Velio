@@ -7,12 +7,13 @@ backend on the same origin. The browser only ever talks to
 
 ```text
 browser ── https ──> Traefik (Dokploy, TLS) ──> velio-web (nginx :80)
-                                                  ├── /            SPA, deep links → index.html
+                                                  ├── /, /es       prerendered landing (dist/prerender/*.html)
+                                                  ├── /*           SPA shell (index.html) for every other path
                                                   ├── /assets/*    hashed files, cached 1 year
                                                   └── /api/*       → API_UPSTREAM (velio-api:8000)
 ```
 
-The language is part of the path: English at the root, Spanish under `/es/...`. nginx needs nothing for it: the `/` location already falls back to `index.html` for any path, and the app resolves the language from the URL before its first render.
+The language is part of the path: English at the root, Spanish under `/es/...`. The landing URLs (`/`, `/es`) are served prerendered (section 6); every other path gets the SPA shell and the app resolves the language from the URL before its first render.
 
 ## 1. DNS
 
@@ -28,7 +29,7 @@ New **Application** in the same project as the backend compose:
 |---|---|
 | Source | GitHub `CuB1z/VelioWeb`, branch `main` |
 | Build type | Dockerfile (`./Dockerfile`, context `.`) |
-| Build arg | `VITE_API_BASE_URL=/api/v1` (the default; relative on purpose) |
+| Build args | `VITE_API_BASE_URL=/api/v1` (the default; relative on purpose), `SITE_URL=https://velio.cub1z.es` (absolute URLs in the prerendered landing) |
 | Environment | `API_UPSTREAM=http://velio-api:8000` |
 | Network | the same Docker network as the backend (`dokploy-network`) so `velio-api` resolves |
 | Domain | `velio.cub1z.es`, port `80`, HTTPS with Let's Encrypt |
@@ -74,7 +75,7 @@ After every deploy:
 scripts/smoke.sh https://velio.cub1z.es
 ```
 
-It checks the landing, two deep links (`/saved`, `/loops`), `/api/health`
+It checks the landing in both languages (status and prerendered content: `<html lang>`, `<h1>`), that `/es/login` still gets the SPA shell, two deep links (`/saved`, `/loops`), `/api/health`
 through the proxy and that `/api/v1/auth/me` answers `401` without a token.
 
 The same image can be checked locally against a backend on the host:
@@ -85,3 +86,13 @@ docker run --rm -p 8088:80 --add-host=host.docker.internal:host-gateway \
   -e API_UPSTREAM=http://host.docker.internal:8000 velio-web:local
 scripts/smoke.sh http://localhost:8088
 ```
+
+## 6. Prerendered landing
+
+The landing is a client-rendered SPA, so crawlers would otherwise get an empty `#root`. The image build runs `pnpm prerender` after `vite build`: `scripts/prerender.mjs` starts `vite preview`, opens `/` and `/<lang>` for every non-default language in headless Chromium, scrolls so every section reveals, and writes the rendered document to `dist/prerender/index.html` and `dist/prerender/<lang>.html` with `<html lang>`, canonical, `hreflang` alternates and the localised description already in the HTML. `dist/index.html` stays the clean shell for every other route.
+
+- nginx: `location = /` serves `prerender/index.html`; `location /` tries `$uri`, then `/prerender$uri.html`, then the shell. `/prerender/` is `internal`, so the files are not reachable as their own URLs.
+- Absolute URLs come from the `SITE_URL` build arg; the runtime keeps using the page origin.
+- The build stage runs on `mcr.microsoft.com/playwright:<version>-noble` (Node + Chromium). Its tag must match `@playwright/test` in `package.json`: bump both together.
+- Locally: `pnpm build && pnpm prerender` (needs `pnpm exec playwright install chromium` once). `vite preview` does not know the prerender mapping; check the real thing with the Docker commands above.
+- React replaces the prerendered DOM on mount (`createRoot`), so the snapshot is for crawlers and the first paint; a section that is only partly inside the first viewport can blink once.
