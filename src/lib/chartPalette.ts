@@ -23,8 +23,8 @@ const NEUTRAL: Record<ChartMode, string> = {
 
 /** Single hue for magnitude (elevation profile, score bars). */
 const ACCENT: Record<ChartMode, string> = {
-  light: '#126CC7',
-  dark: '#4188DB',
+  light: '#428500',
+  dark: '#D1EC31',
 }
 
 /** Reserved for status; never reused as a series colour. */
@@ -33,9 +33,12 @@ const STATUS = {
   dark: { good: '#4FBE85', warning: '#D89A3A', critical: '#E8695F' },
 } as const
 
-const INK: Record<ChartMode, { grid: string; axis: string; muted: string; surface: string }> = {
-  light: { grid: '#E8ECF1', axis: '#C7CED7', muted: '#6B7280', surface: '#FFFFFF' },
-  dark: { grid: '#333333', axis: '#454545', muted: '#A1A1A1', surface: '#222222' },
+const INK: Record<
+  ChartMode,
+  { grid: string; axis: string; muted: string; surface: string; foreground: string }
+> = {
+  light: { grid: '#EFEFEF', axis: '#E5E5E5', muted: '#6B6B6B', surface: '#FAFAFA', foreground: '#0A0A0A' },
+  dark: { grid: '#1A1A1A', axis: '#202020', muted: '#A3A3A3', surface: '#0C0C0C', foreground: '#FFFFFF' },
 }
 
 /** Theme colour if defined, otherwise the compiled fallback. */
@@ -75,6 +78,7 @@ export function ink(mode: ChartMode): (typeof INK)['light'] {
     axis: themed('--border', fallback.axis),
     muted: themed('--muted', fallback.muted),
     surface: themed('--surface', fallback.surface),
+    foreground: themed('--foreground', fallback.foreground),
   }
 }
 

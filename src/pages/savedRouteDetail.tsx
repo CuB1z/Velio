@@ -98,7 +98,7 @@ export function SavedRouteDetailPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border px-4 py-3">
+      <header className="flex shrink-0 flex-wrap items-center gap-3 px-4 py-3 lg:px-6">
         <Button
           variant="ghost"
           isIconOnly
@@ -110,7 +110,7 @@ export function SavedRouteDetailPage() {
         </Button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h1 className="truncate text-lg font-semibold">{route.name}</h1>
+            <h1 className="truncate text-xl font-semibold tracking-tight">{route.name}</h1>
             <Button
               variant="ghost"
               isIconOnly
@@ -124,7 +124,7 @@ export function SavedRouteDetailPage() {
               <PencilIcon />
             </Button>
           </div>
-          <p className="text-xs text-muted">
+          <p className="eyebrow">
             {t('saved.savedOn', { date: formatDate(route.created_at) })}
             {route.updated_at !== route.created_at
               ? ` · ${t('saved.editedOn', { date: formatRelative(route.updated_at) })}`
@@ -174,7 +174,7 @@ export function SavedRouteDetailPage() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="h-[45vh] shrink-0 lg:h-auto lg:flex-1">
+          <div className="h-[45vh] shrink-0 lg:h-auto lg:flex-1 lg:overflow-hidden lg:rounded-e-3xl lg:ring-1 lg:ring-border">
             <LazyMap
               className="h-full w-full"
               styleId={styleId}
@@ -186,42 +186,42 @@ export function SavedRouteDetailPage() {
             />
           </div>
 
-          <aside className="flex shrink-0 flex-col gap-6 overflow-y-auto border-border p-5 lg:w-[420px] lg:border-s">
-            {actionError ? (
-              <p className="text-sm text-danger" role="alert">
-                {actionError}
-              </p>
-            ) : null}
+          <aside className="flex shrink-0 flex-col lg:h-full lg:w-[420px] lg:overflow-hidden">
+            <div className="panel-scroll flex flex-col gap-6 p-5 lg:min-h-0 lg:overflow-y-auto lg:px-7 lg:pb-6 lg:pt-2">
+              {actionError ? (
+                <p className="text-sm text-danger" role="alert">
+                  {actionError}
+                </p>
+              ) : null}
 
-            <MetricTiles result={result} />
-            <ScoreCard score={result.cycling_score} />
-            <SurfaceBar score={result.score} distanceKm={result.distance_km} />
+              <MetricTiles result={result} className="sm:grid-cols-2" />
+              <ScoreCard score={result.cycling_score} className="border-t border-border pt-6" />
+              <SurfaceBar score={result.score} distanceKm={result.distance_km} className="border-t border-border pt-6" />
 
-            {result.score ? (
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-4 text-sm">
-                <div>
-                  <dt className="text-xs text-muted">{t('metric.maxGrade')}</dt>
-                  <dd className="tnum mt-0.5 font-semibold">
-                    {formatPercent(result.score.max_grade_pct)}
-                  </dd>
+              {result.score ? (
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-6">
+                  <div className="flex flex-col gap-1">
+                    <dt className="eyebrow">{t('metric.maxGrade')}</dt>
+                    <dd className="code text-2xl font-medium tracking-tight">
+                      {formatPercent(result.score.max_grade_pct)}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <dt className="eyebrow">{t('metric.climbLoad')}</dt>
+                    <dd className="code text-2xl font-medium tracking-tight">
+                      {Math.round(result.score.climb_load_m)} m
+                    </dd>
+                  </div>
+                </dl>
+              ) : null}
+
+              {result.profile && result.profile.length > 1 ? (
+                <div className="flex flex-col gap-3 border-t border-border pt-6">
+                  <span className="eyebrow">{t('metric.elevationProfile')}</span>
+                  <ElevationProfile profile={result.profile} distanceKm={result.distance_km} onHover={onProfileHover} />
                 </div>
-                <div>
-                  <dt className="text-xs text-muted">{t('metric.climbLoad')}</dt>
-                  <dd className="tnum mt-0.5 font-semibold">
-                    {Math.round(result.score.climb_load_m)} m
-                  </dd>
-                </div>
-              </dl>
-            ) : null}
-
-            {result.profile && result.profile.length > 1 ? (
-              <div className="flex flex-col gap-2">
-                <span className="text-[13px] text-muted">
-                  {t('metric.elevationProfile')}
-                </span>
-                <ElevationProfile profile={result.profile} distanceKm={result.distance_km} onHover={onProfileHover} />
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </aside>
         </div>
       )}

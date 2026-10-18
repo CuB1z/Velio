@@ -59,7 +59,7 @@ export function SliderField({
         )}
         <Slider.Track className="h-0.5 rounded-full bg-border">
           <Slider.Fill className="rounded-full bg-foreground" />
-          <Slider.Thumb className="size-4 border-0 bg-foreground data-[dragging=true]:bg-foreground" />
+          <Slider.Thumb className="size-4 border-0" />
         </Slider.Track>
       </Slider>
       {hint ? <span className="eyebrow">{hint}</span> : null}

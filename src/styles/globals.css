@@ -12,8 +12,8 @@
   :root,
   .light,
   [data-theme="light"] {
-    --velio-accent: #4f7d00;
-    --velio-accent-text: #4f7d00;
+    --velio-accent: #428500;
+    --velio-accent-text: #428500;
 
     --background: #ffffff;
     --foreground: #0a0a0a;
@@ -33,8 +33,8 @@
 
     --accent: var(--velio-accent);
     --accent-foreground: #ffffff;
-    --accent-soft: #eaf6cc;
-    --accent-soft-foreground: #3d6100;
+    --accent-soft: #e8f6c6;
+    --accent-soft-foreground: #356a00;
 
     /* HeroUI fields ship borderless, so the border width is restored here.
        --field-shadow must stay a valid transparent shadow: `none` breaks the
@@ -54,7 +54,7 @@
     --separator: #efefef;
 
     /* Chart series: the accent comes first and nothing else resembles it. */
-    --chart-1: #7cb305;
+    --chart-1: #86c80c;
     --chart-2: #6366f1;
     --chart-3: #d97706;
     --chart-4: #db2777;
@@ -158,6 +158,12 @@
   }
   .switch {
     flex-direction: row;
+  }
+  /* The knob is the thumb's ::after; HeroUI paints it accent-foreground, which inverts on dark. */
+  .slider__thumb,
+  .slider__thumb:before,
+  .slider__thumb:after {
+    background-color: var(--foreground) !important;
   }
   .eyebrow {
     font-family: var(--font-mono);

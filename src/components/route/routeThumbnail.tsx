@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
 import { useTheme } from '@/hooks/useTheme'
-import { accent, ink, status } from '@/lib/chartPalette'
+import { accent, ink } from '@/lib/chartPalette'
 import { cn } from '@/lib/cn'
 import { boundsOf, decodePolyline, type LngLat } from '@/lib/polyline'
 
@@ -104,7 +104,7 @@ export function RouteThumbnail({
         cx={path.startPoint[0]}
         cy={path.startPoint[1]}
         r={4.5}
-        fill={status(resolved, 'good')}
+        fill={palette.foreground}
         stroke={palette.surface}
         strokeWidth={2}
       />

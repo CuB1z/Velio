@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { cn } from '@/lib/cn'
 import { useTheme } from '@/hooks/useTheme'
-import { accent, categorical, ink, status } from '@/lib/chartPalette'
+import { accent, categorical, ink } from '@/lib/chartPalette'
 import { applyBaseStyle, DEFAULT_CENTER, DEFAULT_ZOOM, type MapStyleId } from '@/lib/mapStyles'
 import { MapControls } from './mapControls'
 import { ARROW_LAYOUT, routeArrowImage } from './routeArrow'
@@ -87,10 +87,10 @@ function markerElement(marker: MapMarker, dark: boolean): HTMLElement {
   ].join(';')
 
   if (marker.kind === 'start') {
-    el.style.background = status(mode, 'good')
+    el.style.background = brand
     el.style.color = surface
   } else if (marker.kind === 'end') {
-    el.style.background = brand
+    el.style.background = ink(mode).foreground
     el.style.color = surface
   } else {
     el.style.background = surface
