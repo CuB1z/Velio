@@ -44,8 +44,17 @@ server {
         try_files $uri =404;
     }
 
+    location /prerender/ {
+        internal;
+    }
+
+    location = / {
+        expires -1;
+        try_files /prerender/index.html /index.html;
+    }
+
     location / {
         expires -1;
-        try_files $uri $uri/ /index.html;
+        try_files $uri /prerender$uri.html /index.html;
     }
 }
