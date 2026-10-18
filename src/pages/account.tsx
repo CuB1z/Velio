@@ -1,6 +1,6 @@
 import { Button, InputOTP, Modal, Spinner, useOverlayState } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
@@ -13,6 +13,7 @@ import { ErrorState } from '@/components/common/errorState'
 import { PasswordInput } from '@/components/common/field'
 import { PageHeader } from '@/components/common/pageHeader'
 import { SegmentedControl } from '@/components/common/segmentedControl'
+import { useActiveSection } from '@/hooks/useActiveSection'
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'
 import i18n, { LANGUAGE_INFO, LANGUAGES, type Language } from '@/i18n'
 import { cn } from '@/lib/cn'
@@ -40,6 +41,7 @@ const SECTIONS = [
   { id: 'sesiones', key: 'account.navSessions' },
   { id: 'cuenta', key: 'account.navAccount' },
 ]
+const SECTION_IDS = SECTIONS.map((section) => section.id)
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system']
 
@@ -60,6 +62,15 @@ export function AccountPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [deleteNotice, setDeleteNotice] = useState<string | null>(null)
   const deleteDialog = useOverlayState()
+  const active = useActiveSection(SECTION_IDS)
+  const navRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const nav = navRef.current
+    const item = nav?.querySelector<HTMLElement>('[aria-current]')
+    if (!nav || !item || nav.scrollWidth <= nav.clientWidth) return
+    nav.scrollTo({ left: item.offsetLeft - 16, behavior: 'smooth' })
+  }, [active])
 
   const sessions = useQuery({ queryKey: ['sessions'], queryFn: authApi.sessions })
 
@@ -115,14 +126,21 @@ export function AccountPage() {
 
       <div className="grid gap-10 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-20">
         <nav
+          ref={navRef}
           aria-label={t('account.heading')}
-          className="flex flex-wrap gap-1 lg:sticky lg:top-10 lg:flex-col lg:self-start"
+          className="no-scrollbar sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-border bg-background/90 px-4 py-2 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:top-10 lg:mx-0 lg:flex-col lg:self-start lg:overflow-visible lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
         >
           {SECTIONS.map((section) => (
             <a
               key={section.id}
               href={`#${section.id}`}
-              className="rounded-full px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              aria-current={active === section.id ? 'true' : undefined}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+                active === section.id
+                  ? 'bg-surface-hover text-foreground'
+                  : 'text-muted hover:bg-surface-hover hover:text-foreground',
+              )}
             >
               {t(section.key)}
             </a>
@@ -130,7 +148,7 @@ export function AccountPage() {
         </nav>
 
         <div className="flex min-w-0 flex-col gap-16">
-          <section id="perfil" className="flex flex-col gap-6 scroll-mt-10">
+          <section id="perfil" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">
             <div className="flex items-center gap-5">
               <span
                 aria-hidden="true"
@@ -159,7 +177,7 @@ export function AccountPage() {
             </div>
           </section>
 
-          <section id="preferencias" className="flex flex-col gap-6 scroll-mt-10">
+          <section id="preferencias" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">
             <SectionTitle eyebrow={t('account.navPreferences')} title={t('account.preferencesTitle')} />
             <div>
               <SettingRow label={t('account.language')} description={t('account.languageHint')}>
@@ -188,7 +206,7 @@ export function AccountPage() {
             </div>
           </section>
 
-          <section id="seguridad" className="flex flex-col gap-6 scroll-mt-10">
+          <section id="seguridad" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">
             <SectionTitle eyebrow={t('account.navSecurity')} title={t('account.securityTitle')} />
             <SettingRow
               label={t('account.passwordRow')}
@@ -238,7 +256,7 @@ export function AccountPage() {
             </SettingRow>
           </section>
 
-          <section id="sesiones" className="flex flex-col gap-6 scroll-mt-10">
+          <section id="sesiones" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <SectionTitle eyebrow={t('account.navSessions')} title={t('account.sessionsTitle')} />
               <Button
@@ -268,7 +286,7 @@ export function AccountPage() {
             )}
           </section>
 
-          <section id="cuenta" className="flex flex-col gap-6 scroll-mt-10">
+          <section id="cuenta" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">
             <SectionTitle eyebrow={t('account.navAccount')} title={t('account.accountTitle')} />
             <div className="flex flex-col gap-4">
               <SettingRow label={t('nav.logout')} description={t('account.logoutHint')} className="border-b border-border">
