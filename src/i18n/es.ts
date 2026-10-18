@@ -389,7 +389,6 @@ export default {
     dataBody: 'Datos abiertos y verificables, sin claves de pago ni cifras maquilladas.',
     dataOsmBody: 'El callejero de España, Portugal y Andorra, enrutado con Valhalla.',
     dataDemBody: 'Elevación a 30 m, leída directamente de las teselas.',
-    dataPnoaBody: 'La ortofoto del IGN para la vista satélite en España.',
 
     statDem: 'Resolución del modelo de elevación',
     statError: 'Error medio de altitud',

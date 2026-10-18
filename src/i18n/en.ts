@@ -388,7 +388,6 @@ export default {
     dataBody: 'Open, verifiable data, with no paid keys and no polished figures.',
     dataOsmBody: 'The street map of Spain, Portugal and Andorra, routed with Valhalla.',
     dataDemBody: 'Elevation at 30 m, read straight from the tiles.',
-    dataPnoaBody: 'The IGN orthophoto for the satellite view in Spain.',
 
     statDem: 'Elevation model resolution',
     statError: 'Mean elevation error',

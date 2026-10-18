@@ -167,8 +167,10 @@ and `VelioLogo` the full lockup; both inherit `currentColor`.
 
 - **Map**: OpenFreeMap Positron (light) and Dark (dark), vector, worldwide. In
   dark mode the basemap colours are re-tinted to slate (`tintStyle`).
-- **Satellite**: IGN PNOA orthophoto. It only covers Spain, which is exactly
-  the coverage of the backend's Valhalla graph.
+- **Satellite**: Esri World Imagery, one global layer (sub-metre in Spain and
+  Portugal), so there is no colour seam at the border. It uses Esri's public
+  tile endpoint for now; Esri's terms ask for an ArcGIS account in production,
+  so switch to an ArcGIS Location Platform key (free tier) before deploying.
 
 None needs credentials. Styles are changed in `src/lib/mapStyles.ts`.
 
@@ -267,5 +269,5 @@ the smoke test are in [docs/deploy.md](docs/deploy.md).
 Map data © [OpenStreetMap](https://www.openstreetmap.org/copyright)
 contributors, tiles and styles by [OpenFreeMap](https://openfreemap.org/)
 © [OpenMapTiles](https://www.openmaptiles.org/).
-PNOA orthophoto courtesy of © Instituto Geográfico Nacional de España.
+Satellite imagery: Esri World Imagery (Esri, Maxar, Earthstar Geographics, and the GIS User Community), credited in the map attribution.
 Elevation: Copernicus DEM GLO-30, via the backend.

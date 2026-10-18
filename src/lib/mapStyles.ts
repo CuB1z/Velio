@@ -6,34 +6,32 @@ export type MapStyleId = 'map' | 'satellite'
  * Basemaps without API keys, so there are no credentials to manage.
  * - OpenFreeMap Positron / Dark: global vector tiles, desaturated so the route
  *   is the only colour.
- * - IGN PNOA orthophoto: Spain only, matching the backend's Valhalla graph.
+ * - Esri World Imagery: one global imagery layer, so the satellite view has no
+ *   seams at borders.
  */
 const BASE_LIGHT = 'https://tiles.openfreemap.org/styles/positron'
 const BASE_DARK = 'https://tiles.openfreemap.org/styles/dark'
 
 const BASE_GLYPHS = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf'
 
-const PNOA_TILES =
-  'https://www.ign.es/wmts/pnoa-ma?service=WMTS&request=GetTile&version=1.0.0' +
-  '&layer=OI.OrthoimageCoverage&style=default&tilematrixset=GoogleMapsCompatible' +
-  '&format=image/jpeg&TileMatrix={z}&TileCol={x}&TileRow={y}'
+const IMAGERY_TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
 
-const PNOA_ATTRIBUTION =
-  'PNOA cedido por © <a href="https://www.ign.es" target="_blank" rel="noreferrer">Instituto Geográfico Nacional de España</a>'
+const IMAGERY_ATTRIBUTION =
+  'Powered by <a href="https://www.esri.com" target="_blank" rel="noreferrer">Esri</a> | Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
 
 const satelliteStyle: StyleSpecification = {
   version: 8,
   glyphs: BASE_GLYPHS,
   sources: {
-    pnoa: {
+    imagery: {
       type: 'raster',
-      tiles: [PNOA_TILES],
+      tiles: [IMAGERY_TILES],
       tileSize: 256,
       maxzoom: 19,
-      attribution: PNOA_ATTRIBUTION,
+      attribution: IMAGERY_ATTRIBUTION,
     },
   },
-  layers: [{ id: 'pnoa', type: 'raster', source: 'pnoa' }],
+  layers: [{ id: 'imagery', type: 'raster', source: 'imagery' }],
 }
 
 /** The "map" style follows the theme; satellite is the same in both. */

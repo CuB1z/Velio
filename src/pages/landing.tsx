@@ -37,7 +37,6 @@ const DATA_SOURCES = [
     label: 'Copernicus DEM GLO-30',
     href: 'https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM',
   },
-  { key: 'Pnoa', label: 'PNOA · IGN', href: 'https://pnoa.ign.es/' },
 ]
 
 const BIKES = ['road', 'city', 'gravel', 'mtb'] as const
@@ -291,7 +290,7 @@ export function LandingPage() {
             </Reveal>
 
             <Reveal>
-              <ul className="mt-12 grid gap-10 sm:grid-cols-3">
+              <ul className="mt-12 grid gap-10 sm:grid-cols-2">
                 {DATA_SOURCES.map((source) => (
                   <li key={source.key} className="flex flex-col gap-2">
                     <a

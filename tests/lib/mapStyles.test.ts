@@ -1,7 +1,7 @@
 import type { StyleSpecification } from 'maplibre-gl'
 import { describe, expect, it } from 'vitest'
 
-import { tintStyle, tintToCharcoal } from '@/lib/mapStyles'
+import { styleFor, tintStyle, tintToCharcoal } from '@/lib/mapStyles'
 
 describe('tintToCharcoal', () => {
   it('moves every colour notation onto neutral greys and keeps alpha', () => {
@@ -36,5 +36,18 @@ describe('tintToCharcoal', () => {
     const expression = motorway.paint['line-color'] as unknown[]
     expect(expression.slice(0, 3)).toEqual(['interpolate', ['linear'], ['zoom']])
     expect(expression[6]).toBe('hsla(0, 0%, 4.0%, 1)')
+  })
+})
+
+describe('satellite style', () => {
+  const style = styleFor('satellite', false) as StyleSpecification
+
+  it('draws one global imagery layer', () => {
+    expect(style.layers.map((layer) => layer.id)).toEqual(['imagery'])
+    expect((style.sources.imagery as { tiles: string[] }).tiles[0]).toContain('World_Imagery')
+  })
+
+  it('credits the imagery provider', () => {
+    expect((style.sources.imagery as { attribution: string }).attribution).toContain('Esri')
   })
 })
