@@ -14,10 +14,26 @@ check() {
   fi
 }
 
+check_body() {
+  if curl -s "$BASE$1" | grep -q "$2"; then
+    echo "ok   $1 contains $2"
+  else
+    echo "FAIL $1 does not contain $2"
+    fail=1
+  fi
+}
+
 check / 200
+check /es 200
 check /saved 200
 check /loops 200
 check /api/health 200
 check /api/v1/auth/me 401
+
+check_body / '<html lang="en"'
+check_body / '<h1'
+check_body /es '<html lang="es"'
+check_body /es '<h1'
+check_body /es/login '<div id="root"></div>'
 
 exit "$fail"
