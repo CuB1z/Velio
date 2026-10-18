@@ -85,16 +85,13 @@ export function RegisterPage() {
           )}
         </div>
 
-        {/* Explicit `flex-row`: HeroUI's .checkbox sets column and Tailwind's `flex` only sets display. */}
-        <Checkbox
-          isSelected={accepted}
-          onChange={setAccepted}
-          className="flex flex-row items-start gap-3"
-        >
-          <Checkbox.Control className="mt-0.5 [--field-border:color-mix(in_oklch,var(--muted)_70%,transparent)]">
-            <Checkbox.Indicator />
-          </Checkbox.Control>
-          <Checkbox.Content className="text-xs text-muted">{t('auth.terms')}</Checkbox.Content>
+        <Checkbox isSelected={accepted} onChange={setAccepted}>
+          <Checkbox.Content className="flex flex-row items-start gap-3 text-xs text-muted">
+            <Checkbox.Control className="mt-0.5 [--field-border:color-mix(in_oklch,var(--muted)_70%,transparent)]">
+              <Checkbox.Indicator />
+            </Checkbox.Control>
+            <span>{t('auth.terms')}</span>
+          </Checkbox.Content>
         </Checkbox>
 
         <Button
