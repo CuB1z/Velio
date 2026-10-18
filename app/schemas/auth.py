@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, model_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.core.security import validate_password_strength
 
@@ -60,6 +60,18 @@ class ChangePasswordRequest(BaseModel):
     def _password_policy(self):
         validate_password_strength(self.new_password)
         return self
+
+
+class ProfileUpdateRequest(BaseModel):
+    full_name: str = Field(min_length=1, max_length=255)
+
+    @field_validator("full_name")
+    @classmethod
+    def _tidy(cls, value: str) -> str:
+        cleaned = " ".join(value.split())
+        if not cleaned:
+            raise ValueError("full_name must not be blank")
+        return cleaned
 
 
 class UserResponse(BaseModel):

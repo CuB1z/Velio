@@ -27,6 +27,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/auth/refresh` | — | Rotate refresh token into a new pair |
 | POST | `/api/v1/auth/logout` | — | Revoke a refresh token |
 | GET | `/api/v1/auth/me` | Bearer | Current user profile |
+| PATCH | `/api/v1/auth/me` | Bearer | Change the display name |
 | GET | `/api/v1/auth/sessions` | Bearer | List live sessions with device metadata |
 | DELETE | `/api/v1/auth/sessions/{session_id}` | Bearer | Revoke one session (404 if not owned) |
 | DELETE | `/api/v1/auth/sessions` | Bearer | Revoke every session except the caller's |
@@ -122,6 +123,21 @@ Session shape (`login` and `refresh` answer it):
 
 Refresh rotates: the used refresh token is revoked and a fresh pair is
 returned. Logging out revokes the given refresh token.
+
+### Profile
+
+`PATCH /api/v1/auth/me` changes the display name and answers the same user
+envelope as `GET /me`. Surrounding whitespace is trimmed and inner runs of
+spaces collapse to one; a blank name or one over 255 characters is a 422
+`VALIDATION_ERROR`. Email changes are not supported here.
+
+```bash
+curl -s -X PATCH localhost:8000/api/v1/auth/me \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"full_name":"Marta Ruiz"}'
+# → 200 {"id":"…","email":"marta@example.com","full_name":"Marta Ruiz","status":"active"}
+```
 
 ### Sessions
 
@@ -386,7 +402,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.31.0"}
+{"status": "ok", "version": "0.32.0"}
 ```
 
 ---

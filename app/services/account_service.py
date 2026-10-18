@@ -19,6 +19,7 @@ from app.core.exceptions import (
     EmailVerificationError,
     InvalidCredentialsError,
     NoLocalPasswordError,
+    NotFoundError,
     PasswordResetError,
 )
 from app.core.security import (
@@ -213,6 +214,15 @@ class AccountService:
             user, hashed_password=hash_password(new_password)
         )
         await self._tokens.revoke_all_for_user(user.id)
+
+    async def update_profile(self, user_id: uuid.UUID, *, full_name: str) -> User:
+        """Change the display name; the schema has already tidied it."""
+        user = await self._users.get_by_id(user_id)
+        if user is None:
+            raise NotFoundError("User not found")
+        ensure_active(user)
+        await self._users.set_full_name(user, full_name=full_name)
+        return user
 
     # GDPR deletion ------------------------------------------------------------
 

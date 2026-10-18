@@ -27,6 +27,7 @@ from app.schemas.auth import (
     DeleteRequest,
     ForgotPasswordRequest,
     LoginRequest,
+    ProfileUpdateRequest,
     RefreshRequest,
     RegisterRequest,
     ResendVerificationRequest,
@@ -142,6 +143,16 @@ async def logout(
 @router.get("/me", response_model=UserResponse)
 async def me(current_user=Depends(get_current_user)) -> UserResponse:
     return UserMapper.out(current_user)
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_profile(
+    data: ProfileUpdateRequest,
+    current_user=Depends(get_current_user),
+    service: AccountService = Depends(get_account_service),
+) -> UserResponse:
+    user = await service.update_profile(current_user.id, full_name=data.full_name)
+    return UserMapper.out(user)
 
 
 @router.post("/me/delete-request", status_code=status.HTTP_202_ACCEPTED)

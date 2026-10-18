@@ -124,6 +124,10 @@ class UserRepository:
         """Attach a new local credential hash (persisted with the request)."""
         user.hashed_password = hashed_password
 
+    async def set_full_name(self, user: User, *, full_name: str) -> None:
+        """Rename the account (persisted with the request)."""
+        user.full_name = full_name
+
     async def delete(self, user: User) -> None:
         """Hard-delete the user; child rows cascade at the database level."""
         await self.db.delete(user)
