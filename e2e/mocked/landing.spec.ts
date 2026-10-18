@@ -60,3 +60,12 @@ test('the default language lives at the root and /en redirects there', async ({ 
   await expect(page.locator('link[rel="alternate"]')).toHaveCount(3)
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Velio builds/)
 })
+
+test('the footer language menu moves the landing to the other language', async ({ page }) => {
+  await page.goto('/es')
+  await page.getByRole('button', { name: 'Cambiar de idioma' }).click()
+  await page.getByRole('menuitemradio', { name: 'English' }).or(page.getByRole('menuitem', { name: 'English' })).click()
+  await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/)
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Loops cut to your distance')
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+})

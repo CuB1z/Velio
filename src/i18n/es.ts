@@ -32,6 +32,9 @@ export default {
     save: 'Guardar',
   },
 
+  language: {
+    toggle: 'Cambiar de idioma',
+  },
   theme: {
     toggle: 'Cambiar de tema',
     light: 'Claro',

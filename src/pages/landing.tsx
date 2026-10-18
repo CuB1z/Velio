@@ -11,6 +11,7 @@ import { Ridge } from '@/components/landing/ridge'
 import { Showcase } from '@/components/landing/showcase'
 import { TaglineReveal } from '@/components/landing/taglineReveal'
 import { VelioLogo } from '@/components/layout/logo'
+import { LanguageToggle } from '@/components/layout/languageToggle'
 import { ThemeToggle } from '@/components/layout/themeToggle'
 import { useDocumentHead } from '@/hooks/useDocumentHead'
 import { DEFAULT_LANGUAGE, LANGUAGES } from '@/i18n/languages'
@@ -393,9 +394,10 @@ export function LandingPage() {
           </FooterColumn>
         </div>
 
-        <div className="border-t border-border">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 text-sm text-muted sm:px-6">
-            <span>© {new Date().getFullYear()} Velio</span>
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-6 text-sm text-muted sm:px-6">
+          <span>© {new Date().getFullYear()} Velio</span>
+          <div className="flex items-center gap-1">
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </div>

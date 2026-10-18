@@ -31,6 +31,9 @@ export default {
     save: 'Save',
   },
 
+  language: {
+    toggle: 'Change language',
+  },
   theme: {
     toggle: 'Change the theme',
     light: 'Light',
