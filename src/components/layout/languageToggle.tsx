@@ -15,7 +15,7 @@ export function LanguageToggle() {
     <Dropdown>
       <Dropdown.Trigger
         aria-label={t('language.toggle')}
-        className={dropdownTriggerClass({ variant: 'ghost', isIconOnly: true }, 'size-11')}
+        className={dropdownTriggerClass({ variant: 'ghost', isIconOnly: true }, 'size-11 bg-surface-secondary hover:bg-surface-hover')}
       >
         <GlobeIcon />
       </Dropdown.Trigger>

@@ -13,7 +13,7 @@ export function ThemeToggle() {
     <Dropdown>
       <Dropdown.Trigger
         aria-label={t('theme.toggle')}
-        className={dropdownTriggerClass({ variant: 'ghost', isIconOnly: true }, 'size-11')}
+        className={dropdownTriggerClass({ variant: 'ghost', isIconOnly: true }, 'size-11 bg-surface-secondary hover:bg-surface-hover')}
       >
         {resolved === 'dark' ? <MoonIcon /> : <SunIcon />}
       </Dropdown.Trigger>

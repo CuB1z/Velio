@@ -102,16 +102,7 @@ export function LandingPage() {
             ))}
           </nav>
 
-          <div className="ms-auto flex items-center gap-1 md:ms-6">
-            <ThemeToggle />
-            {authenticated ? null : (
-              <Link
-                to={to('/login')}
-                className="hidden min-h-10 items-center rounded-full px-3 text-sm font-medium transition-colors duration-150 hover:text-muted sm:inline-flex"
-              >
-                {t('landing.signIn')}
-              </Link>
-            )}
+          <div className="ms-auto flex items-center md:ms-6">
             <Link
               to={to(primary.to)}
               className={`inline-flex min-h-10 items-center rounded-full bg-foreground px-4 text-sm font-semibold text-background hover:opacity-90 ${fluid} ${focus}`}
