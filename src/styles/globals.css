@@ -121,8 +121,8 @@
 }
 
 @theme inline {
-  --font-sans: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Geist Variable", Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Tailwind v4 only generates utilities from --color-* tokens, so custom
      tokens need their mapping here. */
