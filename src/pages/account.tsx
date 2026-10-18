@@ -1,21 +1,29 @@
-import { Alert, Button, Card, Chip, InputOTP, Modal, Spinner, useOverlayState } from '@heroui/react'
+import { Button, InputOTP, Modal, Spinner, useOverlayState } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 import * as authApi from '@/api/auth'
 import { useAuth } from '@/auth/useAuth'
+import { ProfileForm } from '@/components/account/profileForm'
+import { SettingRow } from '@/components/account/settingRow'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { ErrorState } from '@/components/common/errorState'
 import { PasswordInput } from '@/components/common/field'
 import { PageHeader } from '@/components/common/pageHeader'
+import { SegmentedControl } from '@/components/common/segmentedControl'
+import { useTheme, type ThemePreference } from '@/hooks/useTheme'
+import i18n, { LANGUAGES, type Language } from '@/i18n'
+import { cn } from '@/lib/cn'
 import { formatDateTime } from '@/lib/format'
-import type { AccountStatus } from '@/types/api'
+import { parseUserAgent } from '@/lib/userAgent'
+import type { AccountStatus, DeviceSession } from '@/types/api'
 
-const STATUS_COLOR: Record<AccountStatus, 'success' | 'warning' | 'danger'> = {
-  active: 'success',
-  pending: 'warning',
-  suspended: 'danger',
+const STATUS_TONE: Record<AccountStatus, string> = {
+  active: 'text-accent',
+  pending: 'text-warning',
+  suspended: 'text-danger',
 }
 
 const STATUS_KEY: Record<AccountStatus, string> = {
@@ -24,12 +32,23 @@ const STATUS_KEY: Record<AccountStatus, string> = {
   suspended: 'account.suspended',
 }
 
+const SECTIONS = [
+  { id: 'perfil', key: 'account.navProfile' },
+  { id: 'preferencias', key: 'account.navPreferences' },
+  { id: 'seguridad', key: 'account.navSecurity' },
+  { id: 'sesiones', key: 'account.navSessions' },
+  { id: 'cuenta', key: 'account.navAccount' },
+]
+
+const THEMES: ThemePreference[] = ['light', 'dark', 'system']
+
 export function AccountPage() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const client = useQueryClient()
   const describe = useApiErrorMessage()
-
+  const { preference, setPreference } = useTheme()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null)
@@ -79,152 +98,211 @@ export function AccountPage() {
     onError: (error) => setDeleteError(describe(error)),
   })
 
+  const initials = (user?.full_name || user?.email || '?')
+    .split(/[\s@.]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+  const language = (i18n.language.slice(0, 2) as Language) ?? 'es'
+
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-4 sm:p-6">
-      <PageHeader title={t('account.title')} subtitle={t('account.subtitle')} />
+    <div className="mx-auto flex max-w-[1120px] flex-col gap-10 p-4 sm:p-6 lg:p-10">
+      <PageHeader eyebrow={t('account.eyebrow')} title={t('account.heading')} />
 
-      <Card>
-        <Card.Content className="flex flex-wrap items-center gap-4 p-5">
-          <div className="flex size-14 shrink-0 items-center justify-center rounded-full bg-accent-soft text-lg font-semibold text-accent">
-            {(user?.full_name || user?.email || '?').slice(0, 2).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="truncate text-base font-semibold">
-                {user?.full_name || user?.email}
+      <div className="grid gap-10 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-20">
+        <nav
+          aria-label={t('account.heading')}
+          className="flex flex-wrap gap-1 lg:sticky lg:top-10 lg:flex-col lg:self-start"
+        >
+          {SECTIONS.map((section) => (
+            <a
+              key={section.id}
+              href={`#${section.id}`}
+              className="rounded-full px-3 py-2 text-sm font-medium text-muted transition-colors duration-150 hover:bg-surface-hover hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              {t(section.key)}
+            </a>
+          ))}
+        </nav>
+
+        <div className="flex min-w-0 flex-col gap-16">
+          <section id="perfil" className="flex flex-col gap-6 scroll-mt-10">
+            <div className="flex items-center gap-5">
+              <span
+                aria-hidden="true"
+                className="code flex size-16 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xl font-semibold text-accent-soft-foreground"
+              >
+                {initials}
               </span>
-              {user ? (
-                <Chip color={STATUS_COLOR[user.status]} variant="soft" size="sm">
-                  <Chip.Label>{t(STATUS_KEY[user.status])}</Chip.Label>
-                </Chip>
-              ) : null}
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex flex-wrap items-baseline gap-3">
+                  <h2 className="truncate text-2xl font-semibold tracking-tight">{user?.full_name || user?.email}</h2>
+                  {user ? (
+                    <span className={cn('eyebrow', STATUS_TONE[user.status])}>● {t(STATUS_KEY[user.status])}</span>
+                  ) : null}
+                </div>
+                <p className="truncate text-sm text-muted">{user?.email}</p>
+              </div>
             </div>
-            <p className="mt-0.5 truncate text-sm text-muted">{user?.email}</p>
-          </div>
-        </Card.Content>
-      </Card>
+            <div>
+              <SettingRow label={t('account.name')} description={t('account.nameHint')} align="start">
+                {user ? <ProfileForm key={user.full_name} name={user.full_name} /> : null}
+              </SettingRow>
+              <SettingRow label={t('account.email')} description={t('account.emailHint')} className="border-b border-border">
+                <span className="code text-sm">{user?.email}</span>
+                {user?.status === 'active' ? <span className="eyebrow text-accent">{t('account.verified')}</span> : null}
+              </SettingRow>
+            </div>
+          </section>
 
-      <Card>
-        <Card.Header className="p-5 pb-0">
-          <Card.Title>{t('account.password')}</Card.Title>
-          <Card.Description>{t('account.passwordHint')}</Card.Description>
-        </Card.Header>
-        <Card.Content className="flex flex-col gap-4 p-5">
-          {passwordNotice ? (
-            <Alert status="success">
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Description>{passwordNotice}</Alert.Description>
-              </Alert.Content>
-            </Alert>
-          ) : null}
-          <PasswordInput
-            label={t('account.currentPassword')}
-            value={current}
-            onChange={setCurrent}
-            autoComplete="current-password"
-          />
-          <PasswordInput
-            label={t('account.newPassword')}
-            value={next}
-            onChange={setNext}
-            autoComplete="new-password"
-            errorMessage={passwordError ?? undefined}
-          />
-          <Button
-            variant="secondary"
-            className="min-h-11 self-start"
-            isDisabled={!current || !next || changePassword.isPending}
-            onPress={() => {
-              setPasswordError(null)
-              changePassword.mutate()
-            }}
-          >
-            {t('account.changePassword')}
-          </Button>
-        </Card.Content>
-      </Card>
+          <section id="preferencias" className="flex flex-col gap-6 scroll-mt-10">
+            <SectionTitle eyebrow={t('account.navPreferences')} title={t('account.preferencesTitle')} />
+            <div>
+              <SettingRow label={t('account.language')} description={t('account.languageHint')}>
+                <SegmentedControl
+                  label={t('account.language')}
+                  options={LANGUAGES.map((id) => ({ id, label: id === 'es' ? 'Español' : 'English' }))}
+                  value={language}
+                  onChange={(id) => void i18n.changeLanguage(id)}
+                  className="w-full lg:w-64"
+                />
+              </SettingRow>
+              <SettingRow label={t('account.theme')} description={t('account.themeHint')} className="border-b border-border">
+                <SegmentedControl
+                  label={t('account.theme')}
+                  options={THEMES.map((id) => ({ id, label: t(`theme.${id}`) }))}
+                  value={preference}
+                  onChange={setPreference}
+                  className="w-full lg:w-96"
+                />
+              </SettingRow>
+            </div>
+          </section>
 
-      <Card>
-        <Card.Header className="flex flex-wrap items-start justify-between gap-3 p-5 pb-0">
-          <div>
-            <Card.Title>{t('account.sessions')}</Card.Title>
-            <Card.Description>{t('account.sessionsHint')}</Card.Description>
-          </div>
-          <Button
-            variant="ghost"
-            className="min-h-11"
-            isDisabled={revokeOthers.isPending || (sessions.data?.length ?? 0) < 2}
-            onPress={() => revokeOthers.mutate()}
-          >
-            {t('account.revokeOthers')}
-          </Button>
-        </Card.Header>
-        <Card.Content className="p-5">
-          {sessions.isLoading ? (
-            <Spinner aria-label={t('common.loading')} />
-          ) : sessions.isError ? (
-            <ErrorState error={sessions.error} onRetry={() => void sessions.refetch()} />
-          ) : (
-            <ul className="flex flex-col divide-y divide-border">
-              {sessions.data?.map((session) => (
-                <li key={session.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-sm font-medium">
-                        {session.user_agent || '—'}
-                      </span>
-                      {session.current ? (
-                        <Chip color="accent" variant="soft" size="sm">
-                          <Chip.Label>{t('account.sessionCurrent')}</Chip.Label>
-                        </Chip>
-                      ) : null}
-                    </div>
-                    <p className="tnum mt-0.5 text-xs text-muted">
-                      {t('account.sessionStarted', { date: formatDateTime(session.created_at) })}
+          <section id="seguridad" className="flex flex-col gap-6 scroll-mt-10">
+            <SectionTitle eyebrow={t('account.navSecurity')} title={t('account.securityTitle')} />
+            <SettingRow
+              label={t('account.passwordRow')}
+              description={t('account.passwordRowHint')}
+              align="start"
+              className="border-b border-border"
+            >
+              <form
+                className="flex w-full flex-col gap-3 lg:max-w-sm"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  setPasswordError(null)
+                  changePassword.mutate()
+                }}
+              >
+                <PasswordInput
+                  label={t('account.currentPassword')}
+                  labelHidden
+                  placeholder={t('account.currentPassword')}
+                  value={current}
+                  onChange={setCurrent}
+                  autoComplete="current-password"
+                />
+                <PasswordInput
+                  label={t('account.newPassword')}
+                  labelHidden
+                  placeholder={t('account.newPassword')}
+                  value={next}
+                  onChange={setNext}
+                  autoComplete="new-password"
+                  errorMessage={passwordError ?? undefined}
+                />
+                {passwordNotice ? (
+                  <p className="eyebrow text-accent" role="status">
+                    {passwordNotice}
+                  </p>
+                ) : null}
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  className="min-h-11 self-end"
+                  isDisabled={!current || !next || changePassword.isPending}
+                >
+                  {t('account.changePassword')}
+                </Button>
+              </form>
+            </SettingRow>
+          </section>
+
+          <section id="sesiones" className="flex flex-col gap-6 scroll-mt-10">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <SectionTitle eyebrow={t('account.navSessions')} title={t('account.sessionsTitle')} />
+              <Button
+                variant="outline"
+                className="min-h-11"
+                isDisabled={revokeOthers.isPending || (sessions.data?.length ?? 0) < 2}
+                onPress={() => revokeOthers.mutate()}
+              >
+                {t('account.revokeOthers')}
+              </Button>
+            </div>
+            {sessions.isLoading ? (
+              <Spinner aria-label={t('common.loading')} />
+            ) : sessions.isError ? (
+              <ErrorState error={sessions.error} onRetry={() => void sessions.refetch()} />
+            ) : (
+              <ul className="flex flex-col border-b border-border">
+                {sessions.data?.map((session) => (
+                  <SessionRow
+                    key={session.id}
+                    session={session}
+                    isRevoking={revoke.isPending}
+                    onRevoke={() => revoke.mutate(session.id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section id="cuenta" className="flex flex-col gap-6 scroll-mt-10">
+            <SectionTitle eyebrow={t('account.navAccount')} title={t('account.accountTitle')} />
+            <div className="flex flex-col gap-4">
+              <SettingRow label={t('nav.logout')} description={t('account.logoutHint')} className="border-b border-border">
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  onPress={() => {
+                    void navigate('/')
+                    void logout()
+                  }}
+                >
+                  {t('nav.logout')}
+                </Button>
+              </SettingRow>
+              <div className="grid gap-4 rounded-3xl p-6 ring-1 ring-danger/40 lg:grid-cols-2 lg:items-start lg:gap-8">
+                <div className="flex flex-col gap-1">
+                  <span className="text-base font-medium text-danger">{t('account.danger')}</span>
+                  <span className="text-sm text-muted text-pretty">{t('account.dangerBody')}</span>
+                  {deleteError ? (
+                    <p className="mt-2 text-sm text-danger" role="alert">
+                      {deleteError}
                     </p>
-                  </div>
-                  {session.current ? null : (
-                    <Button
-                      variant="ghost"
-                      className="min-h-11 shrink-0"
-                      isDisabled={revoke.isPending}
-                      onPress={() => revoke.mutate(session.id)}
-                    >
-                      {t('account.revoke')}
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card.Content>
-      </Card>
-
-      <Card className="border-danger/40">
-        <Card.Content className="flex flex-wrap items-start justify-between gap-4 p-5">
-          <div className="min-w-0 flex-1">
-            <p className="text-base font-semibold text-danger">{t('account.danger')}</p>
-            <p className="mt-1.5 max-w-prose text-sm text-muted">{t('account.dangerBody')}</p>
-            {deleteError ? (
-              <p className="mt-2 text-sm text-danger" role="alert">
-                {deleteError}
-              </p>
-            ) : null}
-          </div>
-          <Button
-            variant="danger-soft"
-            className="min-h-11 shrink-0"
-            isDisabled={requestDeletion.isPending}
-            onPress={() => {
-              setDeleteError(null)
-              requestDeletion.mutate()
-            }}
-          >
-            {t('account.dangerAction')}
-          </Button>
-        </Card.Content>
-      </Card>
+                  ) : null}
+                </div>
+                <div className="flex lg:justify-end">
+                  <Button
+                    variant="danger-soft"
+                    className="min-h-11"
+                    isDisabled={requestDeletion.isPending}
+                    onPress={() => {
+                      setDeleteError(null)
+                      requestDeletion.mutate()
+                    }}
+                  >
+                    {t('account.dangerAction')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
 
       <Modal state={deleteDialog}>
         <Modal.Backdrop>
@@ -275,5 +353,73 @@ export function AccountPage() {
         </Modal.Backdrop>
       </Modal>
     </div>
+  )
+}
+
+function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="eyebrow">{eyebrow}</span>
+      <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+    </div>
+  )
+}
+
+function SessionRow({
+  session,
+  isRevoking,
+  onRevoke,
+}: {
+  session: DeviceSession
+  isRevoking: boolean
+  onRevoke: () => void
+}) {
+  const { t } = useTranslation()
+  const device = parseUserAgent(session.user_agent)
+  const label =
+    device.browser && device.platform
+      ? t('account.deviceOn', { browser: device.browser, platform: device.platform })
+      : (device.browser ?? device.platform ?? t('account.deviceUnknown'))
+
+  return (
+    <li className="flex items-center justify-between gap-4 border-t border-border py-4">
+      <div className="flex min-w-0 items-center gap-4">
+        <span className="shrink-0 text-muted" aria-hidden="true">
+          {device.mobile ? <PhoneIcon /> : <ScreenIcon />}
+        </span>
+        <div className="flex min-w-0 flex-col gap-1">
+          <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="truncate text-base font-medium" title={session.user_agent ?? undefined}>
+              {label}
+            </span>
+            {session.current ? <span className="eyebrow text-accent">{t('account.sessionCurrent')}</span> : null}
+          </span>
+          <span className="eyebrow">{t('account.sessionStarted', { date: formatDateTime(session.created_at) })}</span>
+        </div>
+      </div>
+      {session.current ? null : (
+        <Button variant="outline" className="min-h-10 shrink-0" isDisabled={isRevoking} onPress={onRevoke}>
+          {t('account.revoke')}
+        </Button>
+      )}
+    </li>
+  )
+}
+
+function ScreenIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M8 20h8" />
+    </svg>
+  )
+}
+
+function PhoneIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="7" y="2" width="10" height="20" rx="2" />
+      <path d="M11 18h2" />
+    </svg>
   )
 }

@@ -5,6 +5,7 @@ import type {
   ForgotPasswordRequest,
   LoginRequest,
   OAuthProvider,
+  ProfileUpdate,
   RegisterRequest,
   ResetPasswordRequest,
   User,
@@ -48,6 +49,10 @@ export function logout(refreshToken: string): Promise<void> {
 
 export function me(): Promise<User> {
   return request<User>('/auth/me', { auth: true })
+}
+
+export function updateProfile(payload: ProfileUpdate): Promise<User> {
+  return request<User>('/auth/me', { method: 'PATCH', body: payload, auth: true })
 }
 
 export function sessions(): Promise<DeviceSession[]> {

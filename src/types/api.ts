@@ -54,6 +54,8 @@ export type HealthResponse = { status: string; version: string }
 
 export type AccountStatus = 'pending' | 'active' | 'suspended'
 
+export type ProfileUpdate = { full_name: string }
+
 export type User = {
   id: string
   email: string
