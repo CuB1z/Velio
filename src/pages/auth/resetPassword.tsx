@@ -34,6 +34,9 @@ export function ResetPasswordPage() {
 
   return (
     <AuthLayout
+      eyebrow={t('auth.passwordEyebrow')}
+      title={t('auth.resetTitle')}
+      subtitle={t('auth.resetSubtitle', { email })}
       footer={
         <Link to={to('/login')} className="font-semibold">
           {t('auth.backToLogin')}
@@ -41,18 +44,13 @@ export function ResetPasswordPage() {
       }
     >
       <form
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault()
           setError(null)
           mutation.mutate()
         }}
       >
-        <div className="mb-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{t('auth.resetTitle')}</h1>
-          <p className="mt-2 text-sm text-muted">{t('auth.resetSubtitle', { email })}</p>
-        </div>
-
         {params.get('email') ? null : (
           <TextInput
             label={t('auth.email')}
@@ -64,7 +62,7 @@ export function ResetPasswordPage() {
           />
         )}
 
-        <div className="flex justify-center">
+        <div className="flex">
           <InputOTP value={code} onChange={setCode} maxLength={6} aria-label={t('auth.verifyCode')} className="w-fit">
             <InputOTP.Group>
               {[0, 1, 2, 3, 4, 5].map((index) => (

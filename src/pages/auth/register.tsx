@@ -22,15 +22,13 @@ export function RegisterPage() {
   const to = useLangPath()
   const describe = useApiErrorMessage()
 
-  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const mutation = useMutation({
-    mutationFn: () =>
-      register({ email, password, full_name: fullName.trim() || undefined }),
+    mutationFn: () => register({ email, password }),
     onSuccess: () => void navigate(`${to('/verify')}?email=${encodeURIComponent(email)}`),
     onError: (cause) => setError(describe(cause)),
   })
@@ -40,6 +38,9 @@ export function RegisterPage() {
 
   return (
     <AuthLayout
+      eyebrow={t('auth.registerEyebrow')}
+      title={t('auth.registerTitle')}
+      subtitle={t('auth.registerSubtitle')}
       footer={
         <>
           {t('auth.hasAccount')}{' '}
@@ -50,27 +51,13 @@ export function RegisterPage() {
       }
     >
       <form
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault()
           setError(null)
           mutation.mutate()
         }}
       >
-        <div className="mb-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{t('auth.registerTitle')}</h1>
-          <p className="mt-2 text-sm text-muted">{t('auth.registerSubtitle')}</p>
-        </div>
-
-        <TextInput
-          label={t('auth.fullName')}
-          value={fullName}
-          onChange={setFullName}
-          autoComplete="name"
-          description={t('common.optional')}
-          autoFocus
-        />
-
         <TextInput
           label={t('auth.email')}
           value={email}
@@ -79,6 +66,7 @@ export function RegisterPage() {
           inputMode="email"
           autoComplete="email"
           isRequired
+          autoFocus
         />
 
         <div className="flex flex-col gap-3">
@@ -90,7 +78,11 @@ export function RegisterPage() {
             isRequired
             errorMessage={error ?? undefined}
           />
-          <PasswordRules password={password} email={email} />
+          {password ? (
+            <PasswordRules password={password} email={email} />
+          ) : (
+            <span className="text-xs text-muted">{t('auth.passwordRules')}</span>
+          )}
         </div>
 
         {/* Explicit `flex-row`: HeroUI's .checkbox sets column and Tailwind's `flex` only sets display. */}

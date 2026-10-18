@@ -59,23 +59,19 @@ export function OAuthCallbackPage() {
   }, [adoptTokens, navigate, describe, t, to])
 
   return (
-    <AuthLayout>
-      <div className="flex flex-col items-center gap-5 text-center">
-        {error ? (
-          <>
-            <h1 className="text-2xl font-semibold tracking-tight">{t('error.title')}</h1>
-            <p className="text-sm text-muted">{error}</p>
-            <Button variant="primary" className="min-h-12" onPress={() => void navigate(to('/login'))}>
-              {t('auth.backToLogin')}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Spinner aria-label={t('auth.oauthTitle')} />
-            <p className="text-sm text-muted">{t('auth.oauthTitle')}</p>
-          </>
-        )}
-      </div>
+    <AuthLayout eyebrow={t('auth.loginEyebrow')} title={error ? t('error.title') : t('auth.oauthTitle')}>
+      {error ? (
+        <div className="flex flex-col items-start gap-5">
+          <p className="text-sm text-danger" role="alert">
+            {error}
+          </p>
+          <Button variant="primary" className="min-h-12" onPress={() => void navigate(to('/login'))}>
+            {t('auth.backToLogin')}
+          </Button>
+        </div>
+      ) : (
+        <Spinner aria-label={t('auth.oauthTitle')} />
+      )}
     </AuthLayout>
   )
 }

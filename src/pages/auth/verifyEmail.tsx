@@ -40,6 +40,9 @@ export function VerifyEmailPage() {
 
   return (
     <AuthLayout
+      eyebrow={t('auth.verifyEyebrow')}
+      title={t('auth.verifyTitle')}
+      subtitle={t('auth.verifySubtitle', { email })}
       footer={
         <Link to={to('/register')} className="font-semibold">
           {t('auth.verifyOtherEmail')}
@@ -47,25 +50,13 @@ export function VerifyEmailPage() {
       }
     >
       <form
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault()
           setError(null)
           verify.mutate()
         }}
       >
-        <div className="flex size-12 items-center justify-center self-center rounded-xl bg-accent-soft text-accent">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
-            <path d="M3 6.5h18v11H3v-11Z" />
-            <path d="m3 7 9 6 9-6" />
-          </svg>
-        </div>
-
-        <div className="mb-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{t('auth.verifyTitle')}</h1>
-          <p className="mt-2 text-sm text-muted">{t('auth.verifySubtitle', { email })}</p>
-        </div>
-
         {notice ? (
           <Alert status="success">
             <Alert.Indicator />
@@ -75,7 +66,7 @@ export function VerifyEmailPage() {
           </Alert>
         ) : null}
 
-        <div className="flex justify-center">
+        <div className="flex">
           <InputOTP value={code} onChange={setCode} maxLength={6} aria-label={t('auth.verifyCode')} className="w-fit">
             <InputOTP.Group>
               {[0, 1, 2, 3, 4, 5].map((index) => (
@@ -101,7 +92,7 @@ export function VerifyEmailPage() {
           {t('auth.verifySubmit')}
         </Button>
 
-        <div className="flex items-center justify-center gap-3 text-xs text-muted">
+        <div className="flex items-center gap-3 text-xs text-muted">
           {cooldown.left > 0 ? (
             <span className="tnum">{t('auth.verifyResendIn', { seconds: cooldown.left })}</span>
           ) : (
@@ -117,9 +108,7 @@ export function VerifyEmailPage() {
           )}
         </div>
 
-        <p className="rounded-lg border border-border bg-surface-secondary p-3 text-xs text-muted">
-          {t('auth.verifyAttempts')}
-        </p>
+        <p className="eyebrow border-t border-border pt-5">{t('auth.verifyAttempts')}</p>
       </form>
     </AuthLayout>
   )

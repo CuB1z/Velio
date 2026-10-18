@@ -27,6 +27,9 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthLayout
+      eyebrow={t('auth.passwordEyebrow')}
+      title={t('auth.forgotTitle')}
+      subtitle={t('auth.forgotSubtitle')}
       footer={
         <Link to={to('/login')} className="font-semibold">
           {t('auth.backToLogin')}
@@ -34,18 +37,13 @@ export function ForgotPasswordPage() {
       }
     >
       <form
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault()
           setError(null)
           mutation.mutate()
         }}
       >
-        <div className="mb-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{t('auth.forgotTitle')}</h1>
-          <p className="mt-2 text-sm text-muted">{t('auth.forgotSubtitle')}</p>
-        </div>
-
         {sent ? (
           <>
             <Alert status="success">

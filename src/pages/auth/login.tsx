@@ -45,6 +45,9 @@ export function LoginPage() {
 
   return (
     <AuthLayout
+      eyebrow={t('auth.loginEyebrow')}
+      title={t('auth.loginTitle')}
+      subtitle={t('auth.loginSubtitle')}
       footer={
         <>
           {t('auth.noAccount')}{' '}
@@ -55,18 +58,13 @@ export function LoginPage() {
       }
     >
       <form
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault()
           setError(null)
           mutation.mutate()
         }}
       >
-        <div className="mb-3 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">{t('auth.loginTitle')}</h1>
-          <p className="mt-2 text-sm text-muted">{t('auth.loginSubtitle')}</p>
-        </div>
-
         <TextInput
           label={t('auth.email')}
           value={email}
