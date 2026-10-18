@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { AnalyzeIcon, BookmarkIcon, LoopIcon, RouteIcon } from '@/components/common/icons'
+import { useDocumentHead } from '@/hooks/useDocumentHead'
 import { cn } from '@/lib/cn'
 import { useLangPath } from '@/lib/paths'
 import { VelioLogo, VelioMark } from './logo'
@@ -22,6 +23,7 @@ const NAV: NavItem[] = [
 export function AppShell() {
   const { t } = useTranslation()
   const to = useLangPath()
+  useDocumentHead({ noindex: true })
 
   return (
     <div className="flex h-full bg-background text-foreground">

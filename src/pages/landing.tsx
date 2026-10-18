@@ -12,9 +12,11 @@ import { Showcase } from '@/components/landing/showcase'
 import { TaglineReveal } from '@/components/landing/taglineReveal'
 import { VelioLogo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/layout/themeToggle'
+import { useDocumentHead } from '@/hooks/useDocumentHead'
+import { DEFAULT_LANGUAGE, LANGUAGES } from '@/i18n/languages'
 import { SurfaceBar } from '@/components/route/surfaceBar'
 import { formatDistance, formatRatio } from '@/lib/format'
-import { useLangPath } from '@/lib/paths'
+import { useLangPath, withLang } from '@/lib/paths'
 import { LANDING_EXAMPLES, LANDING_REPAIR } from './landingExamples'
 
 const SIERRA = LANDING_EXAMPLES[1]
@@ -49,9 +51,18 @@ const sectionTitle = 'text-4xl font-semibold leading-none tracking-[-0.03em] tex
 const footerLink = 'inline-flex min-h-10 items-center text-sm text-muted transition-colors duration-150 hover:text-foreground'
 
 export function LandingPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { status } = useAuth()
   const to = useLangPath()
+  const origin = window.location.origin
+  useDocumentHead({
+    description: t('landing.metaDescription'),
+    canonical: origin + withLang('/', i18n.language),
+    alternates: {
+      ...Object.fromEntries(LANGUAGES.map((lang) => [lang, origin + withLang('/', lang)])),
+      'x-default': origin + withLang('/', DEFAULT_LANGUAGE),
+    },
+  })
   const authenticated = status === 'authenticated'
   const primary = { to: authenticated ? '/loops' : '/register', label: t(authenticated ? 'landing.openApp' : 'landing.heroCta') }
 

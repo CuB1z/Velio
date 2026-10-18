@@ -424,6 +424,7 @@ export default {
     anchorHow: 'como-funciona',
     anchorData: 'los-datos',
     anchorFaq: 'preguntas',
+    metaDescription: 'Velio genera rutas ciclistas circulares y punto a punto con datos reales de firme, seguridad y desnivel.',
     heroEyebrow: 'Rutas ciclistas sobre datos abiertos · España, Portugal y Andorra',
     ridgeCaption: 'Perfil real del motor, sin retocar',
     north: 'N',

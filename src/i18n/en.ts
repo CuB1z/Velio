@@ -423,6 +423,7 @@ export default {
     anchorHow: 'how-it-works',
     anchorData: 'the-data',
     anchorFaq: 'faq',
+    metaDescription: 'Velio builds loop and point-to-point cycling routes from real surface, safety and elevation data.',
     heroEyebrow: 'Cycling routes on open data · Spain, Portugal and Andorra',
     ridgeCaption: 'Real engine output, untouched',
     north: 'N',
