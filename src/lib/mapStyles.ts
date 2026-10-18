@@ -98,5 +98,5 @@ export const DEFAULT_ZOOM = 11
 
 /** Fit padding that keeps the route clear of the result panel; shared with the panel's size. */
 export function mapFitPadding(hasResult: boolean, collapsed = false) {
-  return { top: 48, right: 48, bottom: hasResult && !collapsed ? 440 : 48, left: 48 }
+  return { top: 48, right: 48, bottom: hasResult && !collapsed ? 320 : 48, left: 72 }
 }

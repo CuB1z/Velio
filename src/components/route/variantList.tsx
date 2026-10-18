@@ -35,11 +35,11 @@ export function VariantList({ variants, selected, onSelect, className }: Props) 
             aria-pressed={isSelected}
             title={`${formatDistance(variant.distance_km)} · ${formatSigned(variant.gain_m)} · ${formatDuration(variant.duration_min)}`}
             className={cn(
-              'flex min-h-9 items-center gap-2 rounded-full border px-3 text-[13px] transition-colors',
+              'flex min-h-9 items-center gap-2 rounded-full px-3 text-sm transition-colors',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
               isSelected
-                ? 'border-accent bg-accent-soft font-semibold'
-                : 'border-border bg-surface hover:bg-surface-hover',
+                ? 'bg-foreground font-semibold text-background'
+                : 'bg-surface-secondary font-medium text-muted hover:text-foreground',
             )}
           >
             <span
@@ -49,7 +49,7 @@ export function VariantList({ variants, selected, onSelect, className }: Props) 
             />
             {index === 0 ? t('result.variantMain') : t('result.variantAlternative', { index })}
             {variant.cycling_score ? (
-              <span className="tnum font-semibold">{formatScore(variant.cycling_score.total)}</span>
+              <span className="code font-semibold">{formatScore(variant.cycling_score.total)}</span>
             ) : null}
           </button>
         )

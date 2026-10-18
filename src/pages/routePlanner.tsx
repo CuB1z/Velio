@@ -121,6 +121,12 @@ export function RoutePlannerPage() {
     <PlannerLayout
       resultCollapsed={resultCollapsed}
       onResultCollapsedChange={setResultCollapsed}
+      heading={
+        <>
+          <span className="eyebrow">{t('planner.routeEyebrow')}</span>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('planner.routeTitle')}</h1>
+        </>
+      }
       form={
         <form
           className="flex flex-col gap-5"
@@ -165,12 +171,12 @@ export function RoutePlannerPage() {
             </InsetRow>
           </InsetGroup>
 
-          <div className="flex gap-2">
+          <div className="sticky bottom-0 z-10 mt-auto flex gap-2 bg-background py-4">
             <Button
               type="submit"
               variant="primary"
               fullWidth
-              className="min-h-11 text-[15px] font-semibold"
+              className="min-h-12 text-base font-semibold"
               isDisabled={waypoints.length < 2 || mutation.isPending || retryIn > 0}
             >
               {mutation.isPending

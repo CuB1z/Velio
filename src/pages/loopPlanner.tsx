@@ -169,6 +169,12 @@ export function LoopPlannerPage() {
     <PlannerLayout
       resultCollapsed={resultCollapsed}
       onResultCollapsedChange={setResultCollapsed}
+      heading={
+        <>
+          <span className="eyebrow">{t('planner.loopEyebrow')}</span>
+          <h1 className="text-2xl font-semibold tracking-tight">{t('planner.loopTitle')}</h1>
+        </>
+      }
       form={
         <div className="flex flex-col gap-4">
           <LoopForm

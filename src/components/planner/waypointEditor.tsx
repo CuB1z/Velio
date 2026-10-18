@@ -31,13 +31,13 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between ps-4">
-        <h3 className="text-[13px] font-normal text-muted">{t('planner.stops')}</h3>
+    <div className="flex flex-col gap-2 border-t border-border pt-5">
+      <div className="flex items-center justify-between">
+        <h3 className="eyebrow">{t('planner.stops')}</h3>
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-9 text-[13px] text-accent"
+          className="min-h-9 text-sm text-accent"
           onPress={() => onChange([...value].reverse())}
           isDisabled={value.length < 2}
         >
@@ -45,21 +45,21 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
         </Button>
       </div>
 
-      <ol className="flex flex-col divide-y divide-separator rounded-xl bg-surface shadow-card">
+      <ol className="flex flex-col divide-y divide-border">
         {value.map((point, index) => {
           const [lat, lon] = formatCoordinates(point.lat, point.lon).split(' · ')
           return (
-            <li key={index} className="flex min-h-14 items-center gap-2 ps-4 pe-2">
+            <li key={index} className="flex min-h-14 items-center gap-3 py-1">
               <span
                 aria-hidden="true"
-                className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"
+                className="code flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background"
               >
                 {LETTERS[index] ?? index + 1}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="sr-only">{t('planner.stopLetter', { letter: LETTERS[index] })}</span>
-                <span className="tnum block text-[13px] leading-tight text-foreground">{lat}</span>
-                <span className="tnum block text-[13px] leading-tight text-foreground">{lon}</span>
+                <span className="code block text-sm leading-tight text-foreground">{lat}</span>
+                <span className="code block text-sm leading-tight text-foreground">{lon}</span>
               </span>
               <Button
                 variant={pickTarget === index ? 'primary' : 'ghost'}

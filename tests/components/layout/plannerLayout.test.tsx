@@ -45,7 +45,7 @@ describe('PlannerLayout', () => {
 describe('mapFitPadding', () => {
   it('stops reserving space when the panel is collapsed', () => {
     // Reserving the gap while collapsed squeezes the route into the top half.
-    expect(mapFitPadding(true).bottom).toBe(440)
+    expect(mapFitPadding(true).bottom).toBe(320)
     expect(mapFitPadding(true, true).bottom).toBe(48)
     expect(mapFitPadding(false).bottom).toBe(48)
   })

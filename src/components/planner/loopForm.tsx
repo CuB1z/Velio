@@ -228,12 +228,12 @@ export function LoopForm({
         </InsetGroup>
       </details>
 
-      <div className="flex gap-2">
+      <div className="sticky bottom-0 z-10 mt-auto flex gap-2 bg-background py-4">
         <Button
           type="submit"
           variant="primary"
           fullWidth
-          className="min-h-11 text-[15px] font-semibold"
+          className="min-h-12 text-base font-semibold"
           isDisabled={!value.origin || isBusy || retryIn > 0}
         >
           {isBusy

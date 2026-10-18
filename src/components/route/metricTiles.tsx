@@ -8,18 +8,18 @@ type Tile = { label: string; value: string; hint?: string; tone?: 'good' | 'crit
 
 function Tile({ label, value, hint, tone }: Tile) {
   return (
-    <div className="min-w-0">
-      <div className="text-[13px] text-muted">{label}</div>
+    <div className="flex min-w-0 flex-col gap-1">
+      <div className="eyebrow">{label}</div>
       <div
         className={cn(
-          'tnum mt-1 truncate text-xl font-semibold',
+          'code truncate text-2xl font-medium tracking-tight',
           tone === 'good' && 'text-success',
           tone === 'critical' && 'text-danger',
         )}
       >
         {value}
       </div>
-      {hint ? <div className="mt-0.5 truncate text-[11px] text-muted">{hint}</div> : null}
+      {hint ? <div className="code truncate text-xs text-muted">{hint}</div> : null}
     </div>
   )
 }
@@ -39,7 +39,7 @@ export function MetricTiles({ result, targetKm, targetGainM, lossHint, durationH
   const { t } = useTranslation()
 
   return (
-    <div className={cn('grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4', className)}>
+    <div className={cn('grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4', className)}>
       <Tile
         label={t('metric.distance')}
         value={formatDistance(result.distance_km)}
