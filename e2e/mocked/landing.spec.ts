@@ -69,3 +69,11 @@ test('the footer language menu moves the landing to the other language', async (
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Loops cut to your distance')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en')
 })
+
+test('the logo brings the page back to the top', async ({ page }) => {
+  await page.goto('/es')
+  await page.getByRole('heading', { level: 2, name: 'Cómo funciona' }).scrollIntoViewIfNeeded()
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  await page.locator('header').getByRole('link', { name: 'Velio' }).click()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+})

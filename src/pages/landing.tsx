@@ -56,6 +56,7 @@ export function LandingPage() {
   const { status } = useAuth()
   const to = useLangPath()
   const origin = window.location.origin
+  const scrollToTop = () => window.scrollTo({ top: 0 })
   useDocumentHead({
     description: t('landing.metaDescription'),
     canonical: origin + withLang('/', i18n.language),
@@ -85,7 +86,7 @@ export function LandingPage() {
     <div className="min-h-full overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
         <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
-          <Link to={to('/')} aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
+          <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
             <VelioLogo height={20} decorative />
           </Link>
 
@@ -356,7 +357,7 @@ export function LandingPage() {
       <footer className="border-t border-border">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
           <div className="flex flex-col items-start gap-4">
-            <Link to={to('/')} aria-label="Velio">
+            <Link to={to('/')} onClick={scrollToTop} aria-label="Velio">
               <VelioLogo height={20} decorative />
             </Link>
             <p className="max-w-xs text-sm text-muted">{t('landing.footerRights')}</p>
