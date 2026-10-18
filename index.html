@@ -20,7 +20,7 @@
           document.documentElement.classList.toggle('dark', dark)
           document.documentElement.classList.toggle('light', !dark)
           var lang = location.pathname.split('/')[1]
-          if (lang === 'es' || lang === 'en') document.documentElement.lang = lang
+          if (/^[a-z]{2}$/.test(lang)) document.documentElement.lang = lang
         } catch (e) {}
       })()
     </script>

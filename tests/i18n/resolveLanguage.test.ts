@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveLanguage } from '@/i18n'
+import { resolveLanguage } from '@/i18n/languages'
 
 describe('resolveLanguage', () => {
   it('takes the URL prefix over everything else', () => {

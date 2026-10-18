@@ -46,5 +46,5 @@ it('signing out revokes the session and lands on the public landing', async () =
   expect(await screen.findByRole('heading', { level: 1, name: /Circuitos a tu medida/ })).toBeInTheDocument()
   await waitFor(() => expect(calls).toContain('POST /api/v1/auth/logout'))
   expect(localStorage.getItem('velio.refresh')).toBeNull()
-  expect(window.location.pathname).toBe('/')
+  expect(window.location.pathname).toBe('/es')
 })

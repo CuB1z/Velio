@@ -1,8 +1,11 @@
-import { lazy } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { lazy, useLayoutEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 
 import { RedirectIfAuthenticated, RequireAuth } from '@/auth/requireAuth'
 import { AppShell } from '@/components/layout/appShell'
+import { LANGUAGES, type Language } from '@/i18n'
+import { withLang } from '@/lib/paths'
 import { ForgotPasswordPage } from '@/pages/auth/forgotPassword'
 import { LoginPage } from '@/pages/auth/login'
 import { OAuthCallbackPage } from '@/pages/auth/oauthCallback'
@@ -24,20 +27,33 @@ const SavedRoutesPage = lazy(() => import('@/pages/savedRoutes').then((m) => ({ 
 export function AppRouter() {
   return (
     <Routes>
+      {LANGUAGES.map((lang) => (
+        <Route key={lang} path={lang} element={<LanguageRoute lang={lang} />}>
+          {appRoutes()}
+        </Route>
+      ))}
+      <Route path="*" element={<LanguageRedirect />} />
+    </Routes>
+  )
+}
+
+function appRoutes() {
+  return (
+    <>
       {/* Public landing page. */}
-      <Route path="/" element={<LandingPage />} />
+      <Route index element={<LandingPage />} />
 
       {/* Auth screens, hidden from signed-in users. */}
       <Route element={<RedirectIfAuthenticated />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/verify" element={<VerifyEmailPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route path="verify" element={<VerifyEmailPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       {/* The OAuth callback arrives without a session and creates it. */}
-      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+      <Route path="oauth/callback" element={<OAuthCallbackPage />} />
 
       {/* Routing endpoints require a Bearer token, so the whole app sits behind login. */}
       <Route element={<RequireAuth />}>
@@ -51,6 +67,23 @@ export function AppRouter() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Route>
-    </Routes>
+    </>
   )
+}
+
+function LanguageRoute({ lang }: { lang: Language }) {
+  const { i18n } = useTranslation()
+
+  useLayoutEffect(() => {
+    if (i18n.language !== lang) void i18n.changeLanguage(lang)
+  }, [i18n, lang])
+
+  return <Outlet />
+}
+
+function LanguageRedirect() {
+  const { i18n } = useTranslation()
+  const { pathname, search, hash, state } = useLocation()
+
+  return <Navigate to={`${withLang(pathname, i18n.language)}${search}${hash}`} replace state={state} />
 }

@@ -5,14 +5,16 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
-import i18n, { LANGUAGES } from '@/i18n'
+import { LANGUAGE_INFO, LANGUAGES } from '@/i18n'
 import { cn } from '@/lib/cn'
+import { swapLang } from '@/lib/paths'
 
 export function UserMenu() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const onAccount = useLocation().pathname.startsWith('/account')
+  const location = useLocation()
+  const onAccount = location.pathname.endsWith('/account')
 
   const initials = (user?.full_name || user?.email || '?')
     .split(/[\s@.]+/)
@@ -47,7 +49,10 @@ export function UserMenu() {
               void logout()
             }
             else if (typeof key === 'string' && key.startsWith('lang:')) {
-              void i18n.changeLanguage(key.slice(5))
+              void navigate(
+                { pathname: swapLang(location.pathname, key.slice(5)), search: location.search },
+                { replace: true },
+              )
             }
           }}
         >
@@ -57,7 +62,7 @@ export function UserMenu() {
           <Dropdown.Section>
             {LANGUAGES.map((language) => (
               <Dropdown.Item key={language} id={`lang:${language}`}>
-                {language === 'es' ? 'Español' : 'English'}
+                {LANGUAGE_INFO[language].name}
               </Dropdown.Item>
             ))}
           </Dropdown.Section>

@@ -3,12 +3,15 @@
  * Minus is U+2212, not a hyphen, so it never breaks a line or reads as a separator.
  */
 
+import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_INFO } from '@/i18n/languages'
+
 const MINUS = '−'
 const EM_DASH = '\u2014'
 const NBSP = ' '
 
 function locale(): string {
-  return document.documentElement.lang === 'en' ? 'en-GB' : 'es-ES'
+  const lang = document.documentElement.lang
+  return (isLanguage(lang) ? LANGUAGE_INFO[lang] : LANGUAGE_INFO[DEFAULT_LANGUAGE]).locale
 }
 
 function number(value: number, decimals: number): string {

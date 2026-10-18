@@ -2,7 +2,7 @@ import { Button, InputOTP, Modal, Spinner, useOverlayState } from '@heroui/react
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import * as authApi from '@/api/auth'
 import { useAuth } from '@/auth/useAuth'
@@ -14,8 +14,9 @@ import { PasswordInput } from '@/components/common/field'
 import { PageHeader } from '@/components/common/pageHeader'
 import { SegmentedControl } from '@/components/common/segmentedControl'
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'
-import i18n, { LANGUAGES, type Language } from '@/i18n'
+import i18n, { LANGUAGE_INFO, LANGUAGES, type Language } from '@/i18n'
 import { cn } from '@/lib/cn'
+import { swapLang } from '@/lib/paths'
 import { formatDateTime } from '@/lib/format'
 import { parseUserAgent } from '@/lib/userAgent'
 import type { AccountStatus, DeviceSession } from '@/types/api'
@@ -46,6 +47,7 @@ export function AccountPage() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const client = useQueryClient()
   const describe = useApiErrorMessage()
   const { preference, setPreference } = useTheme()
@@ -162,9 +164,14 @@ export function AccountPage() {
               <SettingRow label={t('account.language')} description={t('account.languageHint')}>
                 <SegmentedControl
                   label={t('account.language')}
-                  options={LANGUAGES.map((id) => ({ id, label: id === 'es' ? 'Español' : 'English' }))}
+                  options={LANGUAGES.map((id) => ({ id, label: LANGUAGE_INFO[id].name }))}
                   value={language}
-                  onChange={(id) => void i18n.changeLanguage(id)}
+                  onChange={(id) =>
+                    void navigate(
+                      { pathname: swapLang(location.pathname, id), search: location.search },
+                      { replace: true },
+                    )
+                  }
                   className="w-full lg:w-64"
                 />
               </SettingRow>

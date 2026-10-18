@@ -3,26 +3,11 @@ import { initReactI18next } from 'react-i18next'
 
 import en from './en'
 import es from './es'
+import { DEFAULT_LANGUAGE, resolveLanguage } from './languages'
 
-export const LANGUAGES = ['es', 'en'] as const
-export type Language = (typeof LANGUAGES)[number]
+export * from './languages'
 
 const STORAGE_KEY = 'velio.lang'
-
-export function isLanguage(value: string | null | undefined): value is Language {
-  return LANGUAGES.includes(value as Language)
-}
-
-export function resolveLanguage(
-  pathname: string,
-  stored: string | null,
-  navigatorLanguage: string | undefined,
-): Language {
-  const prefix = pathname.split('/')[1]
-  if (isLanguage(prefix)) return prefix
-  if (isLanguage(stored)) return stored
-  return navigatorLanguage?.toLowerCase().startsWith('en') ? 'en' : 'es'
-}
 
 function readStored(): string | null {
   try {
@@ -40,7 +25,7 @@ void i18n.use(initReactI18next).init({
     en: { translation: en },
   },
   lng: initial,
-  fallbackLng: 'es',
+  fallbackLng: DEFAULT_LANGUAGE,
   initAsync: false,
   interpolation: { escapeValue: false },
 })
