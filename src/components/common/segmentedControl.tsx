@@ -24,7 +24,7 @@ export function SegmentedControl<T extends string>({
       role="group"
       aria-label={label}
       className={cn('grid gap-1 rounded-full bg-surface-secondary p-1', className)}
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+      style={{ gridTemplateColumns: `repeat(${options.length}, auto)` }}
     >
       {options.map((option) => {
         const isSelected = option.id === value
@@ -36,7 +36,7 @@ export function SegmentedControl<T extends string>({
             aria-pressed={isSelected}
             data-selected={isSelected}
             className={cn(
-              'min-h-11 truncate rounded-full px-2 text-sm transition-colors duration-150 ease-enter md:min-h-9',
+              'min-h-11 truncate rounded-full px-3 text-sm transition-colors duration-150 ease-enter md:min-h-9',
               'focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent',
               isSelected
                 ? 'bg-foreground font-semibold text-background'

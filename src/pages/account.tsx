@@ -200,7 +200,7 @@ export function AccountPage() {
                   options={THEMES.map((id) => ({ id, label: t(`theme.${id}`) }))}
                   value={preference}
                   onChange={setPreference}
-                  className="w-full lg:w-96"
+                  className="w-full lg:w-auto"
                 />
               </SettingRow>
             </div>
@@ -224,16 +224,12 @@ export function AccountPage() {
               >
                 <PasswordInput
                   label={t('account.currentPassword')}
-                  labelHidden
-                  placeholder={t('account.currentPassword')}
                   value={current}
                   onChange={setCurrent}
                   autoComplete="current-password"
                 />
                 <PasswordInput
                   label={t('account.newPassword')}
-                  labelHidden
-                  placeholder={t('account.newPassword')}
                   value={next}
                   onChange={setNext}
                   autoComplete="new-password"
