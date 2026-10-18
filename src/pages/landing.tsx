@@ -74,8 +74,8 @@ export function LandingPage() {
     faq: t('landing.anchorFaq'),
   }
   const anchors = [
-    { href: `#${ids.how}`, label: t('landing.navHow') },
     { href: `#${ids.features}`, label: t('landing.navFeatures') },
+    { href: `#${ids.how}`, label: t('landing.navHow') },
     { href: `#${ids.data}`, label: t('landing.navData') },
     { href: `#${ids.faq}`, label: t('landing.navFaq') },
   ]
