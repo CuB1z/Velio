@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
@@ -47,4 +47,26 @@ it('signing out revokes the session and lands on the public landing', async () =
   await waitFor(() => expect(calls).toContain('POST /api/v1/auth/logout'))
   expect(localStorage.getItem('velio.refresh')).toBeNull()
   expect(window.location.pathname).toBe('/es')
+})
+
+it('switches the theme from the menu and shows who is signed in', async () => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const url = String(input)
+    if (url.includes('/auth/refresh')) return json(SESSION)
+    if (url.includes('/routes/saved')) {
+      return json({ data: [], meta: { page: 1, limit: 12, total: 0, total_pages: 1, is_last: true } })
+    }
+    return new Response(null, { status: 404 })
+  })
+  render(<App />)
+  await userEvent.click((await screen.findAllByRole('button', { name: 'Ajustes de cuenta' }))[0])
+  expect(await screen.findByText('Marta Ríos')).toBeInTheDocument()
+  expect(screen.queryByText('marta@velio.cc')).not.toBeInTheDocument()
+  expect(screen.queryByRole('menuitem', { name: 'English' })).not.toBeInTheDocument()
+
+  const theme = screen.getByRole('group', { name: 'Tema' })
+  await userEvent.click(within(theme).getByRole('button', { name: 'Oscuro' }))
+  expect(within(theme).getByRole('button', { name: 'Oscuro' })).toHaveAttribute('aria-pressed', 'true')
+  expect(localStorage.getItem('velio.theme')).toBe('dark')
+  expect(document.documentElement.classList.contains('dark')).toBe(true)
 })

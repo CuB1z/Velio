@@ -8,7 +8,6 @@ import { useDocumentHead } from '@/hooks/useDocumentHead'
 import { cn } from '@/lib/cn'
 import { useLangPath } from '@/lib/paths'
 import { VelioLogo, VelioMark } from './logo'
-import { ThemeToggle } from './themeToggle'
 import { UserMenu } from './userMenu'
 
 type NavItem = { to: string; labelKey: string; icon: ReactNode }
@@ -72,7 +71,6 @@ export function AppShell() {
         </ul>
 
         <div className="flex flex-col items-center gap-1 pt-3">
-          <ThemeToggle />
           <UserMenu />
         </div>
       </nav>
@@ -84,7 +82,6 @@ export function AppShell() {
             <VelioLogo height={24} decorative />
           </NavLink>
           <div className="flex items-center gap-1">
-            <ThemeToggle />
             <UserMenu />
           </div>
         </header>
