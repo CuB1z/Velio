@@ -91,3 +91,23 @@ it('switches theme and language from the preferences', async () => {
   expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument()
   await i18n.changeLanguage('es')
 })
+
+it('marks the section in view in the section nav', async () => {
+  serve()
+  render(<App />)
+  const nav = await screen.findByRole('navigation', { name: 'Ajustes' })
+  await waitFor(() =>
+    expect(within(nav).getByRole('link', { name: 'Perfil' })).toHaveAttribute('aria-current', 'true'),
+  )
+  expect(within(nav).getByRole('link', { name: 'Sesiones' })).not.toHaveAttribute('aria-current')
+
+  Object.defineProperty(window, 'innerHeight', { value: 1000, configurable: true })
+  const tops = { perfil: -1800, preferencias: -1200, seguridad: -600, sesiones: 100, cuenta: 900 }
+  for (const [id, top] of Object.entries(tops)) {
+    document.getElementById(id)!.getBoundingClientRect = () => ({ top }) as DOMRect
+  }
+  window.dispatchEvent(new Event('scroll'))
+  await waitFor(() =>
+    expect(within(nav).getByRole('link', { name: 'Sesiones' })).toHaveAttribute('aria-current', 'true'),
+  )
+})

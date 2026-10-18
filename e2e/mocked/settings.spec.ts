@@ -63,3 +63,18 @@ test('switching the language keeps the settings page under the other prefix', as
   await page.reload()
   await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible()
 })
+
+test('the section nav follows the scroll and jumps to a section', async ({ page }) => {
+  await signedIn(page, {
+    '**/api/v1/auth/me': (route) => route.fulfill(json(SESSION.user)),
+    '**/api/v1/auth/sessions': (route) => route.fulfill(json([])),
+  })
+
+  await page.goto('/es/account')
+  const nav = page.getByRole('navigation', { name: 'Ajustes' })
+  await expect(nav.getByRole('link', { name: 'Perfil' })).toHaveAttribute('aria-current', 'true')
+
+  await nav.getByRole('link', { name: 'Sesiones' }).click()
+  await expect(nav.getByRole('link', { name: 'Sesiones' })).toHaveAttribute('aria-current', 'true')
+  await expect(page.getByRole('heading', { name: 'Dispositivos con sesión abierta' })).toBeInViewport()
+})
