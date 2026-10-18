@@ -8,10 +8,12 @@ import * as authApi from '@/api/auth'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
+import { useLangPath } from '@/lib/paths'
 
 export function ForgotPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const to = useLangPath()
   const describe = useApiErrorMessage()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
@@ -26,7 +28,7 @@ export function ForgotPasswordPage() {
   return (
     <AuthLayout
       footer={
-        <Link to="/login" className="font-semibold">
+        <Link to={to('/login')} className="font-semibold">
           {t('auth.backToLogin')}
         </Link>
       }
@@ -57,7 +59,7 @@ export function ForgotPasswordPage() {
               fullWidth
               className="min-h-12"
               onPress={() =>
-                void navigate(`/reset-password?email=${encodeURIComponent(email)}`)
+                void navigate(`${to('/reset-password')}?email=${encodeURIComponent(email)}`)
               }
             >
               {t('common.continue')}

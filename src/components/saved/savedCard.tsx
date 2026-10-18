@@ -10,6 +10,7 @@ import { formatDistance, formatDuration, formatRatio, formatRelative, formatScor
 import { surfaceLabelKey, surfaceSegments } from '@/lib/routeMetrics'
 import { readSavedResult, savedRouteKind } from '@/lib/savedRoute'
 import type { SavedRoute } from '@/types/api'
+import { useLangPath } from '@/lib/paths'
 
 const lift = 'transition-[translate,box-shadow] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
 
@@ -22,6 +23,7 @@ type Props = {
 
 export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
   const { t } = useTranslation()
+  const to = useLangPath()
   const { resolved } = useTheme()
   const result = readSavedResult(route)
   const kind = savedRouteKind(route)
@@ -82,7 +84,7 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
             </label>
           ) : (
             <Link
-              to={`/saved/${route.id}`}
+              to={to(`/saved/${route.id}`)}
               className="block truncate text-lg font-semibold tracking-tight transition-colors duration-150 group-hover:text-accent focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
             >
               {route.name}

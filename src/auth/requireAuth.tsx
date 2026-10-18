@@ -2,6 +2,7 @@ import { Spinner } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
+import { useLangPath } from '@/lib/paths'
 import { useAuth } from './useAuth'
 
 /**
@@ -12,6 +13,7 @@ export function RequireAuth() {
   const { t } = useTranslation()
   const { status } = useAuth()
   const location = useLocation()
+  const to = useLangPath()
 
   if (status === 'loading') {
     return (
@@ -22,7 +24,7 @@ export function RequireAuth() {
   }
 
   if (status === 'anonymous') {
-    return <Navigate to="/login" replace state={{ from: location }} />
+    return <Navigate to={to('/login')} replace state={{ from: location }} />
   }
 
   return <Outlet />
@@ -33,6 +35,7 @@ export function RedirectIfAuthenticated() {
   const { t } = useTranslation()
   const { status } = useAuth()
   const location = useLocation()
+  const to = useLangPath()
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname
 
   if (status === 'loading') {
@@ -44,7 +47,7 @@ export function RedirectIfAuthenticated() {
   }
 
   if (status === 'authenticated') {
-    return <Navigate to={from ?? '/loops'} replace />
+    return <Navigate to={from ?? to('/loops')} replace />
   }
 
   return <Outlet />

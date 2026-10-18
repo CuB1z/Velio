@@ -8,10 +8,12 @@ import * as authApi from '@/api/auth'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { AuthLayout } from '@/components/layout/authLayout'
 import { useCooldown } from '@/hooks/useCooldown'
+import { useLangPath } from '@/lib/paths'
 
 export function VerifyEmailPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const to = useLangPath()
   const [params] = useSearchParams()
   const describe = useApiErrorMessage()
 
@@ -23,7 +25,7 @@ export function VerifyEmailPage() {
 
   const verify = useMutation({
     mutationFn: () => authApi.verify({ email, code }),
-    onSuccess: () => void navigate('/login', { state: { notice: t('auth.verifyDone') } }),
+    onSuccess: () => void navigate(to('/login'), { state: { notice: t('auth.verifyDone') } }),
     onError: (cause) => setError(describe(cause)),
   })
 
@@ -39,7 +41,7 @@ export function VerifyEmailPage() {
   return (
     <AuthLayout
       footer={
-        <Link to="/register" className="font-semibold">
+        <Link to={to('/register')} className="font-semibold">
           {t('auth.verifyOtherEmail')}
         </Link>
       }

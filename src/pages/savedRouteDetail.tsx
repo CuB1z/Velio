@@ -23,12 +23,14 @@ import { formatDate, formatPercent, formatRelative } from '@/lib/format'
 import type { MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { readSavedResult } from '@/lib/savedRoute'
+import { useLangPath } from '@/lib/paths'
 
 export function SavedRouteDetailPage() {
   const { t } = useTranslation()
   const { focusPoint, onProfileHover } = useProfileFocus()
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const to = useLangPath()
   const client = useQueryClient()
   const describe = useApiErrorMessage()
 
@@ -58,7 +60,7 @@ export function SavedRouteDetailPage() {
     mutationFn: () => savedRoutesApi.remove(id),
     onSuccess: async () => {
       await client.invalidateQueries({ queryKey: ['savedRoutes'] })
-      void navigate('/saved')
+      void navigate(to('/saved'))
     },
     onError: (error) => setActionError(describe(error)),
   })
@@ -104,7 +106,7 @@ export function SavedRouteDetailPage() {
           isIconOnly
           className="size-11"
           aria-label={t('common.back')}
-          onPress={() => void navigate('/saved')}
+          onPress={() => void navigate(to('/saved'))}
         >
           <BackIcon />
         </Button>
@@ -133,7 +135,7 @@ export function SavedRouteDetailPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" className="min-h-11" onPress={() => void navigate('/loops')}>
+          <Button variant="ghost" className="min-h-11" onPress={() => void navigate(to('/loops'))}>
             {t('saved.recompute')}
           </Button>
           {result ? (
@@ -168,7 +170,7 @@ export function SavedRouteDetailPage() {
       {!result ? (
         <div className="mx-auto max-w-2xl p-8 text-center">
           <p className="text-sm text-muted">{t('saved.unreadable')}</p>
-          <Link to="/saved" className="mt-4 inline-block text-sm font-semibold">
+          <Link to={to('/saved')} className="mt-4 inline-block text-sm font-semibold">
             {t('common.back')}
           </Link>
         </div>

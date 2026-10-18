@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { AuthLayout } from '@/components/layout/authLayout'
+import { useLangPath } from '@/lib/paths'
 
 /**
  * OAuth callback: reads the result from the URL fragment, which keeps tokens out of server logs, proxies and Referer.
@@ -14,6 +15,7 @@ import { AuthLayout } from '@/components/layout/authLayout'
 export function OAuthCallbackPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const to = useLangPath()
   const { adoptTokens } = useAuth()
   const describe = useApiErrorMessage()
   const [error, setError] = useState<string | null>(null)
@@ -49,12 +51,12 @@ export function OAuthCallbackPage() {
           refresh_token: refreshToken,
           token_type: 'bearer',
         })
-        void navigate('/loops', { replace: true })
+        void navigate(to('/loops'), { replace: true })
       } catch (cause) {
         setError(describe(cause))
       }
     })()
-  }, [adoptTokens, navigate, describe, t])
+  }, [adoptTokens, navigate, describe, t, to])
 
   return (
     <AuthLayout>
@@ -63,7 +65,7 @@ export function OAuthCallbackPage() {
           <>
             <h1 className="text-2xl font-semibold tracking-tight">{t('error.title')}</h1>
             <p className="text-sm text-muted">{error}</p>
-            <Button variant="primary" className="min-h-12" onPress={() => void navigate('/login')}>
+            <Button variant="primary" className="min-h-12" onPress={() => void navigate(to('/login'))}>
               {t('auth.backToLogin')}
             </Button>
           </>

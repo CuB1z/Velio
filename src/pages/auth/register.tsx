@@ -12,12 +12,14 @@ import { PasswordInput, TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { isPasswordValid } from '@/lib/passwordPolicy'
+import { useLangPath } from '@/lib/paths'
 import { Divider } from './divider'
 
 export function RegisterPage() {
   const { t } = useTranslation()
   const { register } = useAuth()
   const navigate = useNavigate()
+  const to = useLangPath()
   const describe = useApiErrorMessage()
 
   const [fullName, setFullName] = useState('')
@@ -29,7 +31,7 @@ export function RegisterPage() {
   const mutation = useMutation({
     mutationFn: () =>
       register({ email, password, full_name: fullName.trim() || undefined }),
-    onSuccess: () => void navigate(`/verify?email=${encodeURIComponent(email)}`),
+    onSuccess: () => void navigate(`${to('/verify')}?email=${encodeURIComponent(email)}`),
     onError: (cause) => setError(describe(cause)),
   })
   const retryIn = useRetryAfter(mutation.error)
@@ -41,7 +43,7 @@ export function RegisterPage() {
       footer={
         <>
           {t('auth.hasAccount')}{' '}
-          <Link to="/login" className="font-semibold">
+          <Link to={to('/login')} className="font-semibold">
             {t('auth.submitLogin')}
           </Link>
         </>

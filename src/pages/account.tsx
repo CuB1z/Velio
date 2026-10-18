@@ -16,7 +16,7 @@ import { SegmentedControl } from '@/components/common/segmentedControl'
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'
 import i18n, { LANGUAGE_INFO, LANGUAGES, type Language } from '@/i18n'
 import { cn } from '@/lib/cn'
-import { swapLang } from '@/lib/paths'
+import { swapLang, useLangPath } from '@/lib/paths'
 import { formatDateTime } from '@/lib/format'
 import { parseUserAgent } from '@/lib/userAgent'
 import type { AccountStatus, DeviceSession } from '@/types/api'
@@ -48,6 +48,7 @@ export function AccountPage() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const to = useLangPath()
   const client = useQueryClient()
   const describe = useApiErrorMessage()
   const { preference, setPreference } = useTheme()
@@ -275,7 +276,7 @@ export function AccountPage() {
                   variant="outline"
                   className="min-h-11"
                   onPress={() => {
-                    void navigate('/')
+                    void navigate(to('/'))
                     void logout()
                   }}
                 >

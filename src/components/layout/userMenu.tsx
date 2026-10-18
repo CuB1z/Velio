@@ -7,14 +7,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 import { LANGUAGE_INFO, LANGUAGES } from '@/i18n'
 import { cn } from '@/lib/cn'
-import { swapLang } from '@/lib/paths'
+import { swapLang, useLangPath } from '@/lib/paths'
 
 export function UserMenu() {
   const { t } = useTranslation()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const onAccount = location.pathname.endsWith('/account')
+  const to = useLangPath()
+  const onAccount = location.pathname === to('/account')
 
   const initials = (user?.full_name || user?.email || '?')
     .split(/[\s@.]+/)
@@ -43,9 +44,9 @@ export function UserMenu() {
       <Dropdown.Popover>
         <Dropdown.Menu
           onAction={(key) => {
-            if (key === 'account') void navigate('/account')
+            if (key === 'account') void navigate(to('/account'))
             else if (key === 'logout') {
-              void navigate('/')
+              void navigate(to('/'))
               void logout()
             }
             else if (typeof key === 'string' && key.startsWith('lang:')) {

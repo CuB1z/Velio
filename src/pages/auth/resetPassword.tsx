@@ -10,10 +10,12 @@ import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
 import { isPasswordValid } from '@/lib/passwordPolicy'
+import { useLangPath } from '@/lib/paths'
 
 export function ResetPasswordPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const to = useLangPath()
   const [params] = useSearchParams()
   const describe = useApiErrorMessage()
 
@@ -24,7 +26,7 @@ export function ResetPasswordPage() {
 
   const mutation = useMutation({
     mutationFn: () => authApi.resetPassword({ email, code, new_password: password }),
-    onSuccess: () => void navigate('/login', { state: { notice: t('auth.resetDone') } }),
+    onSuccess: () => void navigate(to('/login'), { state: { notice: t('auth.resetDone') } }),
     onError: (cause) => setError(describe(cause)),
   })
 
@@ -33,7 +35,7 @@ export function ResetPasswordPage() {
   return (
     <AuthLayout
       footer={
-        <Link to="/login" className="font-semibold">
+        <Link to={to('/login')} className="font-semibold">
           {t('auth.backToLogin')}
         </Link>
       }

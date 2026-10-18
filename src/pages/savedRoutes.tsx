@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/common/pageHeader'
 import { SegmentedControl } from '@/components/common/segmentedControl'
 import { SavedCard, SavedCardSkeleton } from '@/components/saved/savedCard'
 import { SavedStats } from '@/components/saved/savedStats'
+import { useLangPath } from '@/lib/paths'
 
 const PAGE_SIZES = ['12', '24', '48'] as const
 type PageSize = (typeof PAGE_SIZES)[number]
@@ -19,6 +20,7 @@ type PageSize = (typeof PAGE_SIZES)[number]
 export function SavedRoutesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const to = useLangPath()
   const client = useQueryClient()
   const describe = useApiErrorMessage()
 
@@ -109,7 +111,7 @@ export function SavedRoutesPage() {
                 {t('saved.select')}
               </Button>
             ) : null}
-            <Button variant="primary" className="min-h-11" onPress={() => void navigate('/loops')}>
+            <Button variant="primary" className="min-h-11" onPress={() => void navigate(to('/loops'))}>
               {t('saved.newRoute')}
             </Button>
           </>
@@ -132,10 +134,10 @@ export function SavedRoutesPage() {
           <h2 className="mt-6 text-xl font-semibold tracking-tight text-balance">{t('saved.empty')}</h2>
           <p className="mt-2 max-w-sm text-muted text-pretty">{t('saved.emptyHint')}</p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
-            <Button variant="primary" className="min-h-11" onPress={() => void navigate('/loops')}>
+            <Button variant="primary" className="min-h-11" onPress={() => void navigate(to('/loops'))}>
               {t('saved.emptyAction')}
             </Button>
-            <Button variant="outline" className="min-h-11" onPress={() => void navigate('/routes')}>
+            <Button variant="outline" className="min-h-11" onPress={() => void navigate(to('/routes'))}>
               {t('saved.emptyRoute')}
             </Button>
           </div>
@@ -156,7 +158,7 @@ export function SavedRoutesPage() {
           {query.isLoading || selecting ? null : (
             <li className="flex">
               <Link
-                to="/loops"
+                to={to('/loops')}
                 className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-foreground/20 p-6 text-center text-muted transition-colors duration-150 hover:border-foreground/40 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <PlusIcon />

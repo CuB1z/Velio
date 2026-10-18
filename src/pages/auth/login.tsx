@@ -11,6 +11,7 @@ import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
+import { useLangPath } from '@/lib/paths'
 import { Divider } from './divider'
 
 export function LoginPage() {
@@ -18,6 +19,7 @@ export function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const to = useLangPath()
   const describe = useApiErrorMessage()
 
   const [email, setEmail] = useState('')
@@ -28,12 +30,12 @@ export function LoginPage() {
     mutationFn: () => login({ email, password }),
     onSuccess: () => {
       const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname
-      void navigate(from ?? '/loops', { replace: true })
+      void navigate(from ?? to('/loops'), { replace: true })
     },
     onError: (cause) => {
       // An unverified account isn't a form error: it's the next step.
       if (isApiError(cause) && cause.code === 'EMAIL_NOT_VERIFIED') {
-        void navigate(`/verify?email=${encodeURIComponent(email)}`)
+        void navigate(`${to('/verify')}?email=${encodeURIComponent(email)}`)
         return
       }
       setError(describe(cause))
@@ -46,7 +48,7 @@ export function LoginPage() {
       footer={
         <>
           {t('auth.noAccount')}{' '}
-          <Link to="/register" className="font-semibold">
+          <Link to={to('/register')} className="font-semibold">
             {t('auth.createOne')}
           </Link>
         </>
@@ -83,7 +85,7 @@ export function LoginPage() {
           isRequired
           errorMessage={error ?? undefined}
           labelAction={
-            <Link to="/forgot-password" className="text-xs">
+            <Link to={to('/forgot-password')} className="text-xs">
               {t('auth.forgot')}
             </Link>
           }

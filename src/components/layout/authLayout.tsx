@@ -8,6 +8,7 @@ import { Reveal } from '@/components/landing/reveal'
 import { ScoreCard } from '@/components/route/scoreCard'
 import { formatDistance, formatSigned } from '@/lib/format'
 import { LANDING_EXAMPLES } from '@/pages/landingExamples'
+import { useLangPath } from '@/lib/paths'
 import { VelioLogo } from './logo'
 import { ThemeToggle } from './themeToggle'
 
@@ -17,12 +18,13 @@ const SIERRA = LANDING_EXAMPLES[1]
 
 export function AuthLayout({ children, footer }: Props) {
   const { t } = useTranslation()
+  const to = useLangPath()
 
   return (
     <div className="flex min-h-full bg-background text-foreground [--field-background:var(--surface)]">
       <div className="flex w-full flex-col px-4 py-6 sm:px-10 sm:py-8 lg:w-1/2">
         <div className="flex items-center justify-between">
-          <Link to="/" aria-label="Velio" className="inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+          <Link to={to('/')} aria-label="Velio" className="inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             <VelioLogo height={26} />
           </Link>
           <ThemeToggle />

@@ -5,6 +5,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 import { AnalyzeIcon, BookmarkIcon, LoopIcon, RouteIcon } from '@/components/common/icons'
 import { cn } from '@/lib/cn'
+import { useLangPath } from '@/lib/paths'
 import { VelioLogo, VelioMark } from './logo'
 import { ThemeToggle } from './themeToggle'
 import { UserMenu } from './userMenu'
@@ -20,6 +21,7 @@ const NAV: NavItem[] = [
 
 export function AppShell() {
   const { t } = useTranslation()
+  const to = useLangPath()
 
   return (
     <div className="flex h-full bg-background text-foreground">
@@ -37,7 +39,7 @@ export function AppShell() {
         className="hidden w-[72px] shrink-0 flex-col items-center border-e border-border bg-background py-4 md:flex"
       >
         <NavLink
-          to="/loops"
+          to={to('/loops')}
           aria-label={t('app.name')}
           className="mb-4 flex size-10 items-center justify-center rounded-xl text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
@@ -48,7 +50,7 @@ export function AppShell() {
           {NAV.map((item) => (
             <li key={item.to}>
               <NavLink
-                to={item.to}
+                to={to(item.to)}
                 className={({ isActive }) =>
                   cn(
                     'flex w-14 flex-col items-center gap-1 rounded-xl px-1 py-2',
@@ -76,7 +78,7 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile-only header: on desktop the rail takes over */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3 md:hidden">
-          <NavLink to="/" className="flex items-center" aria-label={t('app.name')}>
+          <NavLink to={to('/')} className="flex items-center" aria-label={t('app.name')}>
             <VelioLogo height={24} decorative />
           </NavLink>
           <div className="flex items-center gap-1">
@@ -106,7 +108,7 @@ export function AppShell() {
           {NAV.map((item) => (
             <NavLink
               key={item.to}
-              to={item.to}
+              to={to(item.to)}
               className={({ isActive }) =>
                 cn(
                   'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors',

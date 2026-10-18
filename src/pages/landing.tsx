@@ -14,6 +14,7 @@ import { VelioLogo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/layout/themeToggle'
 import { SurfaceBar } from '@/components/route/surfaceBar'
 import { formatDistance, formatRatio } from '@/lib/format'
+import { useLangPath } from '@/lib/paths'
 import { LANDING_EXAMPLES, LANDING_REPAIR } from './landingExamples'
 
 const SIERRA = LANDING_EXAMPLES[1]
@@ -50,6 +51,7 @@ const footerLink = 'inline-flex min-h-10 items-center text-sm text-muted transit
 export function LandingPage() {
   const { t } = useTranslation()
   const { status } = useAuth()
+  const to = useLangPath()
   const authenticated = status === 'authenticated'
   const primary = { to: authenticated ? '/loops' : '/register', label: t(authenticated ? 'landing.openApp' : 'landing.heroCta') }
 
@@ -71,7 +73,7 @@ export function LandingPage() {
     <div className="min-h-full overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
         <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
-          <Link to="/" aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
+          <Link to={to('/')} aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
             <VelioLogo height={20} decorative />
           </Link>
 
@@ -91,14 +93,14 @@ export function LandingPage() {
             <ThemeToggle />
             {authenticated ? null : (
               <Link
-                to="/login"
+                to={to('/login')}
                 className="hidden min-h-10 items-center rounded-full px-3 text-sm font-medium transition-colors duration-150 hover:text-muted sm:inline-flex"
               >
                 {t('landing.signIn')}
               </Link>
             )}
             <Link
-              to={primary.to}
+              to={to(primary.to)}
               className={`inline-flex min-h-10 items-center rounded-full bg-foreground px-4 text-sm font-semibold text-background hover:opacity-90 ${fluid} ${focus}`}
             >
               {authenticated ? t('landing.openApp') : t('landing.getStarted')}
@@ -116,7 +118,7 @@ export function LandingPage() {
             </h1>
             <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.heroBody')}</p>
             <div className="flex flex-wrap items-center justify-center gap-6 pt-2">
-              <Link to={primary.to} className={primaryPill}>
+              <Link to={to(primary.to)} className={primaryPill}>
                 {primary.label}
               </Link>
               <a href={`#${ids.product}`} className={`inline-flex items-center gap-2 text-base font-medium ${focus} rounded-md`}>
@@ -331,7 +333,7 @@ export function LandingPage() {
               {t('landing.ctaTitle')}
             </h2>
             <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.ctaBody')}</p>
-            <Link to={primary.to} className={primaryPill}>
+            <Link to={to(primary.to)} className={primaryPill}>
               {primary.label}
             </Link>
             <span className="eyebrow">{t('landing.ctaNote')}</span>
@@ -342,7 +344,7 @@ export function LandingPage() {
       <footer className="border-t border-border">
         <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
           <div className="flex flex-col items-start gap-4">
-            <Link to="/" aria-label="Velio">
+            <Link to={to('/')} aria-label="Velio">
               <VelioLogo height={20} decorative />
             </Link>
             <p className="max-w-xs text-sm text-muted">{t('landing.footerRights')}</p>
@@ -364,8 +366,8 @@ export function LandingPage() {
                 ['/analyze', 'nav.analyze'],
                 ['/saved', 'nav.saved'],
               ] as const
-            ).map(([to, label]) => (
-              <Link key={to} to={to} className={footerLink}>
+            ).map(([path, label]) => (
+              <Link key={path} to={to(path)} className={footerLink}>
                 {t(label)}
               </Link>
             ))}
