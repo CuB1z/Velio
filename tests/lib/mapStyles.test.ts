@@ -1,18 +1,18 @@
 import type { StyleSpecification } from 'maplibre-gl'
 import { describe, expect, it } from 'vitest'
 
-import { tintStyle, tintToSlate } from '@/lib/mapStyles'
+import { tintStyle, tintToCharcoal } from '@/lib/mapStyles'
 
-describe('tintToSlate', () => {
-  it('moves every grey notation onto the slate hue and keeps alpha', () => {
-    expect(tintToSlate('#000')).toBe('hsla(210, 24.3%, 6.5%, 1)')
-    expect(tintToSlate('rgb(27 ,27 ,29)')).toMatch(/^hsla\(210, /)
-    expect(tintToSlate('rgba(0,0,0,0.7)')).toBe('hsla(210, 24.3%, 6.5%, 0.7)')
-    expect(tintToSlate('hsla(0,0%,85%,0.53)')).toMatch(/, 0\.53\)$/)
+describe('tintToCharcoal', () => {
+  it('moves every colour notation onto neutral greys and keeps alpha', () => {
+    expect(tintToCharcoal('#000')).toBe('hsla(0, 0%, 4.0%, 1)')
+    expect(tintToCharcoal('rgb(27 ,27 ,29)')).toMatch(/^hsla\(0, 0%, /)
+    expect(tintToCharcoal('rgba(0,0,0,0.7)')).toBe('hsla(0, 0%, 4.0%, 0.7)')
+    expect(tintToCharcoal('hsla(0,0%,85%,0.53)')).toMatch(/, 0\.53\)$/)
   })
 
   it('preserves lightness order', () => {
-    const l = (c: string) => Number(tintToSlate(c).split(', ')[2].replace('%', ''))
+    const l = (c: string) => Number(tintToCharcoal(c).split(', ')[2].replace('%', ''))
     expect(l('#000')).toBeLessThan(l('rgb(12,12,12)'))
     expect(l('rgb(12,12,12)')).toBeLessThan(l('#181818'))
   })
@@ -32,9 +32,9 @@ describe('tintToSlate', () => {
       ],
     } as StyleSpecification
     const [bg, motorway] = tintStyle(style).layers as { paint: Record<string, unknown> }[]
-    expect(bg.paint['background-color']).toMatch(/^hsla\(210/)
+    expect(bg.paint['background-color']).toMatch(/^hsla\(0, 0%/)
     const expression = motorway.paint['line-color'] as unknown[]
     expect(expression.slice(0, 3)).toEqual(['interpolate', ['linear'], ['zoom']])
-    expect(expression[6]).toBe('hsla(210, 24.3%, 6.5%, 1)')
+    expect(expression[6]).toBe('hsla(0, 0%, 4.0%, 1)')
   })
 })

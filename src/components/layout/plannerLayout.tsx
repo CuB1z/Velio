@@ -31,9 +31,11 @@ export function PlannerLayout({
 
   return (
     <div className="flex h-full flex-col lg:flex-row">
-      <aside className="order-2 flex shrink-0 flex-col bg-background p-4 pb-0 lg:order-1 lg:relative lg:z-10 lg:h-full lg:w-[420px] lg:overflow-y-auto lg:rounded-e-3xl lg:px-7 lg:pt-6 lg:ring-1 lg:ring-border lg:[scrollbar-gutter:stable]">
-        {heading ? <div className="flex flex-col gap-1.5 pb-5">{heading}</div> : null}
-        {form}
+      <aside className="order-2 flex shrink-0 flex-col bg-background lg:order-1 lg:relative lg:z-10 lg:h-full lg:w-[420px] lg:overflow-hidden lg:rounded-e-3xl lg:ring-1 lg:ring-border">
+        <div className="panel-scroll flex flex-1 flex-col p-4 pb-0 lg:min-h-0 lg:overflow-y-auto lg:px-7 lg:pt-6">
+          {heading ? <div className="flex flex-col gap-1.5 pb-5">{heading}</div> : null}
+          {form}
+        </div>
       </aside>
 
       <div className="order-1 flex min-h-0 flex-1 flex-col lg:order-2 lg:-ms-6">

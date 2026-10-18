@@ -22,7 +22,7 @@ export function AppShell() {
   const { t } = useTranslation()
 
   return (
-    <div className="flex h-full bg-background text-foreground">
+    <div className="flex h-full bg-surface text-foreground">
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-4 focus:py-2 focus:text-accent-foreground"
@@ -34,7 +34,7 @@ export function AppShell() {
           Own surface and border so it reads as chrome, not content. */}
       <nav
         aria-label={t('app.name')}
-        className="hidden w-[72px] shrink-0 flex-col items-center border-e border-border bg-background py-4 md:flex"
+        className="hidden w-[72px] shrink-0 flex-col items-center bg-surface py-4 md:flex"
       >
         <NavLink
           to="/loops"
@@ -73,9 +73,9 @@ export function AppShell() {
         </div>
       </nav>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col bg-background md:overflow-hidden md:rounded-s-3xl md:ring-1 md:ring-border">
         {/* Mobile-only header: on desktop the rail takes over */}
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3 md:hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-surface px-3 md:hidden">
           <NavLink to="/" className="flex items-center" aria-label={t('app.name')}>
             <VelioLogo height={24} decorative />
           </NavLink>
@@ -85,7 +85,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main id="contenido" className="min-h-0 flex-1 overflow-auto">
+        <main id="contenido" className="panel-scroll min-h-0 flex-1 overflow-auto">
           <Suspense
             fallback={
               <div className="flex h-full min-h-[60vh] items-center justify-center">
@@ -100,7 +100,7 @@ export function AppShell() {
         {/* Mobile bottom bar */}
         <nav
           aria-label={t('app.name')}
-          className="flex shrink-0 items-stretch border-t border-border bg-background md:hidden"
+          className="flex shrink-0 items-stretch border-t border-border bg-surface md:hidden"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           {NAV.map((item) => (
