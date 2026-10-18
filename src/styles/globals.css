@@ -3,125 +3,126 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Velio theme: tinted background, white cards separated by elevation.
-   Colour pairs are checked for WCAG AA (4.5:1); recheck when changing them. */
+/* Velio theme: black ground, near-black surfaces separated by hairlines, a
+   pistachio accent. Light inverts the ground and uses an olive accent that
+   reads on white. Colour pairs are checked for WCAG AA (4.5:1); recheck when
+   changing them. */
 
 @layer base {
   :root,
   .light,
   [data-theme="light"] {
-    --velio-accent: #0e7c86;
+    --velio-accent: #66700f;
+    --velio-accent-text: #66700f;
 
-    --background: #f7f8fa;
-    --foreground: #111827;
+    --background: #ffffff;
+    --foreground: #0a0a0a;
 
-    --surface: #ffffff;
+    --surface: #fafafa;
     --surface-foreground: var(--foreground);
-    --surface-secondary: #eef1f6;
-    --surface-tertiary: #e3e8f0;
+    --surface-secondary: #f0f0f0;
+    --surface-tertiary: #f5f5f5;
     /* Hover tint, one step below --surface. */
-    --surface-hover: #e9edf4;
+    --surface-hover: #ececec;
 
     --overlay: #ffffff;
     --overlay-foreground: var(--foreground);
-    --overlay-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 40px -12px rgba(16, 24, 40, 0.18);
+    --overlay-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(0, 0, 0, 0.04), 0 16px 40px -12px rgba(0, 0, 0, 0.16);
 
-    --muted: #5b6476;
+    --muted: #6b6b6b;
 
     --accent: var(--velio-accent);
     --accent-foreground: #ffffff;
-    --accent-soft: #d8f0f2;
-    --accent-soft-foreground: #0a5c64;
+    --accent-soft: #eef3c9;
+    --accent-soft-foreground: #4b5308;
 
     /* HeroUI fields ship borderless, so the border width is restored here.
        --field-shadow must stay a valid transparent shadow: `none` breaks the
        composed ring-2 focus ring. */
-    --field-background: #f4f6fa;
+    --field-background: #f0f0f0;
     --field-foreground: var(--foreground);
-    --field-border: #dde3ec;
+    --field-border: #e0e0e0;
     --field-border-width: 1px;
     --border-width-field: 1px;
     --field-shadow: 0 0 0 0 transparent;
     --field-focus: #ffffff;
 
-    --default: #eef1f6;
+    --default: #f0f0f0;
     --default-foreground: var(--foreground);
 
-    --border: #e2e7ef;
-    --separator: #edf0f5;
+    --border: #e5e5e5;
+    --separator: #efefef;
 
     /* Chart series: the accent comes first and nothing else resembles it. */
-    --chart-1: #0e7c86;
+    --chart-1: #7d8c14;
     --chart-2: #6366f1;
     --chart-3: #d97706;
     --chart-4: #db2777;
     --chart-5: #16a34a;
-    --chart-neutral: #94a3b8;
-    --link: var(--velio-accent);
+    --chart-neutral: #a3a3a3;
+    --link: var(--velio-accent-text);
 
     /* Inverted landing sections: dark in both themes, so defined once here
        and not repeated under .dark. */
-    --ink: #121a21;
-    --ink-muted: #aebbc7;
-    --ink-accent: #5fd3de;
+    --ink: #0c0c0c;
+    --ink-muted: #a3a3a3;
+    --ink-accent: #d1ec31;
   }
 
   .dark,
   [data-theme="dark"] {
-    /* The fill accent carries white text; text on the background needs the
-       lighter accent. */
-    --velio-accent: #2ba8b4;
-    --velio-accent-text: #5fd3de;
+    --velio-accent: #d1ec31;
+    --velio-accent-text: #d1ec31;
 
-    --background: #0f1419;
-    --foreground: #f3f6f9;
+    --background: #000000;
+    --foreground: #ffffff;
 
-    --surface: #182029;
+    --surface: #0c0c0c;
     --surface-foreground: var(--foreground);
-    --surface-secondary: #1e2832;
-    --surface-tertiary: #141b22;
-    --surface-hover: #243040;
+    --surface-secondary: #161616;
+    --surface-tertiary: #111111;
+    --surface-hover: #1c1c1c;
 
-    --overlay: #182029;
+    --overlay: #080808;
     --overlay-foreground: var(--foreground);
-    --overlay-shadow: 0 0 0 1px var(--border), 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 44px -12px rgba(0, 0, 0, 0.6);
+    --overlay-shadow: 0 0 0 1px var(--border), 0 18px 44px -12px rgba(0, 0, 0, 0.7);
 
-    --muted: #94a3b8;
+    --muted: #a3a3a3;
 
     --accent: var(--velio-accent);
-    --accent-foreground: #06202a;
-    --accent-soft: #113039;
+    --accent-foreground: #000000;
+    --accent-soft: color-mix(in srgb, var(--velio-accent) 16%, #141414);
     --accent-soft-foreground: var(--velio-accent-text);
 
     /* Light :root values leak in here (that block follows HeroUI's .dark in
        the cascade), so every override above must be repeated below. */
-    --field-background: #182029;
+    --field-background: #161616;
     --field-foreground: var(--foreground);
-    --field-border: #33414f;
+    --field-border: #262626;
     --field-border-width: 1px;
     --border-width-field: 1px;
     --field-shadow: 0 0 0 0 transparent;
-    --field-focus: #1e2832;
+    --field-focus: #1c1c1c;
 
-    --default: #1e2832;
+    --default: #161616;
     --default-foreground: var(--foreground);
 
-    --border: #2a3642;
-    --separator: #222c36;
+    --border: #202020;
+    --separator: #1a1a1a;
 
-    --chart-1: #2ba8b4;
+    --chart-1: #d1ec31;
     --chart-2: #818cf8;
     --chart-3: #f59e0b;
     --chart-4: #f472b6;
     --chart-5: #4ade80;
-    --chart-neutral: #64748b;
+    --chart-neutral: #525252;
     --link: var(--velio-accent-text);
   }
 }
 
 @theme inline {
-  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Tailwind v4 only generates utilities from --color-* tokens, so custom
      tokens need their mapping here. */
@@ -132,7 +133,7 @@
 
   --radius-lg: 12px;
   --radius-xl: 16px;
-  --radius-2xl: 22px;
+  --radius-2xl: 24px;
 }
 
 /* Pill buttons. The components layer beats HeroUI's styles while
@@ -149,6 +150,14 @@
   }
   .switch {
     flex-direction: row;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
 }
 
@@ -197,18 +206,15 @@ html {
 
 body {
   font-family: var(--font-sans);
-  /* 17px body text; Tailwind utilities are rem-based, so components keep
-     their size. */
-  font-size: 17px;
-  line-height: 1.47;
-  letter-spacing: -0.374px;
+  font-size: 16px;
+  line-height: 1.5;
   background: var(--background);
   color: var(--foreground);
 }
 
 h1, h2, h3 {
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 /* Tailwind v4 dropped the pointer cursor on buttons; restore it for
@@ -223,10 +229,10 @@ h1, h2, h3 {
   }
 }
 
-/* Soft shadows vanish on dark backgrounds, so these are denser. */
+/* Shadows vanish on a black ground: surfaces separate by hairline there. */
 .dark {
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
-  --shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 18px 44px -12px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 0 0 1px var(--border);
+  --shadow-raised: 0 0 0 1px var(--border), 0 18px 44px -12px rgba(0, 0, 0, 0.7);
 }
 
 /* Tabular figures in the UI font so metric columns don't jitter; use
