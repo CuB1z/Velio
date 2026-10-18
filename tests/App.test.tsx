@@ -11,7 +11,7 @@ beforeAll(async () => {
 beforeEach(() => {
   localStorage.clear()
   vi.restoreAllMocks()
-  window.history.pushState({}, '', '/')
+  window.history.pushState({}, '', '/es')
 })
 
 describe('app bootstrap', () => {
@@ -29,7 +29,7 @@ describe('app bootstrap', () => {
   })
 
   it('the planner requires a session and redirects to login', async () => {
-    window.history.pushState({}, '', '/loops')
+    window.history.pushState({}, '', '/es/loops')
     render(<App />)
 
     await waitFor(() => {
@@ -38,7 +38,7 @@ describe('app bootstrap', () => {
   })
 
   it('tries to exchange a stored refresh token before deciding', async () => {
-    window.history.pushState({}, '', '/loops')
+    window.history.pushState({}, '', '/es/loops')
     localStorage.setItem('velio.refresh', 'un-token')
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ error: 'INVALID_REFRESH_TOKEN', message: 'no vale' }), {
@@ -57,5 +57,33 @@ describe('app bootstrap', () => {
     })
     // A dead refresh token must not stay stored.
     expect(localStorage.getItem('velio.refresh')).toBeNull()
+  })
+})
+
+describe('language routes', () => {
+  it('serves the default language without a prefix', async () => {
+    window.history.pushState({}, '', '/?ref=x')
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Loops cut to your distance/)
+    expect(window.location.pathname + window.location.search).toBe('/?ref=x')
+    expect(document.documentElement.lang).toBe('en')
+    await i18n.changeLanguage('es')
+  })
+
+  it('strips the default prefix and keeps the rest of the path', async () => {
+    window.history.pushState({}, '', '/en/loops')
+    render(<App />)
+
+    await waitFor(() => expect(window.location.pathname).toBe('/login'))
+    await i18n.changeLanguage('es')
+  })
+
+  it('renders Spanish under /es and marks the document language', async () => {
+    window.history.pushState({}, '', '/es')
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Circuitos a tu medida/)
+    expect(document.documentElement.lang).toBe('es')
   })
 })

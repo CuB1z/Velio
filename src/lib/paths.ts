@@ -1,9 +1,10 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { isLanguage } from '@/i18n/languages'
+import { DEFAULT_LANGUAGE, isLanguage } from '@/i18n/languages'
 
 export function withLang(path: string, lang: string): string {
+  if (lang === DEFAULT_LANGUAGE) return path
   return `/${lang}${path === '/' ? '' : path}`
 }
 

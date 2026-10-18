@@ -12,7 +12,7 @@ beforeAll(async () => {
 beforeEach(() => {
   localStorage.clear()
   vi.restoreAllMocks()
-  window.history.pushState({}, '', '/login')
+  window.history.pushState({}, '', '/es/login')
 })
 
 it('a 429 keeps the submit disabled with a countdown until Retry-After runs out', async () => {

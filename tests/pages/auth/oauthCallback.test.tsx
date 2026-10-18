@@ -17,7 +17,7 @@ beforeEach(() => {
 
 describe('OAuth callback', () => {
   it('adopts the fragment tokens and clears the URL', async () => {
-    window.history.pushState({}, '', '/oauth/callback#access_token=at&refresh_token=rt&token_type=bearer')
+    window.history.pushState({}, '', '/es/oauth/callback#access_token=at&refresh_token=rt&token_type=bearer')
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       if (String(input).includes('/auth/me')) {
         return new Response(JSON.stringify(USER), { status: 200 })
@@ -38,7 +38,7 @@ describe('OAuth callback', () => {
   })
 
   it('shows the fragment error instead of a blank page', async () => {
-    window.history.pushState({}, '', '/oauth/callback#error=OAUTH_ERROR&message=estado+caducado')
+    window.history.pushState({}, '', '/es/oauth/callback#error=OAUTH_ERROR&message=estado+caducado')
     render(<App />)
 
     await waitFor(() => {

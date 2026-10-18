@@ -43,7 +43,7 @@ beforeEach(() => {
   localStorage.clear()
   vi.restoreAllMocks()
   mapProps.current = null
-  window.history.pushState({}, '', '/loops')
+  window.history.pushState({}, '', '/es/loops')
 })
 
 it('the generated route reaches the map', async () => {

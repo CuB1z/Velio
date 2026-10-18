@@ -23,7 +23,7 @@ beforeAll(async () => {
 beforeEach(() => {
   localStorage.clear()
   vi.restoreAllMocks()
-  window.history.pushState({}, '', '/loops')
+  window.history.pushState({}, '', '/es/loops')
 })
 
 describe('loop planner', () => {

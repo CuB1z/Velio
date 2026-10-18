@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
+
+beforeAll(() => {
+  document.documentElement.lang = 'es'
+})
 
 import {
   formatCoordinates,

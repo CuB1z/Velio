@@ -77,7 +77,7 @@ beforeEach(() => {
   localStorage.setItem('velio.refresh', 'refresh-1')
   vi.restoreAllMocks()
   mapProps.current = null
-  window.history.pushState({}, '', '/loops')
+  window.history.pushState({}, '', '/es/loops')
 })
 
 it('shows progress and the first loop before the result arrives', async () => {

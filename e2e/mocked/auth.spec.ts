@@ -9,7 +9,7 @@ test('a guest is sent to the login and returns to the page they asked for', asyn
     '**/api/v1/auth/login': (route) => route.fulfill(json(SESSION)),
     '**/api/v1/routes/saved*': (route) => route.fulfill(emptyList),
   })
-  await page.goto('/saved')
+  await page.goto('/es/saved')
   await expect(page).toHaveURL(/\/login$/)
 
   await page.getByLabel(/Correo electrónico/).fill('marta@velio.cc')
@@ -22,7 +22,7 @@ test('a guest is sent to the login and returns to the page they asked for', asyn
 
 test('registering needs a valid password and the terms, then asks for the emailed code', async ({ page }) => {
   await mockApi(page, { '**/api/v1/auth/register': (route) => route.fulfill(json(SESSION.user, 201)) })
-  await page.goto('/register')
+  await page.goto('/es/register')
   const submit = page.getByRole('button', { name: 'Crear cuenta' })
   await expect(submit).toBeDisabled()
 
@@ -44,7 +44,7 @@ test('a rate limited login counts the Retry-After down before allowing another t
     '**/api/v1/auth/login': (route) =>
       route.fulfill({ ...json({ error: 'RATE_LIMITED', message: 'Too many requests' }, 429), headers: { 'retry-after': '2' } }),
   })
-  await page.goto('/login')
+  await page.goto('/es/login')
   await page.getByLabel(/Correo electrónico/).fill('marta@velio.cc')
   await page.getByLabel(/^Contraseña/).fill('Ruta2026x')
   await page.getByRole('button', { name: 'Entrar' }).click()

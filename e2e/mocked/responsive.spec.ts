@@ -7,14 +7,14 @@ const overflow = (page: import('@playwright/test').Page) =>
 
 test('the landing fits the screen without horizontal scroll', async ({ page }) => {
   await mockApi(page)
-  await page.goto('/')
+  await page.goto('/es')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   expect(await overflow(page)).toBeLessThanOrEqual(0)
 })
 
 test('the login keeps only the form, without the product panel', async ({ page }) => {
   await mockApi(page)
-  await page.goto('/login')
+  await page.goto('/es/login')
   await expect(page.getByRole('button', { name: 'Entrar' })).toBeVisible()
   await expect(page.getByText('Circuitos a tu medida, puntuados antes de salir.')).toBeHidden()
   expect(await overflow(page)).toBeLessThanOrEqual(0)
@@ -22,7 +22,7 @@ test('the login keeps only the form, without the product panel', async ({ page }
 
 test('the loop planner stacks the map over the form', async ({ page }) => {
   await signedIn(page)
-  await page.goto('/loops')
+  await page.goto('/es/loops')
   const map = page.locator('.maplibregl-canvas')
   const submit = page.getByRole('button', { name: 'Generar ruta' })
   await expect(map).toBeVisible()

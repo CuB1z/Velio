@@ -4,8 +4,8 @@ import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 
 import { RedirectIfAuthenticated, RequireAuth } from '@/auth/requireAuth'
 import { AppShell } from '@/components/layout/appShell'
-import { LANGUAGES, type Language } from '@/i18n'
-import { withLang } from '@/lib/paths'
+import { DEFAULT_LANGUAGE, LANGUAGES, type Language } from '@/i18n'
+import { swapLang } from '@/lib/paths'
 import { ForgotPasswordPage } from '@/pages/auth/forgotPassword'
 import { LoginPage } from '@/pages/auth/login'
 import { OAuthCallbackPage } from '@/pages/auth/oauthCallback'
@@ -27,12 +27,13 @@ const SavedRoutesPage = lazy(() => import('@/pages/savedRoutes').then((m) => ({ 
 export function AppRouter() {
   return (
     <Routes>
-      {LANGUAGES.map((lang) => (
+      {LANGUAGES.filter((lang) => lang !== DEFAULT_LANGUAGE).map((lang) => (
         <Route key={lang} path={lang} element={<LanguageRoute lang={lang} />}>
           {appRoutes()}
         </Route>
       ))}
-      <Route path="*" element={<LanguageRedirect />} />
+      <Route path={`${DEFAULT_LANGUAGE}/*`} element={<DefaultPrefixRedirect />} />
+      <Route element={<LanguageRoute lang={DEFAULT_LANGUAGE} />}>{appRoutes()}</Route>
     </Routes>
   )
 }
@@ -81,9 +82,8 @@ function LanguageRoute({ lang }: { lang: Language }) {
   return <Outlet />
 }
 
-function LanguageRedirect() {
-  const { i18n } = useTranslation()
+function DefaultPrefixRedirect() {
   const { pathname, search, hash, state } = useLocation()
 
-  return <Navigate to={`${withLang(pathname, i18n.language)}${search}${hash}`} replace state={state} />
+  return <Navigate to={`${swapLang(pathname, DEFAULT_LANGUAGE)}${search}${hash}`} replace state={state} />
 }

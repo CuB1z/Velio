@@ -3,25 +3,28 @@ import { describe, expect, it } from 'vitest'
 import { swapLang, withLang } from '@/lib/paths'
 
 describe('withLang', () => {
-  it('prefixes a path with the language', () => {
+  it('prefixes a path with a non-default language', () => {
     expect(withLang('/loops', 'es')).toBe('/es/loops')
-    expect(withLang('/saved/42', 'en')).toBe('/en/saved/42')
+    expect(withLang('/', 'es')).toBe('/es')
   })
 
-  it('maps the root to the bare prefix', () => {
-    expect(withLang('/', 'en')).toBe('/en')
+  it('leaves the default language unprefixed', () => {
+    expect(withLang('/saved/42', 'en')).toBe('/saved/42')
+    expect(withLang('/', 'en')).toBe('/')
   })
 })
 
 describe('swapLang', () => {
-  it('replaces an existing prefix', () => {
-    expect(swapLang('/es/account', 'en')).toBe('/en/account')
-    expect(swapLang('/en', 'es')).toBe('/es')
+  it('replaces or removes an existing prefix', () => {
+    expect(swapLang('/es/account', 'en')).toBe('/account')
+    expect(swapLang('/en/account', 'es')).toBe('/es/account')
+    expect(swapLang('/es', 'en')).toBe('/')
   })
 
-  it('prefixes a path that has none', () => {
-    expect(swapLang('/account', 'en')).toBe('/en/account')
-    expect(swapLang('/', 'en')).toBe('/en')
+  it('prefixes an unprefixed path', () => {
+    expect(swapLang('/account', 'es')).toBe('/es/account')
+    expect(swapLang('/', 'es')).toBe('/es')
+    expect(swapLang('/account', 'en')).toBe('/account')
   })
 
   it('leaves segments that only look like a language alone', () => {

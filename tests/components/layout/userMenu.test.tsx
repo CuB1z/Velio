@@ -23,7 +23,7 @@ beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('velio.refresh', 'refresh-1')
   vi.restoreAllMocks()
-  window.history.pushState({}, '', '/saved')
+  window.history.pushState({}, '', '/es/saved')
 })
 
 it('signing out revokes the session and lands on the public landing', async () => {

@@ -29,7 +29,7 @@ test('settings: rename, switch the theme and close another session', async ({ pa
     },
   })
 
-  await page.goto('/account')
+  await page.goto('/es/account')
   await expect(page.getByRole('heading', { level: 1, name: 'Ajustes' })).toBeVisible()
   await expect(page.getByText('Chrome en Linux')).toBeVisible()
 
@@ -43,4 +43,23 @@ test('settings: rename, switch the theme and close another session', async ({ pa
   await page.getByRole('button', { name: 'Cerrar', exact: true }).click()
   await expect.poll(() => revoked).toContain('DELETE')
   await expect(page.getByText('Safari en iPhone')).toHaveCount(0)
+})
+
+test('switching the language keeps the settings page under the other prefix', async ({ page }) => {
+  await signedIn(page, {
+    '**/api/v1/auth/me': (route) => route.fulfill(json(SESSION.user)),
+    '**/api/v1/auth/sessions': (route) => route.fulfill(json([])),
+  })
+
+  await page.goto('/es/account')
+  await expect(page.getByRole('heading', { level: 1, name: 'Ajustes' })).toBeVisible()
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
+
+  await page.getByRole('group', { name: 'Idioma' }).getByRole('button', { name: 'English' }).click()
+  await expect(page).toHaveURL(/^https?:\/\/[^/]+\/account$/)
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible()
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible()
 })

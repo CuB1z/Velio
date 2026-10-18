@@ -23,7 +23,7 @@ it('a rejected refresh token is cleared from storage and the user lands on the l
         })
       : new Response(null, { status: 404 }),
   )
-  window.history.pushState({}, '', '/loops')
+  window.history.pushState({}, '', '/es/loops')
   render(<App />)
 
   expect(await screen.findByRole('heading', { name: 'Vuelve a la carretera' })).toBeInTheDocument()

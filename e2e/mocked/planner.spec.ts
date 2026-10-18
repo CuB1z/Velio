@@ -20,7 +20,7 @@ test('a loop streams in, shows its figures on the map panel and can be saved', a
       )
     },
   })
-  await page.goto('/loops')
+  await page.goto('/es/loops')
   await expect(page.locator('.maplibregl-canvas')).toBeVisible()
 
   await page.getByRole('button', { name: 'Generar ruta' }).click()
@@ -38,14 +38,14 @@ test('a rate limited generate keeps the button disabled with the wait', async ({
     '**/api/v1/loops/stream': (route) =>
       route.fulfill({ ...json({ error: 'RATE_LIMITED', message: 'Too many requests' }, 429), headers: { 'retry-after': '5' } }),
   })
-  await page.goto('/loops')
+  await page.goto('/es/loops')
   await page.getByRole('button', { name: 'Generar ruta' }).click()
   await expect(page.getByRole('button', { name: /^Espera \d s$/ })).toBeDisabled()
 })
 
 test('a point to point route with the default stops', async ({ page }) => {
   await signedIn(page, { '**/api/v1/routes': (route) => route.fulfill(json(LOOP)) })
-  await page.goto('/routes')
+  await page.goto('/es/routes')
   await page.getByRole('button', { name: 'Trazar la ruta' }).click()
   await expect(visible(page.getByText('31,2 km'))).toBeVisible()
 })
@@ -54,7 +54,7 @@ test('hovering the elevation profile marks that point on the map', async ({ page
   const sierra = LANDING_EXAMPLES[1]
   const loop = { ...sierra.result, polyline: polyline.encode(sierra.shape, 6), profile: sierra.profile, alternatives: null }
   await signedIn(page, { '**/api/v1/loops/stream': (route) => route.fulfill(sse(['result', loop])) })
-  await page.goto('/loops')
+  await page.goto('/es/loops')
   await page.getByRole('button', { name: 'Generar ruta' }).click()
 
   const chart = visible(page.getByRole('img', { name: /Perfil de elevación/ }))

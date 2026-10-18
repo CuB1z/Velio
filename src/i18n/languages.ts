@@ -1,6 +1,6 @@
 export const LANGUAGES = ['es', 'en'] as const
 export type Language = (typeof LANGUAGES)[number]
-export const DEFAULT_LANGUAGE: Language = 'es'
+export const DEFAULT_LANGUAGE: Language = 'en'
 
 export const LANGUAGE_INFO: Record<Language, { name: string; locale: string }> = {
   es: { name: 'Español', locale: 'es-ES' },

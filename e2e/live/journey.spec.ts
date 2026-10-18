@@ -11,7 +11,7 @@ test('a new rider signs up, plans a loop, saves, exports, analyses and signs out
   const password = 'Ruta2026x'
   const name = `E2E ${email.slice(4, 12)}`
 
-  await page.goto('/register')
+  await page.goto('/es/register')
   await page.getByLabel(/Correo electrónico/).fill(email)
   await page.getByLabel(/^Contraseña/).fill(password)
   await page.getByRole('checkbox').check({ force: true })
@@ -46,16 +46,16 @@ test('a new rider signs up, plans a loop, saves, exports, analyses and signs out
   const gpx = await download.path()
   expect(download.suggestedFilename()).toMatch(/\.gpx$/)
 
-  await page.goto('/saved')
+  await page.goto('/es/saved')
   await page.getByRole('link', { name: new RegExp(name) }).first().click()
   await expect(page.getByRole('heading', { name })).toBeVisible()
 
-  await page.goto('/analyze')
+  await page.goto('/es/analyze')
   await page.locator('input[type="file"]').setInputFiles(gpx)
   await page.getByRole('button', { name: 'Analizar' }).click()
   await expect(visible(page.getByText(/\d+,\d\s*km/))).toBeVisible({ timeout: 60_000 })
 
-  await page.goto('/saved')
+  await page.goto('/es/saved')
   await page.getByRole('link', { name: new RegExp(name) }).first().click()
   await visible(page.getByRole('button', { name: 'Eliminar' })).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Eliminar' }).click()
@@ -64,6 +64,6 @@ test('a new rider signs up, plans a loop, saves, exports, analyses and signs out
 
   await visible(page.getByRole('button', { name: 'Ajustes de cuenta' })).click()
   await page.getByRole('menuitem', { name: 'Cerrar sesión' }).click()
-  await expect(page).toHaveURL(/\/$/)
+  await expect(page).toHaveURL(/\/es$/)
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Circuitos a tu medida')
 })

@@ -72,7 +72,7 @@ beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('velio.refresh', 'refresh-1')
   vi.restoreAllMocks()
-  window.history.pushState({}, '', '/saved')
+  window.history.pushState({}, '', '/es/saved')
 })
 
 it('goes back a page when a bulk delete empties the current one', async () => {

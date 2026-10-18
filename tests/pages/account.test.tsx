@@ -51,7 +51,7 @@ beforeEach(() => {
   localStorage.clear()
   localStorage.setItem('velio.refresh', 'refresh-1')
   vi.restoreAllMocks()
-  window.history.pushState({}, '', '/account')
+  window.history.pushState({}, '', '/es/account')
 })
 
 it('renames the account and lists sessions by device', async () => {
