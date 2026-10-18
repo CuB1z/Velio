@@ -2,7 +2,7 @@ import { Button, Modal, SearchField, useOverlayState } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import * as savedRoutesApi from '@/api/savedRoutes'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
@@ -83,6 +83,7 @@ export function SavedRoutesPage() {
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6 p-4 sm:p-6">
       <PageHeader
+        eyebrow={t('nav.saved')}
         title={t('saved.title')}
         actions={
           <>
@@ -95,7 +96,7 @@ export function SavedRoutesPage() {
               <SearchField.Group className="min-h-11 rounded-full ps-1.5">
                 <span
                   aria-hidden="true"
-                  className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-soft-foreground"
+                  className="grid size-8 shrink-0 place-items-center rounded-full text-muted"
                 >
                   <SearchField.SearchIcon className="m-0 text-current" />
                 </span>
@@ -126,7 +127,7 @@ export function SavedRoutesPage() {
       ) : null}
 
       {isEmpty ? (
-        <div className="flex flex-col items-center rounded-3xl bg-surface px-6 py-16 text-center shadow-card ring-1 ring-border">
+        <div className="flex flex-col items-center rounded-3xl bg-surface px-6 py-16 text-center ring-1 ring-border">
           <EmptyIllustration />
           <h2 className="mt-6 text-xl font-semibold tracking-tight text-balance">{t('saved.empty')}</h2>
           <p className="mt-2 max-w-sm text-muted text-pretty">{t('saved.emptyHint')}</p>
@@ -140,7 +141,7 @@ export function SavedRoutesPage() {
           </div>
         </div>
       ) : (
-        <ul aria-busy={query.isLoading} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <ul aria-busy={query.isLoading} className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {query.isLoading
             ? Array.from({ length: 6 }, (_, index) => <SavedCardSkeleton key={index} />)
             : visible.map((route) => (
@@ -152,6 +153,18 @@ export function SavedRoutesPage() {
                   onToggle={() => toggle(route.id)}
                 />
               ))}
+          {query.isLoading || selecting ? null : (
+            <li className="flex">
+              <Link
+                to="/loops"
+                className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-foreground/20 p-6 text-center text-muted transition-colors duration-150 hover:border-foreground/40 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                <PlusIcon />
+                <span className="text-lg font-semibold tracking-tight text-foreground">{t('saved.newTile')}</span>
+                <span className="eyebrow">{t('saved.newTileHint')}</span>
+              </Link>
+            </li>
+          )}
         </ul>
       )}
 
@@ -180,7 +193,7 @@ export function SavedRoutesPage() {
       ) : null}
 
       {selecting ? (
-        <div className="sticky bottom-4 z-20 mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-2xl bg-overlay/95 px-4 py-2.5 shadow-raised ring-1 ring-border backdrop-blur">
+        <div className="sticky bottom-4 z-20 mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full bg-overlay/90 px-5 py-2.5 ring-1 ring-border backdrop-blur-xl">
           <span className="text-sm font-semibold" aria-live="polite">
             {selection.size === 0
               ? t('saved.selectHint')
@@ -256,5 +269,13 @@ function EmptyIllustration() {
         <circle cx="14" cy="40" r="4.5" fill="currentColor" />
       </svg>
     </div>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
   )
 }

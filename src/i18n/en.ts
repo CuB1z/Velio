@@ -144,6 +144,8 @@ export default {
     emptyHint: 'When you generate a loop you like, save it and it will show up here.',
     emptyRoute: 'Plan point to point',
     emptyAction: 'Plan a loop',
+    newTile: 'Start a new route',
+    newTileHint: 'Loop or point to point',
     kindLoop: 'Loop',
     kindRoute: 'Point to point',
     savedOn: 'Saved on {{date}}',

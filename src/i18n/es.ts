@@ -145,6 +145,8 @@ export default {
     emptyHint: 'Cuando generes un circuito que te guste, guárdalo y aparecerá aquí.',
     emptyRoute: 'Trazar punto a punto',
     emptyAction: 'Trazar un circuito',
+    newTile: 'Empezar una ruta nueva',
+    newTileHint: 'Circuito o punto a punto',
     kindLoop: 'Circuito',
     kindRoute: 'Punto a punto',
     savedOn: 'Guardada el {{date}}',
