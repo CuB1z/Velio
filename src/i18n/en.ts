@@ -418,6 +418,11 @@ export default {
     ctaTitle: 'Your next loop starts at your door',
     ctaBody:
       'Tell Velio how far and how much climbing. It returns a scored loop, the surface under every kilometre and a GPX ready for your GPS.',
+    anchorProduct: 'the-result',
+    anchorFeatures: 'what-it-measures',
+    anchorHow: 'how-it-works',
+    anchorData: 'the-data',
+    anchorFaq: 'faq',
     heroEyebrow: 'Cycling routes on open data · Spain, Portugal and Andorra',
     ridgeCaption: 'Real engine output, untouched',
     north: 'N',

@@ -53,11 +53,18 @@ export function LandingPage() {
   const authenticated = status === 'authenticated'
   const primary = { to: authenticated ? '/loops' : '/register', label: t(authenticated ? 'landing.openApp' : 'landing.heroCta') }
 
+  const ids = {
+    product: t('landing.anchorProduct'),
+    features: t('landing.anchorFeatures'),
+    how: t('landing.anchorHow'),
+    data: t('landing.anchorData'),
+    faq: t('landing.anchorFaq'),
+  }
   const anchors = [
-    { href: '#como-funciona', label: t('landing.navHow') },
-    { href: '#funciones', label: t('landing.navFeatures') },
-    { href: '#datos', label: t('landing.navData') },
-    { href: '#preguntas', label: t('landing.navFaq') },
+    { href: `#${ids.how}`, label: t('landing.navHow') },
+    { href: `#${ids.features}`, label: t('landing.navFeatures') },
+    { href: `#${ids.data}`, label: t('landing.navData') },
+    { href: `#${ids.faq}`, label: t('landing.navFaq') },
   ]
 
   return (
@@ -112,7 +119,7 @@ export function LandingPage() {
               <Link to={primary.to} className={primaryPill}>
                 {primary.label}
               </Link>
-              <a href="#producto" className={`inline-flex items-center gap-2 text-base font-medium ${focus} rounded-md`}>
+              <a href={`#${ids.product}`} className={`inline-flex items-center gap-2 text-base font-medium ${focus} rounded-md`}>
                 {t('landing.heroSecondary')}
                 <ArrowIcon />
               </a>
@@ -120,9 +127,9 @@ export function LandingPage() {
             <p className="eyebrow">{t('landing.heroNote')}</p>
           </div>
 
-          <Reveal className="mx-auto mt-12 max-w-[1400px] sm:mt-16">
+          <div className="mx-auto mt-12 max-w-[1400px] sm:mt-16">
             <Ridge example={SIERRA} />
-          </Reveal>
+          </div>
         </section>
 
         <section className="px-4 py-24 sm:px-6 lg:py-40">
@@ -132,7 +139,7 @@ export function LandingPage() {
           />
         </section>
 
-        <section id="producto" className="px-4 pb-24 sm:px-6 lg:pb-40">
+        <section id={ids.product} className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
             <Reveal className="flex max-w-[720px] flex-col gap-4">
               <span className="eyebrow">{t('landing.showcaseEyebrow')}</span>
@@ -144,7 +151,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="funciones" className="px-4 pb-24 sm:px-6 lg:pb-40">
+        <section id={ids.features} className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
             <Reveal className="flex max-w-[720px] flex-col gap-4">
               <span className="eyebrow">{t('landing.benefitsTitle')}</span>
@@ -238,7 +245,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="como-funciona" className="px-4 pb-24 sm:px-6 lg:pb-40">
+        <section id={ids.how} className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
             <Reveal className="max-w-[720px]">
               <h2 className={sectionTitle}>{t('landing.stepsTitle')}</h2>
@@ -257,7 +264,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="datos" className="px-4 pb-24 sm:px-6 lg:pb-40">
+        <section id={ids.data} className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto max-w-6xl">
             <Reveal className="flex max-w-[720px] flex-col gap-4">
               <span className="eyebrow">{t('landing.dataTitle')}</span>
@@ -297,7 +304,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="preguntas" className="px-4 pb-24 sm:px-6 lg:pb-40">
+        <section id={ids.faq} className="px-4 pb-24 sm:px-6 lg:pb-40">
           <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[minmax(0,0.5fr)_minmax(0,1fr)] lg:gap-16">
             <Reveal className="flex flex-col gap-4">
               <span className="eyebrow">{t('landing.navFaq')}</span>

@@ -419,6 +419,11 @@ export default {
     ctaTitle: 'Tu próxima vuelta sale de tu puerta',
     ctaBody:
       'Dile a Velio cuántos kilómetros y cuánto desnivel quieres. Te devuelve un circuito puntuado, el firme de cada kilómetro y un GPX listo para el GPS.',
+    anchorProduct: 'el-resultado',
+    anchorFeatures: 'que-mide',
+    anchorHow: 'como-funciona',
+    anchorData: 'los-datos',
+    anchorFaq: 'preguntas',
     heroEyebrow: 'Rutas ciclistas sobre datos abiertos · España, Portugal y Andorra',
     ridgeCaption: 'Perfil real del motor, sin retocar',
     north: 'N',
