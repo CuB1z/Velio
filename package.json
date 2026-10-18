@@ -14,6 +14,7 @@
     "e2e": "playwright test --project=mocked",
     "e2e:live": "E2E_LIVE=1 playwright test --project=live",
     "preview": "vite preview",
+    "prerender": "node --experimental-strip-types scripts/prerender.mjs",
     "contract:pull": "node scripts/pullContract.mjs",
     "contract:check": "node -e \"import('./scripts/checkContract.mjs').then(m=>{const p=[...m.compare(),...m.comparePaths()];if(p.length){console.error(p.join('\\n'));process.exit(1)}console.log('contract aligned')})\""
   },
