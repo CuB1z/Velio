@@ -71,6 +71,7 @@ function markerElement(marker: MapMarker, dark: boolean): HTMLElement {
   const mode = dark ? 'dark' : 'light'
   const surface = ink(mode).surface
   const brand = accent(mode)
+  const routeColor = categorical(mode, 0)
   const el = document.createElement('div')
   el.className = 'velio-marker'
   el.style.cssText = [
@@ -87,8 +88,9 @@ function markerElement(marker: MapMarker, dark: boolean): HTMLElement {
   ].join(';')
 
   if (marker.kind === 'start') {
-    el.style.background = brand
-    el.style.color = surface
+    el.style.background = routeColor
+    el.style.color = ink(mode).foreground
+    el.style.borderColor = ink(mode).foreground
   } else if (marker.kind === 'end') {
     el.style.background = ink(mode).foreground
     el.style.color = surface

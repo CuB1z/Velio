@@ -258,7 +258,7 @@ export function SavedRoutesPage() {
 
 function EmptyIllustration() {
   return (
-    <div aria-hidden="true" className="flex size-28 items-center justify-center rounded-full bg-accent-soft text-accent">
+    <div aria-hidden="true" className="flex size-28 items-center justify-center rounded-full bg-accent-soft text-accent-text">
       <svg width="88" height="68" viewBox="0 0 72 56" fill="none">
         <path
           d="M14 40c-6-10 2-26 16-28 10-2 14 6 22 4 8-2 12 8 6 16-5 7-14 4-20 8-7 5-18 10-24 0Z"

@@ -54,7 +54,7 @@ export function ProfileForm({ name }: { name: string }) {
         </Button>
       </div>
       {notice ? (
-        <p className="eyebrow text-accent" role="status">
+        <p className="eyebrow text-accent-text" role="status">
           {notice}
         </p>
       ) : null}

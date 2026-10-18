@@ -46,7 +46,7 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
           {kind === 'loop' ? t('saved.kindLoop') : t('saved.kindRoute')}
         </span>
         {score !== undefined ? (
-          <span className="code text-sm font-semibold text-accent">
+          <span className="code text-sm font-semibold text-accent-text">
             {formatScore(score)}
             <span className="font-normal text-muted"> /10</span>
           </span>
@@ -85,7 +85,7 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
           ) : (
             <Link
               to={to(`/saved/${route.id}`)}
-              className="block truncate text-lg font-semibold tracking-tight transition-colors duration-150 group-hover:text-accent focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
+              className="block truncate text-lg font-semibold tracking-tight transition-colors duration-150 group-hover:text-accent-text focus-visible:outline-none after:absolute after:inset-0 after:content-['']"
             >
               {route.name}
             </Link>

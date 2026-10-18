@@ -4,62 +4,63 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Velio theme: black ground, near-black surfaces separated by hairlines, a
-   pistachio accent. Light inverts the ground and uses an olive accent that
-   reads on white. Colour pairs are checked for WCAG AA (4.5:1); recheck when
-   changing them. */
+   pistachio accent. Light is a cool off-white ground that keeps the pistachio
+   for fills and CTAs (ink on top) and uses ink wherever the accent is text
+   (--velio-accent-text). Colour pairs are checked for WCAG AA (4.5:1); recheck
+   when changing them. */
 
 @layer base {
   :root,
   .light,
   [data-theme="light"] {
-    --velio-accent: #428500;
-    --velio-accent-text: #428500;
+    --velio-accent: #c6de30;
+    --velio-accent-text: #0a0a0a;
 
-    --background: #ffffff;
+    --background: #f7f8fa;
     --foreground: #0a0a0a;
 
-    --surface: #fafafa;
+    --surface: #ffffff;
     --surface-foreground: var(--foreground);
-    --surface-secondary: #f0f0f0;
-    --surface-tertiary: #f5f5f5;
+    --surface-secondary: #eceef2;
+    --surface-tertiary: #f1f3f6;
     /* Hover tint, one step below --surface. */
-    --surface-hover: #ececec;
+    --surface-hover: #e6e9ee;
 
     --overlay: #ffffff;
     --overlay-foreground: var(--foreground);
     --overlay-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(0, 0, 0, 0.04), 0 16px 40px -12px rgba(0, 0, 0, 0.16);
 
-    --muted: #6b6b6b;
+    --muted: #68707c;
 
     --accent: var(--velio-accent);
-    --accent-foreground: #ffffff;
-    --accent-soft: #e8f6c6;
-    --accent-soft-foreground: #356a00;
+    --accent-foreground: #0a0a0a;
+    --accent-soft: #edf4c7;
+    --accent-soft-foreground: #0a0a0a;
 
     /* HeroUI fields ship borderless, so the border width is restored here.
        --field-shadow must stay a valid transparent shadow: `none` breaks the
        composed ring-2 focus ring. */
-    --field-background: #f0f0f0;
+    --field-background: #ffffff;
     --field-foreground: var(--foreground);
-    --field-border: #e0e0e0;
+    --field-border: #dde1e7;
     --field-border-width: 1px;
     --border-width-field: 1px;
     --field-shadow: 0 0 0 0 transparent;
     --field-focus: #ffffff;
 
-    --default: #f0f0f0;
+    --default: #eceef2;
     --default-foreground: var(--foreground);
 
-    --border: #e5e5e5;
-    --separator: #efefef;
+    --border: #e3e6eb;
+    --separator: #eceef2;
 
     /* Chart series: the accent comes first and nothing else resembles it. */
-    --chart-1: #86c80c;
+    --chart-1: #9bba10;
     --chart-2: #6366f1;
     --chart-3: #d97706;
     --chart-4: #db2777;
     --chart-5: #16a34a;
-    --chart-neutral: #a3a3a3;
+    --chart-neutral: #a4aab4;
     --link: var(--velio-accent-text);
 
     /* Inverted landing sections: dark in both themes, so defined once here
@@ -127,6 +128,7 @@
   /* Tailwind v4 only generates utilities from --color-* tokens, so custom
      tokens need their mapping here. */
   --color-surface-hover: var(--surface-hover);
+  --color-accent-text: var(--velio-accent-text);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-accent: var(--ink-accent);
@@ -142,19 +144,19 @@
   .button {
     border-radius: 9999px;
   }
-  /* Primary actions are foreground-on-background; the accent is for data. */
+  /* Primary actions are accent-on-ink in both themes. */
   .button--primary {
-    background-color: var(--foreground);
-    color: var(--background);
+    background-color: var(--accent);
+    color: var(--accent-foreground);
   }
   .button--primary:hover {
-    background-color: color-mix(in srgb, var(--foreground) 86%, var(--background));
+    background-color: color-mix(in srgb, var(--accent) 86%, var(--accent-foreground));
   }
   .button--primary:disabled,
   .button--primary[aria-disabled='true'] {
     opacity: 1;
-    background-color: color-mix(in srgb, var(--foreground) 14%, transparent);
-    color: color-mix(in srgb, var(--foreground) 60%, var(--background));
+    background-color: color-mix(in srgb, var(--accent) 28%, var(--background));
+    color: color-mix(in srgb, var(--foreground) 55%, var(--background));
   }
   .switch {
     flex-direction: row;

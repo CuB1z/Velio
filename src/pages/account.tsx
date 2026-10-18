@@ -23,7 +23,7 @@ import { parseUserAgent } from '@/lib/userAgent'
 import type { AccountStatus, DeviceSession } from '@/types/api'
 
 const STATUS_TONE: Record<AccountStatus, string> = {
-  active: 'text-accent',
+  active: 'text-accent-text',
   pending: 'text-warning',
   suspended: 'text-danger',
 }
@@ -172,7 +172,7 @@ export function AccountPage() {
               </SettingRow>
               <SettingRow label={t('account.email')} description={t('account.emailHint')} className="border-b border-border">
                 <span className="code text-sm">{user?.email}</span>
-                {user?.status === 'active' ? <span className="eyebrow text-accent">{t('account.verified')}</span> : null}
+                {user?.status === 'active' ? <span className="eyebrow text-accent-text">{t('account.verified')}</span> : null}
               </SettingRow>
             </div>
           </section>
@@ -236,7 +236,7 @@ export function AccountPage() {
                   errorMessage={passwordError ?? undefined}
                 />
                 {passwordNotice ? (
-                  <p className="eyebrow text-accent" role="status">
+                  <p className="eyebrow text-accent-text" role="status">
                     {passwordNotice}
                   </p>
                 ) : null}
@@ -414,7 +414,7 @@ function SessionRow({
             <span className="truncate text-base font-medium" title={session.user_agent ?? undefined}>
               {label}
             </span>
-            {session.current ? <span className="eyebrow text-accent">{t('account.sessionCurrent')}</span> : null}
+            {session.current ? <span className="eyebrow text-accent-text">{t('account.sessionCurrent')}</span> : null}
           </span>
           <span className="eyebrow">{t('account.sessionStarted', { date: formatDateTime(session.created_at) })}</span>
         </div>

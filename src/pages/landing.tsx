@@ -47,7 +47,7 @@ const DEVICES = ['Garmin Edge', 'Wahoo Elemnt', 'Komoot']
 const fluid = 'transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]'
 const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 const pill = `inline-flex min-h-12 items-center justify-center rounded-full px-7 text-base font-semibold ${fluid} ${focus}`
-const primaryPill = `${pill} bg-foreground text-background hover:opacity-90`
+const primaryPill = `${pill} bg-accent text-accent-foreground hover:opacity-90`
 const sectionTitle = 'text-4xl font-semibold leading-none tracking-[-0.03em] text-balance sm:text-5xl'
 const footerLink = 'inline-flex min-h-10 items-center text-sm text-muted transition-colors duration-150 hover:text-foreground'
 
@@ -105,7 +105,7 @@ export function LandingPage() {
           <div className="ms-auto flex items-center md:ms-6">
             <Link
               to={to(primary.to)}
-              className={`inline-flex min-h-10 items-center rounded-full bg-foreground px-4 text-sm font-semibold text-background hover:opacity-90 ${fluid} ${focus}`}
+              className={`inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground hover:opacity-90 ${fluid} ${focus}`}
             >
               {authenticated ? t('landing.openApp') : t('landing.getStarted')}
             </Link>
@@ -201,7 +201,7 @@ export function LandingPage() {
                   <p className="code flex items-center gap-4 pt-6 text-5xl font-medium tracking-[-0.04em]">
                     <span className="text-muted line-through">{formatRatio(LANDING_REPAIR.before.overlap, 0)}</span>
                     <ArrowIcon className="text-muted" />
-                    <span className="text-accent">{formatRatio(LANDING_REPAIR.after.overlap, 0)}</span>
+                    <span className="text-accent-text">{formatRatio(LANDING_REPAIR.after.overlap, 0)}</span>
                   </p>
                   <div className="flex flex-col gap-3">
                     <BentoLabel eyebrow={t('landing.repairEyebrow')} title={t('landing.repairTitle')} body={t('landing.repairBody')} />
@@ -260,7 +260,7 @@ export function LandingPage() {
               {STEPS.map((step, index) => (
                 <li key={step}>
                   <Reveal delay={index * 100} className="flex h-full flex-col gap-4">
-                    <span className="eyebrow text-accent">0{step}</span>
+                    <span className="eyebrow text-accent-text">0{step}</span>
                     <h3 className="text-2xl font-semibold tracking-tight text-balance">{t(`landing.step${step}Title`)}</h3>
                     <p className="text-muted text-pretty">{t(`landing.step${step}Body`)}</p>
                   </Reveal>

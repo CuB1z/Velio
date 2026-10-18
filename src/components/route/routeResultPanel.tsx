@@ -102,7 +102,7 @@ export function RouteResultPanel({
         {requested !== undefined && variants.length < requested ? (
           <span className="eyebrow">{t('result.fewerVariants', { count: variants.length, requested })}</span>
         ) : null}
-        {feasible === true ? <span className="eyebrow text-accent">● {t('result.feasible')}</span> : null}
+        {feasible === true ? <span className="eyebrow text-accent-text">● {t('result.feasible')}</span> : null}
         {feasible === false ? <span className="eyebrow text-warning">● {t('result.notFeasible')}</span> : null}
 
         <div className="ms-auto flex flex-wrap items-center gap-2">
@@ -128,7 +128,7 @@ export function RouteResultPanel({
         ))}
         <div className="flex flex-col gap-1 @xl:border-s @xl:border-border @xl:ps-5">
           <dt className="eyebrow">{t('metric.score')}</dt>
-          <dd className="code text-3xl font-medium tracking-tight text-accent">
+          <dd className="code text-3xl font-medium tracking-tight text-accent-text">
             {result.cycling_score ? (
               <>
                 {formatScore(result.cycling_score.total)}

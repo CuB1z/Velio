@@ -95,7 +95,7 @@ export function LoopForm({
         <InsetRow className="px-2">
           <Button
             variant="ghost"
-            className="min-h-11 w-full justify-start gap-2 px-2 text-[15px] text-accent"
+            className="min-h-11 w-full justify-start gap-2 px-2 text-[15px] text-accent-text"
             onPress={() => {
               patch({ via: [...value.via, value.origin ?? { lat: 40.4168, lon: -3.7038 }] })
               onPick(value.via.length)

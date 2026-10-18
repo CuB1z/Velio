@@ -23,7 +23,7 @@ const NEUTRAL: Record<ChartMode, string> = {
 
 /** Single hue for magnitude (elevation profile, score bars). */
 const ACCENT: Record<ChartMode, string> = {
-  light: '#428500',
+  light: '#c6de30',
   dark: '#D1EC31',
 }
 

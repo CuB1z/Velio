@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 import { useElementSize } from '@/hooks/useElementSize'
 import { useTheme } from '@/hooks/useTheme'
-import { accent, ink } from '@/lib/chartPalette'
+import { categorical, ink } from '@/lib/chartPalette'
 import { formatDistance, formatElevation, formatPercent } from '@/lib/format'
 import type { ElevationPoint } from '@/types/api'
 
@@ -61,7 +61,7 @@ export function ElevationProfile({ profile, height = 148, distanceKm, onHover }:
   const hovered = useRef<Sample | null>(null)
   const svgRef = useRef<SVGSVGElement | null>(null)
 
-  const color = accent(resolved)
+  const color = categorical(resolved, 0)
   const palette = ink(resolved)
   const gradientId = `velio-elev-${resolved}`
 

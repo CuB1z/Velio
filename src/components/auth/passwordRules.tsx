@@ -35,7 +35,7 @@ export function PasswordRules({ password, email }: { password: string; email?: s
 
 function CheckIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--success)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--chart-1)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M3.5 8.4 6.4 11.3 12.5 5" />
     </svg>
   )

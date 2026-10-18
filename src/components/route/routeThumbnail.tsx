@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 
 import { useTheme } from '@/hooks/useTheme'
-import { accent, ink } from '@/lib/chartPalette'
+import { categorical, ink } from '@/lib/chartPalette'
 import { cn } from '@/lib/cn'
 import { boundsOf, decodePolyline, type LngLat } from '@/lib/polyline'
 
@@ -73,19 +73,21 @@ export function RouteThumbnail({
       role="img"
       aria-hidden="true"
     >
+      {resolved === 'dark' ? (
+        <path
+          d={path.d}
+          fill="none"
+          stroke={categorical(resolved, 0)}
+          strokeOpacity={0.16}
+          strokeWidth={9}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : null}
       <path
         d={path.d}
         fill="none"
-        stroke={accent(resolved)}
-        strokeOpacity={0.16}
-        strokeWidth={9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d={path.d}
-        fill="none"
-        stroke={accent(resolved)}
+        stroke={categorical(resolved, 0)}
         strokeWidth={2.5}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -95,7 +97,7 @@ export function RouteThumbnail({
           cx={path.endPoint[0]}
           cy={path.endPoint[1]}
           r={4.5}
-          fill={accent(resolved)}
+          fill={categorical(resolved, 0)}
           stroke={palette.surface}
           strokeWidth={2}
         />

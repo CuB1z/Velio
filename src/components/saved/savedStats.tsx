@@ -46,7 +46,7 @@ function Stat({
   return (
     <div className="flex min-w-0 flex-col-reverse gap-1.5 lg:border-s lg:border-border lg:ps-8 lg:first:border-s-0 lg:first:ps-0">
       <dt className="eyebrow text-pretty">{label}</dt>
-      <dd className={cn('code text-3xl font-medium tracking-tight', accent && 'text-accent')}>
+      <dd className={cn('code text-3xl font-medium tracking-tight', accent && 'text-accent-text')}>
         {value}
         {suffix ? <span className="text-sm tracking-normal text-muted"> {suffix}</span> : null}
       </dd>

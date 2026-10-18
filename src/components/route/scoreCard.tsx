@@ -38,7 +38,7 @@ export function ScoreCard({ score, className, compact, large, hideElevation }: P
         <div className="mt-1 flex items-baseline gap-2">
           <span
             className={cn(
-              'code font-medium leading-none tracking-tight text-accent',
+              'code font-medium leading-none tracking-tight text-accent-text',
               large ? 'text-7xl tracking-[-0.04em]' : 'text-4xl',
             )}
           >

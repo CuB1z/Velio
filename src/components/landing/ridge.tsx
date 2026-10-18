@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useTheme } from '@/hooks/useTheme'
-import { accent } from '@/lib/chartPalette'
+import { categorical } from '@/lib/chartPalette'
 import { formatDistance, formatDuration, formatElevation, formatScore, formatSigned } from '@/lib/format'
 import type { LandingExample } from '@/pages/landingExamples'
 
@@ -12,7 +12,7 @@ const VIEW = { width: 1000, height: 120, top: 8, bottom: 8 }
 export function Ridge({ example }: { example: LandingExample }) {
   const { t, i18n } = useTranslation()
   const { resolved } = useTheme()
-  const color = accent(resolved)
+  const color = categorical(resolved, 0)
   const { profile, result } = example
 
   const ridge = useMemo(() => {

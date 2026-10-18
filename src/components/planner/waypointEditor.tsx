@@ -37,7 +37,7 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-9 text-sm text-accent"
+          className="min-h-9 text-sm text-accent-text"
           onPress={() => onChange([...value].reverse())}
           isDisabled={value.length < 2}
         >
@@ -110,7 +110,7 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
         <li className="px-2">
           <Button
             variant="ghost"
-            className="min-h-11 w-full justify-start gap-2 px-2 text-[15px] text-accent"
+            className="min-h-11 w-full justify-start gap-2 px-2 text-[15px] text-accent-text"
             isDisabled={value.length >= MAX_WAYPOINTS}
             onPress={() => {
               const last = value[value.length - 1]
