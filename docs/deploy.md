@@ -12,6 +12,8 @@ browser ── https ──> Traefik (Dokploy, TLS) ──> velio-web (nginx :80
                                                   └── /api/*       → API_UPSTREAM (velio-api:8000)
 ```
 
+The language is part of the path: English at the root, Spanish under `/es/...`. nginx needs nothing for it: the `/` location already falls back to `index.html` for any path, and the app resolves the language from the URL before its first render.
+
 ## 1. DNS
 
 Create an `A` record `velio.cub1z.es` → the VPS public IP (and `AAAA` if the
