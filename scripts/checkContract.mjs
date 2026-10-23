@@ -39,6 +39,8 @@ export const SCHEMA_TO_TYPE = {
   CoverageResponse: 'Coverage',
   CoverageRegion: 'CoverageRegion',
   CoverageGeometry: 'CoverageGeometry',
+  CoverageRequestCreateRequest: 'CoverageRequestBody',
+  CoverageRequestResponse: 'CoverageRequestResult',
 }
 
 export function loadSpec() {

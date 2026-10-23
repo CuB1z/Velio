@@ -23,6 +23,7 @@ export type ErrorCode =
   | 'UNKNOWN_PROVIDER'
   | 'EMAIL_ALREADY_REGISTERED'
   | 'OUT_OF_COVERAGE'
+  | 'ALREADY_COVERED'
   | 'ROUTING_ERROR'
   | 'RATE_LIMITED'
   | 'SERVICE_UNAVAILABLE'
@@ -170,6 +171,17 @@ export type Coverage = {
   regions: CoverageRegion[]
   bbox: [number, number, number, number]
   geometry: CoverageGeometry | null
+}
+
+export type CoverageRequestBody = {
+  country: string
+  email?: string
+  note?: string
+}
+
+export type CoverageRequestResult = {
+  country: string
+  recorded: boolean
 }
 
 /* -------------------------------------------------------------------- loops */

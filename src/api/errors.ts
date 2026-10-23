@@ -43,6 +43,7 @@ const TERMINAL: ReadonlySet<ErrorCode> = new Set<ErrorCode>([
   'NO_LOCAL_PASSWORD',
   'ROUTING_ERROR',
   'OUT_OF_COVERAGE',
+  'ALREADY_COVERED',
 ])
 
 export function isRetryable(error: unknown): boolean {
