@@ -300,14 +300,18 @@ h1, h2, h3 {
   outline: none;
 }
 
-/* Planner on mobile: the bottom sheet covers the map's foot, so the attribution moves up. */
-@media (width < 64rem) {
+/* Planner: the bottom sheet or the result card covers the map's foot, so the
+   attribution moves up, clear of the panel that overlaps the map on desktop. */
+.planner-map .maplibregl-ctrl-bottom-right {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: auto;
+  max-width: calc(100% - 15rem);
+}
+@media (width >= 64rem) {
   .planner-map .maplibregl-ctrl-bottom-right {
-    top: 0;
-    bottom: auto;
-    left: 0;
-    right: auto;
-    max-width: calc(100% - 15rem);
+    left: 1.5rem;
   }
 }
 
