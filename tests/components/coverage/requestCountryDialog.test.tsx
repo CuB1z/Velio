@@ -55,6 +55,9 @@ beforeAll(async () => {
 beforeEach(() => {
   vi.restoreAllMocks()
   requests = []
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400)
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(256)
+  vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['es-ES'])
 })
 
 it('signed out, it needs a valid email and records the request', async () => {
@@ -97,4 +100,12 @@ it('a rate limited request counts down on the submit button', async () => {
   await userEvent.click(within(dialog).getByRole('button', { name: 'Enviar petición' }))
 
   expect(await within(dialog).findByRole('button', { name: /^Espera \d s$/ })).toBeDisabled()
+})
+
+it('suggests the browser region once the coverage is known', async () => {
+  vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])
+  serve(() => json({ country: 'FR', recorded: true }))
+  const dialog = renderDialog('authenticated')
+
+  await waitFor(() => expect(within(dialog).getByRole('combobox', { name: /País/ })).toHaveValue('Francia'))
 })

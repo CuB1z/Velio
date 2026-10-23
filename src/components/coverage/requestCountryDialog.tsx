@@ -1,6 +1,7 @@
 import { Button, ComboBox, Description, Input, Label, ListBox, Modal, useOverlayState } from '@heroui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
+import { ListLayout, Virtualizer } from 'react-aria-components'
 import { useTranslation } from 'react-i18next'
 
 import { requestCoverage } from '@/api/coverage'
@@ -44,13 +45,15 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation()
   const { status } = useAuth()
   const signedIn = status === 'authenticated'
-  const { isos } = useCoverage()
+  const { coverage, isos } = useCoverage()
   const locale = LANGUAGE_INFO[isLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE].locale
   const options = useMemo(() => countryOptions(locale, isos), [locale, isos])
-  const [country, setCountry] = useState(() => preferredCountry(navigator.languages ?? [], isos) ?? '')
+  const [picked, setPicked] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [note, setNote] = useState('')
   const [touched, setTouched] = useState(false)
+  const suggested = coverage ? preferredCountry(navigator.languages ?? [], isos) : null
+  const country = picked ?? suggested ?? ''
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -107,7 +110,7 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
           isRequired
           defaultItems={options}
           selectedKey={country || null}
-          onSelectionChange={(key) => setCountry(key ? String(key) : '')}
+          onSelectionChange={(key) => setPicked(key ? String(key) : '')}
           className="flex flex-col gap-2"
         >
           <Label>{t('coverage.country')}</Label>
@@ -115,14 +118,16 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
             <Input placeholder={t('coverage.countryPlaceholder')} />
             <ComboBox.Trigger />
           </ComboBox.InputGroup>
-          <ComboBox.Popover>
-            <ListBox className="max-h-64 overflow-y-auto">
-              {(option: CountryOption) => (
-                <ListBox.Item id={option.code} textValue={option.name}>
-                  {option.name}
-                </ListBox.Item>
-              )}
-            </ListBox>
+          <ComboBox.Popover className="w-(--trigger-width)">
+            <Virtualizer layout={ListLayout} layoutOptions={{ rowHeight: 40 }}>
+              <ListBox className="max-h-64 overflow-y-auto">
+                {(option: CountryOption) => (
+                  <ListBox.Item id={option.code} textValue={option.name}>
+                    {option.name}
+                  </ListBox.Item>
+                )}
+              </ListBox>
+            </Virtualizer>
           </ComboBox.Popover>
         </ComboBox>
 
