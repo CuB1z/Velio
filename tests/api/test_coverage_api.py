@@ -4,8 +4,9 @@ from fastapi.testclient import TestClient
 
 from app.api.dependencies import get_dem_source, get_loop_service, get_valhalla_client
 from app.core.config import settings
-from app.engine.coverage import Coverage
+from app.engine.coverage import WORLD_BBOX, Coverage
 from app.main import app
+from app.mappers.coverage import CoverageMapper
 from app.services.loop_service import LoopService
 from tests.api.test_loops_api import LOOP_BODY, ConstantDem
 from tests.api.test_loops_stream import parse
@@ -85,3 +86,22 @@ def test_a_route_in_portugal_is_routed(auth_headers):
     client = route_client(FakeValhalla(), auth_headers)
     resp = client.post("/api/v1/routes", json={"waypoints": [LISBON, PORTO]})
     assert resp.status_code == 200
+
+
+def test_coverage_lists_the_regions_bbox_and_geometry(api_client):
+    resp = api_client.get("/api/v1/coverage")
+    assert resp.status_code == 200
+    assert resp.headers["Cache-Control"] == (
+        f"public, max-age={settings.cache_control_max_age}"
+    )
+    body = resp.json()
+    assert body["regions"][2] == {"key": "portugal", "name": "Portugal", "iso": "PT"}
+    assert [region["iso"] for region in body["regions"]] == ["ES", "ES", "PT", "AD"]
+    assert body["bbox"] == list(COVERAGE.bbox)
+    assert body["geometry"]["type"] == "MultiPolygon"
+    assert len(body["geometry"]["coordinates"]) == len(COVERAGE.polygons)
+
+
+def test_without_a_coverage_file_the_answer_is_the_whole_world():
+    body = CoverageMapper.out(Coverage.everywhere()).model_dump()
+    assert body == {"regions": [], "bbox": WORLD_BBOX, "geometry": None}
