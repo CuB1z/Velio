@@ -341,6 +341,7 @@ export function AccountPage() {
                   onChange={setDeleteCode}
                   maxLength={6}
                   aria-label={t('auth.verifyCode')}
+                  className="w-fit"
                 >
                   <InputOTP.Group>
                     {[0, 1, 2, 3, 4, 5].map((index) => (
