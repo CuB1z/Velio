@@ -1,10 +1,9 @@
 import { randomUUID } from 'node:crypto'
 
-import { expect, test, type Locator } from '@playwright/test'
+import { expect, test } from '@playwright/test'
+import { visible } from '../support/locators'
 
 test.skip(!process.env.E2E_LIVE, 'needs the backend test stack (cycling-router docker/docker-compose.test.yaml)')
-
-const visible = (locator: Locator) => locator.filter({ visible: true }).first()
 
 test('a new rider signs up, plans a loop, saves, exports, analyses and signs out', async ({ page }) => {
   const email = `e2e-${randomUUID()}@example.com`

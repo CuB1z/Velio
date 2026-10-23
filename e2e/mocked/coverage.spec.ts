@@ -1,8 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { json, signedIn } from '../support/mockApi'
-
-const visible = (locator: import('@playwright/test').Locator) => locator.filter({ visible: true }).first()
+import { visible } from '../support/locators'
 
 const box = [
   [-3.75, 40.38],

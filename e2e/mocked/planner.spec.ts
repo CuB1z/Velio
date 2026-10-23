@@ -3,8 +3,7 @@ import { expect, test } from '@playwright/test'
 
 import { LANDING_EXAMPLES } from '../../src/pages/landingExamples'
 import { json, LOOP, signedIn, sse } from '../support/mockApi'
-
-const visible = (locator: import('@playwright/test').Locator) => locator.filter({ visible: true }).first()
+import { visible } from '../support/locators'
 
 test('a loop streams in, shows its figures on the map panel and can be saved', async ({ page }) => {
   let saved: unknown = null
