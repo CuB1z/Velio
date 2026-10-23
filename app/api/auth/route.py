@@ -24,7 +24,6 @@ from app.schemas.auth import (
     AuthSession,
     ChangePasswordRequest,
     DeleteAccountRequest,
-    DeleteRequest,
     ForgotPasswordRequest,
     LoginRequest,
     ProfileUpdateRequest,
@@ -157,7 +156,6 @@ async def update_profile(
 
 @router.post("/me/delete-request", status_code=status.HTTP_202_ACCEPTED)
 async def request_account_deletion(
-    _body: DeleteRequest,
     current_user=Depends(get_current_user),
     service: AccountService = Depends(get_account_service),
 ) -> None:

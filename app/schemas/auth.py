@@ -103,10 +103,6 @@ class SessionResponse(BaseModel):
     current: bool
 
 
-class DeleteRequest(BaseModel):
-    """Empty body for the deletion-code request endpoint."""
-
-
 class DeleteAccountRequest(BaseModel):
     """Confirmation code for account deletion."""
 

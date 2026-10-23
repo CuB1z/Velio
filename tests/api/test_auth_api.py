@@ -671,13 +671,12 @@ def test_deletion_request_provider_only_account():
         client = TestClient(app)
         resp = client.post(
             "/api/v1/auth/me/delete-request",
-            json={},
             headers=_auth_header(data["tokens"]),
         )
     finally:
         app.dependency_overrides.pop(get_mail_sender, None)
 
-    assert resp.status_code == 202
+    assert resp.status_code == 202, resp.text
     assert len(spy.codes) == 1
 
 
