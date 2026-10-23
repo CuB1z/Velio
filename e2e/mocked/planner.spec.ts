@@ -70,3 +70,34 @@ test('hovering the elevation profile marks that point on the map', async ({ page
   await page.mouse.move(box.x + box.width * 0.6, box.y - 200)
   await expect(marker).toHaveCount(0)
 })
+
+test('a click outside the coverage explains it and keeps the origin', async ({ page }) => {
+  const box = [
+    [-3.75, 40.38],
+    [-3.65, 40.38],
+    [-3.65, 40.45],
+    [-3.75, 40.45],
+    [-3.75, 40.38],
+  ]
+  const coverage = {
+    regions: [{ key: 'spain', name: 'Spain', iso: 'ES' }],
+    bbox: [-3.75, 40.38, -3.65, 40.45],
+    geometry: { type: 'MultiPolygon', coordinates: [[box]] },
+  }
+  await signedIn(page, { '**/api/v1/coverage': (route) => route.fulfill(json(coverage)) })
+  await page.goto('/es/loops')
+  const canvas = page.locator('.maplibregl-canvas')
+  await expect(canvas).toBeVisible()
+  const origin = page.getByRole('textbox', { name: 'Origen' })
+  const before = await origin.inputValue()
+
+  await page.getByLabel('Elegir en el mapa').first().click()
+  const size = await canvas.boundingBox()
+  await canvas.click({ position: { x: (size?.width ?? 400) - 80, y: (size?.height ?? 400) - 80 } })
+
+  await expect(
+    page.getByText('Ese punto queda fuera de la zona que cubrimos por ahora (España). Elige otro en el mapa.'),
+  ).toBeVisible()
+  await expect(origin).toHaveValue(before)
+})
+

@@ -238,8 +238,7 @@ Everything goes through `src/lib/format.ts`.
   (`src/pages/landingExamples.ts`), rendered with the product's real components
   (score card, surface bar, elevation profile). No maps outside the planner, no
   invented prices or testimonials.
-- **The map limits navigation to Spain** (`maxBounds` in `mapView.tsx`),
-  because that is what the backend graph covers.
+- **The map limits come from the backend coverage** (`GET /coverage`, `useCoverage`): every map is bounded by the covered regions' bbox plus 2°, with an Iberia box while it loads or if it fails. The planners check a clicked point or the browser position against the coverage polygons before using it and explain why when it is outside; the backend still answers `OUT_OF_COVERAGE` for anything that slips through.
 
 ## End-to-end tests
 
