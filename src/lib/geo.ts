@@ -22,3 +22,18 @@ export function minimumLoopKm(origin: LatLon | null, via: LatLon[]): number {
   const farthest = Math.max(...via.map((point) => haversineKm(origin, point)))
   return farthest * 2
 }
+
+function ringContains(ring: [number, number][], lon: number, lat: number): boolean {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i]
+    const [xj, yj] = ring[j]
+    if (yi > lat !== yj > lat && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+
+/** Polygons of [lon, lat] rings, holes after the outer ring: a point in a hole is outside. */
+export function multiPolygonContains(polygons: [number, number][][][], { lat, lon }: LatLon): boolean {
+  return polygons.some((rings) => rings.filter((ring) => ringContains(ring, lon, lat)).length % 2 === 1)
+}

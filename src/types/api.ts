@@ -22,6 +22,7 @@ export type ErrorCode =
   | 'NOT_FOUND'
   | 'UNKNOWN_PROVIDER'
   | 'EMAIL_ALREADY_REGISTERED'
+  | 'OUT_OF_COVERAGE'
   | 'ROUTING_ERROR'
   | 'RATE_LIMITED'
   | 'SERVICE_UNAVAILABLE'
@@ -151,6 +152,25 @@ export type Costing = {
 }
 
 export type ExportFormat = 'json' | 'gpx' | 'geojson'
+
+/* ----------------------------------------------------------------- coverage */
+
+export type CoverageRegion = {
+  key: string
+  name: string
+  iso: string
+}
+
+export type CoverageGeometry = {
+  type: 'MultiPolygon'
+  coordinates: [number, number][][][]
+}
+
+export type Coverage = {
+  regions: CoverageRegion[]
+  bbox: [number, number, number, number]
+  geometry: CoverageGeometry | null
+}
 
 /* -------------------------------------------------------------------- loops */
 

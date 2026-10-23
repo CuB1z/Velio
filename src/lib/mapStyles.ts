@@ -5,6 +5,8 @@ import type {
   StyleSpecification,
 } from 'maplibre-gl'
 
+import type { Coverage } from '@/types/api'
+
 export type MapStyleId = 'map' | 'satellite'
 
 /**
@@ -118,6 +120,24 @@ export function applyBaseStyle(map: MapLibreMap, id: MapStyleId, dark: boolean):
 /** The route needs a dark halo over the orthophoto or dark base, white on the light base. */
 export function overlayNeedsDarkHalo(id: MapStyleId, dark: boolean): boolean {
   return id === 'satellite' || dark
+}
+
+export type MapBounds = [[number, number], [number, number]]
+
+export const FALLBACK_BOUNDS: MapBounds = [
+  [-19.5, 26.5],
+  [5.5, 44.5],
+]
+
+const MARGIN_DEG = 2
+
+export function mapBoundsOf(coverage: Coverage | undefined): MapBounds {
+  if (!coverage?.geometry) return FALLBACK_BOUNDS
+  const [minLon, minLat, maxLon, maxLat] = coverage.bbox
+  return [
+    [Math.max(-180, minLon - MARGIN_DEG), Math.max(-85, minLat - MARGIN_DEG)],
+    [Math.min(180, maxLon + MARGIN_DEG), Math.min(85, maxLat + MARGIN_DEG)],
+  ]
 }
 
 /** Default centre (Puerta del Sol) while the browser gives no position. */

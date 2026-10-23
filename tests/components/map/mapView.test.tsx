@@ -69,6 +69,10 @@ const fake = vi.hoisted(() => {
       return false
     }
     addImage() {}
+    maxBounds: unknown = null
+    setMaxBounds(bounds: unknown) {
+      this.maxBounds = bounds
+    }
     fitBounds() {}
     easeTo() {}
     getZoom() {
@@ -241,4 +245,15 @@ it('leaves the relief off a basemap without buildings, such as the imagery', asy
 
   expect(map.layers.has('velio-relief')).toBe(false)
   expect(map.sources.has('velio-relief')).toBe(false)
+})
+
+it('follows new bounds without recreating the map', () => {
+  const { rerender } = render(<MapView styleId="map" />)
+  const bounds: [[number, number], [number, number]] = [
+    [-33.6, 24.36],
+    [7.1, 46.15],
+  ]
+  rerender(<MapView styleId="map" maxBounds={bounds} />)
+  expect(fake.FakeMap.instances).toHaveLength(1)
+  expect(fake.FakeMap.instances[0].maxBounds).toEqual(bounds)
 })

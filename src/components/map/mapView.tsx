@@ -15,9 +15,11 @@ import {
   applyBaseStyle,
   DEFAULT_CENTER,
   DEFAULT_ZOOM,
+  FALLBACK_BOUNDS,
   RELIEF_SOURCE,
   reliefPaint,
   reliefSource,
+  type MapBounds,
   type MapStyleId,
 } from '@/lib/mapStyles'
 import { MapControls } from './mapControls'
@@ -56,6 +58,7 @@ export type MapViewProps = {
    */
   focus?: { center: [number, number]; key: number }
   styleId: MapStyleId
+  maxBounds?: MapBounds
   routes?: RouteLayer[]
   markers?: MapMarker[]
   focusPoint?: MapFocusPoint | null
@@ -147,6 +150,7 @@ function focusElement(): { root: HTMLElement; label: HTMLElement } {
 
 export function MapView({
   styleId,
+  maxBounds = FALLBACK_BOUNDS,
   routes = [],
   focus,
   markers = [],
@@ -205,11 +209,7 @@ export function MapView({
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
       attributionControl: { compact: true },
-      // The backend graph covers Spain only: no point panning further.
-      maxBounds: [
-        [-19.5, 26.5],
-        [5.5, 44.5],
-      ],
+      maxBounds,
     })
 
     applyBaseStyle(instance, styleId, dark)
@@ -326,6 +326,10 @@ export function MapView({
       instance.off('idle', ensure)
     }
   }, [resolved, colorExpression, collection, relief])
+
+  useEffect(() => {
+    map.current?.setMaxBounds(maxBounds)
+  }, [maxBounds])
 
   // Only set the style on a real change: the constructor already set the initial
   // one, and setting it again is a no-op that emits no styledata.

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "velio",
-    "version": "0.32.0"
+    "version": "0.33.0"
   },
   "paths": {
     "/api/health": {
@@ -793,6 +793,32 @@
         }
       }
     },
+    "/api/v1/coverage": {
+      "get": {
+        "tags": [
+          "coverage"
+        ],
+        "summary": "Read Coverage",
+        "operationId": "read_coverage_api_v1_coverage_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/loops": {
       "post": {
         "tags": [
@@ -1503,6 +1529,115 @@
         "type": "object",
         "title": "CostingOptions",
         "description": "Raw Valhalla bicycle costing overrides (win over `bike`/`hills`)."
+      },
+      "CoverageGeometry": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "MultiPolygon",
+            "title": "Type",
+            "default": "MultiPolygon"
+          },
+          "coordinates": {
+            "items": {
+              "items": {
+                "items": {
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array",
+                  "maxItems": 2,
+                  "minItems": 2
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Coordinates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinates"
+        ],
+        "title": "CoverageGeometry"
+      },
+      "CoverageRegion": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "iso": {
+            "type": "string",
+            "title": "Iso"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "name",
+          "iso"
+        ],
+        "title": "CoverageRegion"
+      },
+      "CoverageResponse": {
+        "properties": {
+          "regions": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageRegion"
+            },
+            "type": "array",
+            "title": "Regions"
+          },
+          "bbox": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Bbox"
+          },
+          "geometry": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CoverageGeometry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "regions",
+          "bbox",
+          "geometry"
+        ],
+        "title": "CoverageResponse"
       },
       "CyclingScore": {
         "properties": {

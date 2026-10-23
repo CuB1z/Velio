@@ -36,6 +36,9 @@ export const SCHEMA_TO_TYPE = {
   ChangePasswordRequest: 'ChangePasswordRequest',
   DeleteAccountRequest: 'DeleteAccountRequest',
   SavedRouteCreateRequest: 'CreateSavedRoute',
+  CoverageResponse: 'Coverage',
+  CoverageRegion: 'CoverageRegion',
+  CoverageGeometry: 'CoverageGeometry',
 }
 
 export function loadSpec() {
