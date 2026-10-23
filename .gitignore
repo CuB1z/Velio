@@ -17,7 +17,7 @@ dist-ssr
 !.env.example
 
 # Tests & coverage
-coverage
+/coverage
 test-results
 playwright-report
 blob-report

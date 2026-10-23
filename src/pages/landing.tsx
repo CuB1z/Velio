@@ -1,8 +1,10 @@
+import { useOverlayState } from '@heroui/react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
+import { RequestCountryDialog } from '@/components/coverage/requestCountryDialog'
 import { Bento, BentoCell, BentoLabel } from '@/components/landing/bento'
 import { CountUp } from '@/components/landing/countUp'
 import { Faq } from '@/components/landing/faq'
@@ -54,6 +56,7 @@ export function LandingPage() {
   const { t, i18n } = useTranslation()
   const { status } = useAuth()
   const to = useLangPath()
+  const askDialog = useOverlayState()
   const origin = window.location.origin
   const scrollToTop = () => window.scrollTo({ top: 0 })
   useDocumentHead({
@@ -316,7 +319,7 @@ export function LandingPage() {
               <h2 className={sectionTitle}>{t('landing.faqTitle')}</h2>
             </Reveal>
             <Reveal delay={100}>
-              <Faq />
+              <Faq onAskCountry={askDialog.open} />
             </Reveal>
           </div>
         </section>
@@ -374,6 +377,9 @@ export function LandingPage() {
                 {t(label)}
               </Link>
             ))}
+            <button type="button" onClick={askDialog.open} className={`${footerLink} text-left`}>
+              {t('coverage.ask')}
+            </button>
           </FooterColumn>
 
           <FooterColumn title={t('landing.footerData')}>
@@ -393,6 +399,7 @@ export function LandingPage() {
           </div>
         </div>
       </footer>
+      <RequestCountryDialog state={askDialog} />
     </div>
   )
 }

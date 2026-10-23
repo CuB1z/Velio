@@ -1,9 +1,11 @@
+import { useOverlayState } from '@heroui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { streamLoop } from '@/api/routing'
 import { ErrorState } from '@/components/common/errorState'
+import { AskCountryButton, RequestCountryDialog } from '@/components/coverage/requestCountryDialog'
 import { PlannerLayout } from '@/components/layout/plannerLayout'
 import { LazyMap } from '@/components/map/lazyMap'
 import type { MapMarker, RouteLayer } from '@/components/map/mapView'
@@ -39,6 +41,7 @@ export function LoopPlannerPage() {
   const [positionNotice, setPositionNotice] = useState<PositionFailure | 'outside' | null>(null)
   const [pickedOutside, setPickedOutside] = useState(false)
   const { covers, isos } = useCoverage()
+  const askDialog = useOverlayState()
   // Bumped to refit the map, only when a new result arrives.
   const [fitKey, setFitKey] = useState(0)
   // Centres the map on a point (the user's position).
@@ -183,94 +186,109 @@ export function LoopPlannerPage() {
   const defaultName = `${formatDistance(form.distanceKm)} · ${t(`bike.${form.bike}`)}`
 
   return (
-    <PlannerLayout
-      resultCollapsed={resultCollapsed}
-      onResultCollapsedChange={setResultCollapsed}
-      heading={
-        <>
-          <span className="eyebrow">{t('planner.loopEyebrow')}</span>
-          <h1 className="text-2xl font-semibold tracking-tight">{t('planner.loopTitle')}</h1>
-        </>
-      }
-      form={
-        <div className="flex flex-col gap-4">
-          <LoopForm
-            value={form}
-            onChange={setForm}
-            onSubmit={() => mutation.mutate(form)}
-            onCancel={() => abort.current?.abort()}
-            isBusy={mutation.isPending}
-            retryIn={retryIn}
-            pickTarget={pickTarget}
-            onPick={(target) => {
-              setPickedOutside(false)
-              setPickTarget(target)
-            }}
-            onLocate={locate}
-          />
-          {mutation.error && !cancelled ? <ErrorState error={mutation.error} /> : null}
-          {exportError ? (
-            <p className="text-sm text-danger" role="alert">
-              {exportError}
-            </p>
-          ) : null}
-          {positionNotice ? (
-            <p className="text-sm text-muted" role="status">
-              {t(`map.position.${positionNotice}`, { regions: formatRegions(isos) })}
-            </p>
-          ) : null}
-        </div>
-      }
-      mapNotice={
-        pickTarget === null
-          ? null
-          : pickedOutside
-            ? t('map.position.pickedOutside', { regions: formatRegions(isos) })
-            : t('map.pickOnMapHint')
-      }
-      map={
-        <LazyMap
-          className="h-full w-full"
-          styleId={styleId}
-          onStyleChange={setStyleId}
-          routes={routes}
-          markers={markers}
-          focusPoint={focusPoint}
-          fitKey={fitKey}
-          focus={focus}
-          // The result panel floats over the map; without this padding the route is fitted behind it.
-          fitPadding={mapFitPadding(variants.length > 0, resultCollapsed)}
-          onMapClick={handleMapClick}
-          isPicking={pickTarget !== null}
-          onLocate={locate}
-        />
-      }
-      result={
-        variants.length > 0 || mutation.isPending ? (
+    <>
+      <PlannerLayout
+        resultCollapsed={resultCollapsed}
+        onResultCollapsedChange={setResultCollapsed}
+        heading={
+          <>
+            <span className="eyebrow">{t('planner.loopEyebrow')}</span>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('planner.loopTitle')}</h1>
+          </>
+        }
+        form={
           <div className="flex flex-col gap-4">
-            {mutation.isPending ? (
-              <LoopProgress progress={progress} found={found.length} requested={requestedLoops} />
+            <LoopForm
+              value={form}
+              onChange={setForm}
+              onSubmit={() => mutation.mutate(form)}
+              onCancel={() => abort.current?.abort()}
+              isBusy={mutation.isPending}
+              retryIn={retryIn}
+              pickTarget={pickTarget}
+              onPick={(target) => {
+                setPickedOutside(false)
+                setPickTarget(target)
+              }}
+              onLocate={locate}
+            />
+            {mutation.error && !cancelled ? <ErrorState error={mutation.error} /> : null}
+            {exportError ? (
+              <p className="text-sm text-danger" role="alert">
+                {exportError}
+              </p>
             ) : null}
-            {variants.length > 0 && request ? (
-              <RouteResultPanel
-                onProfileHover={onProfileHover}
-                variants={variants}
-                selected={selected}
-                onSelect={setSelected}
-                endpoint="loops"
-                request={request}
-                defaultName={defaultName}
-                requested={mutation.data ? requestedLoops : undefined}
-                targetKm={form.distanceKm}
-                // No gain target unless requested: an unasked-for "+900 m" reads as a failure.
-                targetGainM={form.gainEnabled ? form.gainM : undefined}
-                minimumKm={minimumLoopKm(form.origin, form.via)}
-                onError={setExportError}
-              />
+            {positionNotice ? (
+              <p className="text-sm text-muted" role="status">
+                {t(`map.position.${positionNotice}`, { regions: formatRegions(isos) })}
+                {positionNotice === 'outside' ? (
+                  <span className="mt-2 flex">
+                    <AskCountryButton onPress={askDialog.open} />
+                  </span>
+                ) : null}
+              </p>
             ) : null}
           </div>
-        ) : undefined
-      }
-    />
+        }
+        mapNotice={
+          pickTarget === null
+            ? null
+            : pickedOutside
+              ? (
+                  <>
+                    {t('map.position.pickedOutside', { regions: formatRegions(isos) })}
+                    <span className="mt-2 flex justify-center">
+                      <AskCountryButton onPress={askDialog.open} className="pointer-events-auto" />
+                    </span>
+                  </>
+                )
+              : t('map.pickOnMapHint')
+        }
+        map={
+          <LazyMap
+            className="h-full w-full"
+            styleId={styleId}
+            onStyleChange={setStyleId}
+            routes={routes}
+            markers={markers}
+            focusPoint={focusPoint}
+            fitKey={fitKey}
+            focus={focus}
+            // The result panel floats over the map; without this padding the route is fitted behind it.
+            fitPadding={mapFitPadding(variants.length > 0, resultCollapsed)}
+            onMapClick={handleMapClick}
+            isPicking={pickTarget !== null}
+            onLocate={locate}
+          />
+        }
+        result={
+          variants.length > 0 || mutation.isPending ? (
+            <div className="flex flex-col gap-4">
+              {mutation.isPending ? (
+                <LoopProgress progress={progress} found={found.length} requested={requestedLoops} />
+              ) : null}
+              {variants.length > 0 && request ? (
+                <RouteResultPanel
+                  onProfileHover={onProfileHover}
+                  variants={variants}
+                  selected={selected}
+                  onSelect={setSelected}
+                  endpoint="loops"
+                  request={request}
+                  defaultName={defaultName}
+                  requested={mutation.data ? requestedLoops : undefined}
+                  targetKm={form.distanceKm}
+                  // No gain target unless requested: an unasked-for "+900 m" reads as a failure.
+                  targetGainM={form.gainEnabled ? form.gainM : undefined}
+                  minimumKm={minimumLoopKm(form.origin, form.via)}
+                  onError={setExportError}
+                />
+              ) : null}
+            </div>
+          ) : undefined
+        }
+      />
+      <RequestCountryDialog state={askDialog} />
+    </>
   )
 }

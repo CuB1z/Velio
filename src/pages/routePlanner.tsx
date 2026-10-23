@@ -1,10 +1,11 @@
-import { Button, Switch } from '@heroui/react'
+import { Button, Switch, useOverlayState } from '@heroui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { createRoute } from '@/api/routing'
 import { ErrorState } from '@/components/common/errorState'
+import { AskCountryButton, RequestCountryDialog } from '@/components/coverage/requestCountryDialog'
 import { PlannerLayout } from '@/components/layout/plannerLayout'
 import { LazyMap } from '@/components/map/lazyMap'
 import type { MapMarker, RouteLayer } from '@/components/map/mapView'
@@ -42,6 +43,7 @@ export function RoutePlannerPage() {
   const [positionOutside, setPositionOutside] = useState(false)
   const [pickedOutside, setPickedOutside] = useState(false)
   const { covers, isos } = useCoverage()
+  const askDialog = useOverlayState()
   // Browser position replaces the first point unless the user already edited the list.
   useInitialPosition(async (position) => {
     if (!(await covers(position))) {
@@ -129,133 +131,146 @@ export function RoutePlannerPage() {
   const name = `${t('nav.routes')} · ${t(`bike.${bike}`)}`
 
   return (
-    <PlannerLayout
-      resultCollapsed={resultCollapsed}
-      onResultCollapsedChange={setResultCollapsed}
-      heading={
-        <>
-          <span className="eyebrow">{t('planner.routeEyebrow')}</span>
-          <h1 className="text-2xl font-semibold tracking-tight">{t('planner.routeTitle')}</h1>
-        </>
-      }
-      form={
-        <form
-          className="flex flex-col gap-5"
-          onSubmit={(event) => {
-            event.preventDefault()
-            mutation.mutate()
-          }}
-        >
-          <WaypointEditor
-            value={waypoints}
-            onChange={setWaypoints}
-            pickTarget={pickTarget}
-            onPick={(target) => {
-              setPickedOutside(false)
-              setPickTarget(target)
+    <>
+      <PlannerLayout
+        resultCollapsed={resultCollapsed}
+        onResultCollapsedChange={setResultCollapsed}
+        heading={
+          <>
+            <span className="eyebrow">{t('planner.routeEyebrow')}</span>
+            <h1 className="text-2xl font-semibold tracking-tight">{t('planner.routeTitle')}</h1>
+          </>
+        }
+        form={
+          <form
+            className="flex flex-col gap-5"
+            onSubmit={(event) => {
+              event.preventDefault()
+              mutation.mutate()
             }}
-          />
+          >
+            <WaypointEditor
+              value={waypoints}
+              onChange={setWaypoints}
+              pickTarget={pickTarget}
+              onPick={(target) => {
+                setPickedOutside(false)
+                setPickTarget(target)
+              }}
+            />
 
-          <BikePicker bike={bike} hills={hills} onBikeChange={setBike} onHillsChange={setHills} />
+            <BikePicker bike={bike} hills={hills} onBikeChange={setBike} onHillsChange={setHills} />
 
-          <InsetGroup>
-            <InsetRow stacked>
-              <SliderField
-                label={t('planner.alternatives')}
-                value={alternatives}
-                onChange={setAlternatives}
-                min={0}
-                max={2}
-                display={String(alternatives)}
-              />
-            </InsetRow>
-            <InsetRow>
-              <Switch
-                isSelected={includeProfile}
-                onChange={setIncludeProfile}
-                className="flex min-h-11 w-full items-center"
+            <InsetGroup>
+              <InsetRow stacked>
+                <SliderField
+                  label={t('planner.alternatives')}
+                  value={alternatives}
+                  onChange={setAlternatives}
+                  min={0}
+                  max={2}
+                  display={String(alternatives)}
+                />
+              </InsetRow>
+              <InsetRow>
+                <Switch
+                  isSelected={includeProfile}
+                  onChange={setIncludeProfile}
+                  className="flex min-h-11 w-full items-center"
+                >
+                  <Switch.Content className="flex w-full items-center justify-between gap-3">
+                    <span className="text-[15px]">{t('planner.includeProfile')}</span>
+                    <Switch.Control>
+                      <Switch.Thumb />
+                    </Switch.Control>
+                  </Switch.Content>
+                </Switch>
+              </InsetRow>
+            </InsetGroup>
+
+            <div className="sticky bottom-0 z-10 mt-auto flex gap-2 bg-overlay py-4 lg:bg-background">
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                className="min-h-12 text-base font-semibold"
+                isDisabled={waypoints.length < 2 || mutation.isPending || retryIn > 0}
               >
-                <Switch.Content className="flex w-full items-center justify-between gap-3">
-                  <span className="text-[15px]">{t('planner.includeProfile')}</span>
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                </Switch.Content>
-              </Switch>
-            </InsetRow>
-          </InsetGroup>
-
-          <div className="sticky bottom-0 z-10 mt-auto flex gap-2 bg-overlay py-4 lg:bg-background">
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              className="min-h-12 text-base font-semibold"
-              isDisabled={waypoints.length < 2 || mutation.isPending || retryIn > 0}
-            >
-              {mutation.isPending
-                ? t('planner.generating')
-                : retryIn > 0
-                  ? t('common.retryIn', { seconds: retryIn })
-                  : t('planner.generateRoute')}
-            </Button>
-            {mutation.isPending ? (
-              <Button variant="ghost" className="min-h-11" onPress={() => abort.current?.abort()}>
-                {t('common.cancel')}
+                {mutation.isPending
+                  ? t('planner.generating')
+                  : retryIn > 0
+                    ? t('common.retryIn', { seconds: retryIn })
+                    : t('planner.generateRoute')}
               </Button>
-            ) : null}
-          </div>
+              {mutation.isPending ? (
+                <Button variant="ghost" className="min-h-11" onPress={() => abort.current?.abort()}>
+                  {t('common.cancel')}
+                </Button>
+              ) : null}
+            </div>
 
-          {mutation.error ? <ErrorState error={mutation.error} /> : null}
-          {positionOutside ? (
-            <p className="text-sm text-muted" role="status">
-              {t('map.position.outside', { regions: formatRegions(isos) })}
-            </p>
-          ) : null}
-          {exportError ? (
-            <p className="text-sm text-danger" role="alert">
-              {exportError}
-            </p>
-          ) : null}
-        </form>
-      }
-      mapNotice={
-        pickTarget === null
-          ? null
-          : pickedOutside
-            ? t('map.position.pickedOutside', { regions: formatRegions(isos) })
-            : t('map.pickOnMapHint')
-      }
-      map={
-        <LazyMap
-          className="h-full w-full"
-          styleId={styleId}
-          onStyleChange={setStyleId}
-          routes={routes}
-          markers={markers}
-          focusPoint={focusPoint}
-          fitKey={fitKey}
-          focus={focus}
-          // The result panel floats over the map; without this padding the route is fitted behind it.
-          fitPadding={mapFitPadding(variants.length > 0, resultCollapsed)}
-          onMapClick={handleMapClick}
-          isPicking={pickTarget !== null}
-        />
-      }
-      result={
-        variants.length > 0 ? (
-          <RouteResultPanel
-            onProfileHover={onProfileHover}
-            variants={variants}
-            selected={selected}
-            onSelect={setSelected}
-            endpoint="routes"
-            request={request}
-            defaultName={name}
-            onError={setExportError}
+            {mutation.error ? <ErrorState error={mutation.error} /> : null}
+            {positionOutside ? (
+              <p className="text-sm text-muted" role="status">
+                {t('map.position.outside', { regions: formatRegions(isos) })}
+                <span className="mt-2 flex">
+                  <AskCountryButton onPress={askDialog.open} />
+                </span>
+              </p>
+            ) : null}
+            {exportError ? (
+              <p className="text-sm text-danger" role="alert">
+                {exportError}
+              </p>
+            ) : null}
+          </form>
+        }
+        mapNotice={
+          pickTarget === null
+            ? null
+            : pickedOutside
+              ? (
+                  <>
+                    {t('map.position.pickedOutside', { regions: formatRegions(isos) })}
+                    <span className="mt-2 flex justify-center">
+                      <AskCountryButton onPress={askDialog.open} className="pointer-events-auto" />
+                    </span>
+                  </>
+                )
+              : t('map.pickOnMapHint')
+        }
+        map={
+          <LazyMap
+            className="h-full w-full"
+            styleId={styleId}
+            onStyleChange={setStyleId}
+            routes={routes}
+            markers={markers}
+            focusPoint={focusPoint}
+            fitKey={fitKey}
+            focus={focus}
+            // The result panel floats over the map; without this padding the route is fitted behind it.
+            fitPadding={mapFitPadding(variants.length > 0, resultCollapsed)}
+            onMapClick={handleMapClick}
+            isPicking={pickTarget !== null}
           />
-        ) : undefined
-      }
-    />
+        }
+        result={
+          variants.length > 0 ? (
+            <RouteResultPanel
+              onProfileHover={onProfileHover}
+              variants={variants}
+              selected={selected}
+              onSelect={setSelected}
+              endpoint="routes"
+              request={request}
+              defaultName={name}
+              onError={setExportError}
+            />
+          ) : undefined
+        }
+      />
+      <RequestCountryDialog state={askDialog} />
+    </>
   )
 }
