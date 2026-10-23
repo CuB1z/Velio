@@ -36,6 +36,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | POST | `/api/v1/auth/me/delete-request` | Bearer | Request account deletion (issues OTP) |
 | DELETE | `/api/v1/auth/me` | Bearer | Confirm deletion and hard-delete the account |
 | GET | `/api/v1/coverage` | — | Covered regions, their bbox and geometry — `Cache-Control: public, max-age=<n>` |
+| POST | `/api/v1/coverage/requests` | Optional Bearer | Ask for a country to be covered; one request per person and country (202) |
 | POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets — `Cache-Control: public, max-age=<n>` |
 | POST | `/api/v1/loops/stream` | Bearer | The same request as Server-Sent Events: progress, each loop as it is found, then the ranked result |
 | POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints — `Cache-Control: public, max-age=<n>` (`CACHE_CONTROL_MAX_AGE`, default 3600) |
@@ -331,7 +332,8 @@ The confirm endpoint:
 1. Validates the OTP (`400 DELETE_ERROR` on wrong / expired / exhausted code).
 2. Revokes every refresh token of the account.
 3. Deletes the Brevo contact when `BREVO_LIST_ID` is configured.
-4. Hard-deletes the user row; foreign keys cascade to tokens, saved routes,
+4. Deletes the account's coverage requests, signed in and anonymous ones made with its email.
+5. Hard-deletes the user row; foreign keys cascade to tokens, saved routes,
    identities and verification codes.
 
 Once confirmed, the access token is invalid and all active sessions die.
@@ -456,6 +458,37 @@ curl -s localhost:8000/api/v1/coverage | jq '{regions, bbox}'
 ```
 
 `/routes/analyze` and `/routes/elevation` are not gated: they work on an existing track, which may be anywhere. Without a coverage file (`COVERAGE_PATH`) the endpoint answers no regions, the whole-world bbox and `"geometry": null`, and every point is accepted.
+
+---
+
+## POST /api/v1/coverage/requests
+
+Asks for a country to be covered. Coverage grows where riders ask, so this is a mailbox, not a promise: requests are counted per country and read by the operator; there is no public counts endpoint.
+
+```bash
+# Anonymous: the email makes it count as a person, not a click
+curl -s -X POST localhost:8000/api/v1/coverage/requests \
+  -H 'Content-Type: application/json' \
+  -d '{"country":"fr","email":"rider@example.com","note":"Pyrenees from the north side"}'
+# → 202 {"country":"FR","recorded":true}
+
+# Signed in: the account is the person, the email is ignored
+curl -s -X POST localhost:8000/api/v1/coverage/requests \
+  -H "Authorization: Bearer $ACCESS_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"country":"IT"}'
+```
+
+- `country` is an ISO 3166-1 alpha-2 code, any case; `note` is optional, up to 280 characters.
+- One request per person and country: asking again answers `202` with `"recorded": false`, never an error.
+- A covered country (today `ES`, `PT`, `AD`) answers `409 ALREADY_COVERED`; an unknown code or a long note `422 VALIDATION_ERROR`; an anonymous request without `email` `400 VALIDATION_ERROR` with `details.field = "email"`.
+- Privacy: the email is stored only to count people and, later and with an explicit opt-in, to say when the country ships. Deleting an account removes its requests, including anonymous ones made with the account's email.
+
+The operator reads the ranking, distinct people per country, with `python -m tools.coverage_requests` (also inside the API container):
+
+```text
+FR 42 · IT 17 · DE 9
+FR     42  latest 2026-10-23
+```
 
 ---
 
@@ -838,6 +871,7 @@ and rate-limit failures; no endpoint returns FastAPI's bare `detail` body:
 | 403 | `EMAIL_NOT_VERIFIED` / `ACCOUNT_SUSPENDED` | Account exists but is pending or suspended |
 | 404 | `NOT_FOUND` / `UNKNOWN_PROVIDER` | Unknown resource for this caller or provider name |
 | 409 | `EMAIL_ALREADY_REGISTERED` | The email already belongs to an account |
+| 409 | `ALREADY_COVERED` | A coverage request for a country the graph already covers; `details.country` names it |
 | 422 | `VALIDATION_ERROR` | Request body fails schema validation |
 | 422 | `OUT_OF_COVERAGE` | A loop origin or route waypoint lies outside the covered regions; `details.points` lists the offending indexes and `details.regions` the covered ISO codes. Checked before routing |
 | 422 | `ROUTING_ERROR` | Valhalla cannot route through the given points |
@@ -856,7 +890,7 @@ until the next request is accepted. Two layers apply:
 - **Per endpoint** (`RULES` in `app/core/ratelimit.py`): ruled paths carry
   an IP budget and/or an authenticated-user budget (e.g. register and login
   50/min/IP, `/auth/me` 120/min/user, compute endpoints 60/min/user,
-  `/coverage` 60/min/IP). Paths
+  `/coverage` 60/min/IP, `/coverage/requests` 10/min per IP and per user). Paths
   without a rule only face the global layer.
 - **Global courtesy ceiling**: every route — ruled or not — shares
   120 requests/min/IP, enforced by middleware.

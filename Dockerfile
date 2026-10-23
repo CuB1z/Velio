@@ -11,6 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY migrations ./migrations
+COPY tools/__init__.py tools/coverage_requests.py ./tools/
 COPY data/restricted_areas.geojson ./data/restricted_areas.geojson
 COPY data/coverage.geojson ./data/coverage.geojson
 COPY start.sh ./start.sh
