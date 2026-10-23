@@ -165,6 +165,9 @@ curl -N -X POST localhost:8000/api/v1/loops/stream -H "Authorization: Bearer $TO
   -H 'Content-Type: application/json' \
   -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":60,"routes":3}'
 
+# Covered regions (public); points outside them answer 422 OUT_OF_COVERAGE
+curl -s localhost:8000/api/v1/coverage | jq '{regions, bbox}'
+
 # Point-to-point route with up to two scored alternatives
 curl -s -X POST localhost:8000/api/v1/routes -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \

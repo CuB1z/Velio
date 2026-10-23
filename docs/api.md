@@ -35,6 +35,7 @@ read from the environment (or a `.env` file): `VALHALLA_URL`,
 | GET | `/api/v1/auth/{provider}/callback` | — | Finish the OAuth round trip, returns session |
 | POST | `/api/v1/auth/me/delete-request` | Bearer | Request account deletion (issues OTP) |
 | DELETE | `/api/v1/auth/me` | Bearer | Confirm deletion and hard-delete the account |
+| GET | `/api/v1/coverage` | — | Covered regions, their bbox and geometry — `Cache-Control: public, max-age=<n>` |
 | POST | `/api/v1/loops` | Bearer | Circular route from an origin, with distance/gain targets — `Cache-Control: public, max-age=<n>` |
 | POST | `/api/v1/loops/stream` | Bearer | The same request as Server-Sent Events: progress, each loop as it is found, then the ranked result |
 | POST | `/api/v1/routes` | Bearer | Point-to-point route through ordered waypoints — `Cache-Control: public, max-age=<n>` (`CACHE_CONTROL_MAX_AGE`, default 3600) |
@@ -57,6 +58,7 @@ Everything is environment-driven (or `.env`):
 | `ENV` | `dev` | `dev` enables `/docs`, `/redoc` and `/openapi.json`; anything else hides them |
 | `VALHALLA_URL` | `http://localhost:8002` | Routing engine base URL |
 | `VALHALLA_ELEVATION_DIR` | `./valhalla/elevation` | DEM tiles directory |
+| `COVERAGE_PATH` | `data/coverage.geojson` | Covered regions (`python -m tools.build_coverage`); points outside them answer `422 OUT_OF_COVERAGE`. Missing file: a startup warning and every point is accepted |
 | `DB_DRIVER` | `postgresql+asyncpg` | SQLAlchemy driver (`sqlite+aiosqlite` for quick local runs) |
 | `DB_HOST/PORT/USER/PASSWORD/NAME` | localhost / cycling / cycling_router | Database connection |
 | `JWT_SECRET_KEY` | dev value | **Change in production**; signs access and refresh tokens |
@@ -423,6 +425,37 @@ curl -s localhost:8000/metrics -H "Authorization: Bearer $METRICS_TOKEN" | head
 Closed by default (`404`). Whether the endpoint is reachable from the public
 internet or only from an internal scraper is an infrastructure decision outside
 this repository; `METRICS_TOKEN` is the app-side guard for the public case.
+
+---
+
+## GET /api/v1/coverage
+
+The regions the routing graph covers, so a client can bound its map and tell a rider up front when a point is out of reach. Public, no token; cacheable like the compute endpoints (`Cache-Control: public, max-age=<n>`).
+
+```bash
+curl -s localhost:8000/api/v1/coverage | jq '{regions, bbox}'
+```
+
+```json
+{
+  "regions": [
+    {"key": "spain", "name": "Spain", "iso": "ES"},
+    {"key": "canary-islands", "name": "Canary Islands", "iso": "ES"},
+    {"key": "portugal", "name": "Portugal", "iso": "PT"},
+    {"key": "andorra", "name": "Andorra", "iso": "AD"}
+  ],
+  "bbox": [-31.6, 26.3612, 5.0985, 44.1486],
+  "geometry": {"type": "MultiPolygon", "coordinates": [[[[-1.8186, 35.8982], "…"]]]}
+}
+```
+
+`bbox` is `[min_lon, min_lat, max_lon, max_lat]` and `geometry` holds one polygon per region in `[lon, lat]` order (the Geofabrik boundary polygons, simplified; about 16 kB). The same polygons gate `POST /loops`, `/loops/stream` and `/routes`: an origin or waypoint outside them answers `422 OUT_OF_COVERAGE` before any routing (as the stream's `error` event on `/loops/stream`):
+
+```json
+{"error": "OUT_OF_COVERAGE", "message": "Some points are outside the covered regions", "details": {"points": [1], "regions": ["AD", "ES", "PT"]}}
+```
+
+`/routes/analyze` and `/routes/elevation` are not gated: they work on an existing track, which may be anywhere. Without a coverage file (`COVERAGE_PATH`) the endpoint answers no regions, the whole-world bbox and `"geometry": null`, and every point is accepted.
 
 ---
 
@@ -806,6 +839,7 @@ and rate-limit failures; no endpoint returns FastAPI's bare `detail` body:
 | 404 | `NOT_FOUND` / `UNKNOWN_PROVIDER` | Unknown resource for this caller or provider name |
 | 409 | `EMAIL_ALREADY_REGISTERED` | The email already belongs to an account |
 | 422 | `VALIDATION_ERROR` | Request body fails schema validation |
+| 422 | `OUT_OF_COVERAGE` | A loop origin or route waypoint lies outside the covered regions; `details.points` lists the offending indexes and `details.regions` the covered ISO codes. Checked before routing |
 | 422 | `ROUTING_ERROR` | Valhalla cannot route through the given points |
 | 429 | `RATE_LIMITED` | Too many requests: the per-endpoint budget (see `RATE_LIMIT_ENABLED`) or the global per-IP ceiling tripped; retry after the seconds stated in the `Retry-After` header |
 | 499 | `CLIENT_CLOSED_REQUEST` | The client disconnected before a loop was ready; nobody reads it, it only appears in logs |
@@ -821,7 +855,8 @@ until the next request is accepted. Two layers apply:
 
 - **Per endpoint** (`RULES` in `app/core/ratelimit.py`): ruled paths carry
   an IP budget and/or an authenticated-user budget (e.g. register and login
-  50/min/IP, `/auth/me` 120/min/user, compute endpoints 60/min/user). Paths
+  50/min/IP, `/auth/me` 120/min/user, compute endpoints 60/min/user,
+  `/coverage` 60/min/IP). Paths
   without a rule only face the global layer.
 - **Global courtesy ceiling**: every route — ruled or not — shares
   120 requests/min/IP, enforced by middleware.
