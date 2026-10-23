@@ -20,6 +20,7 @@ from app.core.exceptions import (
 )
 from app.core.ratelimit import RULES, client_ip, enforce, match_rule
 from app.core.security import ACCESS_TYPE, decode_token
+from app.engine.coverage import Coverage
 from app.engine.dem import DemSource
 from app.engine.restricted import RestrictedAreas
 from app.models import User
@@ -54,6 +55,11 @@ def get_dem_source(request: Request) -> DemSource:
 def get_restricted_areas(request: Request) -> RestrictedAreas:
     """Restricted areas loaded at startup."""
     return request.app.state.restricted
+
+
+def get_coverage(request: Request) -> Coverage:
+    """Covered regions loaded at startup."""
+    return request.app.state.coverage
 
 
 # Repositories ---------------------------------------------------------------
@@ -137,17 +143,21 @@ def get_loop_service(
     valhalla: ValhallaClient = Depends(get_valhalla_client),
     dem: DemSource = Depends(get_dem_source),
     restricted: RestrictedAreas = Depends(get_restricted_areas),
+    coverage: Coverage = Depends(get_coverage),
 ) -> LoopService:
-    """Compose the shared client, DEM source and restricted areas."""
-    return LoopService(valhalla=valhalla, dem=dem, restricted=restricted)
+    """Compose the shared client, DEM source, restricted areas and coverage."""
+    return LoopService(
+        valhalla=valhalla, dem=dem, restricted=restricted, coverage=coverage
+    )
 
 
 def get_route_service(
     valhalla: ValhallaClient = Depends(get_valhalla_client),
     dem: DemSource = Depends(get_dem_source),
+    coverage: Coverage = Depends(get_coverage),
 ) -> RouteService:
-    """Compose the shared client and DEM source into the route service."""
-    return RouteService(valhalla=valhalla, dem=dem)
+    """Compose the shared client, DEM source and coverage into the route service."""
+    return RouteService(valhalla=valhalla, dem=dem, coverage=coverage)
 
 
 def get_analysis_service(

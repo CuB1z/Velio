@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     restricted_areas_path: Path | None = Field(
         default=Path("data/restricted_areas.geojson"), alias="RESTRICTED_AREAS_PATH"
     )
+    coverage_path: Path | None = Field(
+        default=Path("data/coverage.geojson"), alias="COVERAGE_PATH"
+    )
 
     cors_origins: list[str] = Field(default=["*"])
     cache_control_max_age: int = Field(default=3600, alias="CACHE_CONTROL_MAX_AGE")

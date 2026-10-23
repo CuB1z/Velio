@@ -6,8 +6,13 @@ from app.clients.valhalla import (
     ValhallaClient,
     ValhallaError,
 )
-from app.core.exceptions import RoutingError, ServiceUnavailableError
+from app.core.exceptions import (
+    OutOfCoverageError,
+    RoutingError,
+    ServiceUnavailableError,
+)
 from app.engine.analysis import Analysis, analyze_edges
+from app.engine.coverage import Coverage
 from app.engine.cycling_score import BALANCED_WEIGHTS
 from app.engine.dem import DemSource
 from app.engine.elevation import build_profile
@@ -20,12 +25,20 @@ from app.schemas.route import RouteCreateRequest, RouteResponse
 class RouteService:
     """Routes between waypoints and scores the resulting path."""
 
-    def __init__(self, valhalla: ValhallaClient, dem: DemSource):
+    def __init__(
+        self,
+        valhalla: ValhallaClient,
+        dem: DemSource,
+        coverage: Coverage | None = None,
+    ):
         self.valhalla = valhalla
         self.dem = dem
+        self.coverage = coverage or Coverage.everywhere()
 
     async def generate(self, data: RouteCreateRequest) -> RouteResponse:
         locations = [(w.lat, w.lon) for w in data.waypoints]
+        if outside := self.coverage.outside(locations):
+            raise OutOfCoverageError(outside, self.coverage.isos)
         costing_options = costing_options_for(data.bike, data.hills, data.costing)
         try:
             if data.alternatives:

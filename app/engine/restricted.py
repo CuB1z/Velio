@@ -29,6 +29,17 @@ def _crossings(lon: float, lat: float, ring: Ring) -> int:
     return count
 
 
+def feature_polygons(feature: dict) -> list[Polygon]:
+    geometry = feature.get("geometry") or {}
+    if geometry.get("type") == "Polygon":
+        parts = [geometry["coordinates"]]
+    elif geometry.get("type") == "MultiPolygon":
+        parts = geometry["coordinates"]
+    else:
+        return []
+    return [[[(x, y) for x, y, *_ in ring] for ring in rings] for rings in parts]
+
+
 class RestrictedAreas:
     """Polygons in (lon, lat), each an outer ring followed by its holes."""
 
@@ -53,18 +64,11 @@ class RestrictedAreas:
     @classmethod
     def from_geojson(cls, path: Path | str) -> "RestrictedAreas":
         data = json.loads(Path(path).read_text())
-        polygons: list[Polygon] = []
-        for feature in data.get("features", []):
-            geometry = feature.get("geometry") or {}
-            if geometry.get("type") == "Polygon":
-                parts = [geometry["coordinates"]]
-            elif geometry.get("type") == "MultiPolygon":
-                parts = geometry["coordinates"]
-            else:
-                continue
-            for rings in parts:
-                polygons.append([[(x, y) for x, y, *_ in ring] for ring in rings])
-        return cls(polygons)
+        return cls(
+            polygon
+            for feature in data.get("features", [])
+            for polygon in feature_polygons(feature)
+        )
 
     def __len__(self) -> int:
         return len(self._polygons)

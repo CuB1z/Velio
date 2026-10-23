@@ -11,8 +11,13 @@ from app.clients.valhalla import (
     ValhallaClient,
     ValhallaError,
 )
-from app.core.exceptions import RoutingError, ServiceUnavailableError
+from app.core.exceptions import (
+    OutOfCoverageError,
+    RoutingError,
+    ServiceUnavailableError,
+)
 from app.engine.analysis import Analysis, analyze_edges
+from app.engine.coverage import Coverage
 from app.engine.cycling_score import BALANCED_WEIGHTS
 from app.engine.dem import DemSource
 from app.engine.geo import initial_bearing_deg
@@ -66,14 +71,18 @@ class LoopService:
         valhalla: ValhallaClient,
         dem: DemSource,
         restricted: RestrictedAreas | None = None,
+        coverage: Coverage | None = None,
     ):
         self.valhalla = valhalla
         self.dem = dem
         self.restricted = restricted or RestrictedAreas()
+        self.coverage = coverage or Coverage.everywhere()
 
     async def generate(
         self, data: LoopCreateRequest, emit: EventSink | None = None
     ) -> LoopResponse:
+        if self.coverage.outside([(data.origin.lat, data.origin.lon)]):
+            raise OutOfCoverageError([0], self.coverage.isos)
         costing_options = costing_options_for(data.bike, data.hills, data.costing)
         self.logger.info(
             "generating loops",

@@ -15,6 +15,7 @@ from app.clients.valhalla import ValhallaClient
 from app.core.config import settings
 from app.core.database import close_db
 from app.core.logging import setup_logging
+from app.engine.coverage import Coverage
 from app.engine.dem import DemSource
 from app.engine.restricted import RestrictedAreas
 
@@ -31,6 +32,16 @@ def load_restricted_areas(path: Path | None) -> RestrictedAreas:
     return RestrictedAreas.from_geojson(path)
 
 
+def load_coverage(path: Path | None) -> Coverage:
+    if path is None or not path.is_file():
+        logger.warning(
+            "coverage not loaded; every point is accepted",
+            extra={"extra_data": {"path": str(path)}},
+        )
+        return Coverage.everywhere()
+    return Coverage.from_geojson(path)
+
+
 async def init_state(app: FastAPI) -> None:
     """Create every shared resource and hang it off app.state."""
     setup_logging()
@@ -39,6 +50,7 @@ async def init_state(app: FastAPI) -> None:
     )
     app.state.dem = DemSource(settings.elevation_dir)
     app.state.restricted = load_restricted_areas(settings.restricted_areas_path)
+    app.state.coverage = load_coverage(settings.coverage_path)
     app.state.mail = build_mail_sender()
 
 

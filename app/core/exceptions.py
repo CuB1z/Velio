@@ -86,6 +86,18 @@ class RoutingError(AppError):
         )
 
 
+class OutOfCoverageError(AppError):
+    """Some points fall outside the regions the routing graph covers (422)."""
+
+    def __init__(self, points: list[int], regions: list[str]):
+        super().__init__(
+            message="Some points are outside the covered regions",
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            error_code="OUT_OF_COVERAGE",
+            details={"points": points, "regions": regions},
+        )
+
+
 class OAuthError(AppError):
     """The OAuth round trip was rejected (bad state, code or scope) (400)."""
 
