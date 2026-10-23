@@ -81,12 +81,16 @@ def test_disabled_limiter_never_blocks(api_client: TestClient):
 
 
 def test_every_rule_points_at_a_real_endpoint():
-    """Guard against stale RULES entries after route refactors.
-
-    Endpoints without a rule are fine: they simply live under the
-    global ceiling alone.
-    """
+    """Guard against stale RULES entries after route refactors."""
     from app.main import app
 
     spec_paths = set(app.openapi()["paths"])
     assert set(ratelimit.RULES) <= spec_paths
+
+
+def test_every_versioned_endpoint_has_its_own_budget():
+    """A new endpoint must choose its budget; the global ceiling is a backstop."""
+    from app.main import app
+
+    versioned = {path for path in app.openapi()["paths"] if path.startswith("/api/v1/")}
+    assert versioned - set(ratelimit.RULES) == set()

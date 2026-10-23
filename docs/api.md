@@ -893,7 +893,7 @@ until the next request is accepted. Two layers apply:
   `/coverage` 60/min/IP, `/coverage/requests` 10/min per IP and per user). Paths
   without a rule only face the global layer.
 - **Global courtesy ceiling**: every route — ruled or not — shares
-  120 requests/min/IP, enforced by middleware.
+  300 requests/min/IP, enforced by middleware.
 
 Exhausted keys get a temporary ban with Redis-style TTL semantics: the
 deadline is fixed at creation, hammering during the ban never extends it,
