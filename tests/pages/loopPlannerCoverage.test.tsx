@@ -68,20 +68,21 @@ afterEach(() => {
 it('a click outside the coverage shows the notice and sets nothing', async () => {
   await openPlanner()
   await userEvent.click(screen.getAllByLabelText('Elegir en el mapa')[0])
+  expect(await screen.findAllByText('Pulsa en el mapa para colocar el punto')).not.toHaveLength(0)
 
   const onMapClick = mapProps.current?.onMapClick as (coordinate: [number, number]) => Promise<void>
   await act(() => onMapClick([PARIS.lon, PARIS.lat]))
 
   expect(
-    await screen.findByText(
+    await screen.findAllByText(
       'Ese punto queda fuera de la zona que cubrimos por ahora (España y Portugal). Elige otro en el mapa.',
     ),
-  ).toBeInTheDocument()
+  ).not.toHaveLength(0)
   expect(originMarker()).toEqual([MADRID.lon, MADRID.lat])
 
   await act(() => onMapClick([LISBON.lon, LISBON.lat]))
   await waitFor(() => expect(originMarker()).toEqual([LISBON.lon, LISBON.lat]))
-  expect(screen.queryByText(/Ese punto queda fuera/)).not.toBeInTheDocument()
+  expect(screen.queryAllByText(/Ese punto queda fuera|Pulsa en el mapa/)).toHaveLength(0)
 })
 
 it('a user located in Paris keeps the default start and is told why', async () => {

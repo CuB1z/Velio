@@ -95,9 +95,13 @@ test('a click outside the coverage explains it and keeps the origin', async ({ p
   const size = await canvas.boundingBox()
   await canvas.click({ position: { x: (size?.width ?? 400) - 80, y: (size?.height ?? 400) - 80 } })
 
-  await expect(
+  const notice = visible(
     page.getByText('Ese punto queda fuera de la zona que cubrimos por ahora (España). Elige otro en el mapa.'),
-  ).toBeVisible()
+  )
+  await expect(notice).toBeVisible()
+  const noticeBox = await notice.boundingBox()
+  const mapBox = await canvas.boundingBox()
+  expect(noticeBox && mapBox && noticeBox.x > mapBox.x && noticeBox.y > mapBox.y + mapBox.height / 2).toBe(true)
   await expect(origin).toHaveValue(before)
 })
 

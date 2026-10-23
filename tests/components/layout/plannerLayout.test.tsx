@@ -42,6 +42,28 @@ describe('PlannerLayout', () => {
   })
 })
 
+describe('PlannerLayout map notice', () => {
+  it('puts the notice over the map, next to the result and above the sheet', () => {
+    render(
+      <PlannerLayout
+        form={<p>formulario</p>}
+        map={<p>mapa</p>}
+        result={<p>métricas de la ruta</p>}
+        mapNotice="Pulsa en el mapa para colocar el punto"
+      />,
+    )
+    const [sheetCopy, mapCopy] = screen.getAllByRole('status')
+    expect(sheetCopy.closest('aside')).not.toBeNull()
+    expect(mapCopy.closest('aside')).toBeNull()
+    expect(mapCopy.parentElement).toContainElement(screen.getAllByText('métricas de la ruta').at(-1) ?? null)
+  })
+
+  it('renders nothing over the map without a notice', () => {
+    render(<PlannerLayout form={<p>formulario</p>} map={<p>mapa</p>} />)
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+})
+
 describe('PlannerLayout on mobile', () => {
   function Sheet({ withResult }: { withResult: boolean }) {
     return <PlannerLayout form={<p>formulario</p>} map={<p>mapa</p>} result={withResult ? <p>métricas</p> : undefined} />

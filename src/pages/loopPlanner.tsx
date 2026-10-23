@@ -36,7 +36,8 @@ export function LoopPlannerPage() {
   const [selected, setSelected] = useState(0)
   const [exportError, setExportError] = useState<string | null>(null)
   // Why the user's position is missing, if it is.
-  const [positionNotice, setPositionNotice] = useState<PositionFailure | 'outside' | 'pickedOutside' | null>(null)
+  const [positionNotice, setPositionNotice] = useState<PositionFailure | 'outside' | null>(null)
+  const [pickedOutside, setPickedOutside] = useState(false)
   const { covers, isos } = useCoverage()
   // Bumped to refit the map, only when a new result arrives.
   const [fitKey, setFitKey] = useState(0)
@@ -117,10 +118,10 @@ export function LoopPlannerPage() {
     if (pickTarget === null) return
     const point = { lat: coordinate[1], lon: coordinate[0] }
     if (!(await covers(point))) {
-      setPositionNotice('pickedOutside')
+      setPickedOutside(true)
       return
     }
-    setPositionNotice(null)
+    setPickedOutside(false)
     if (pickTarget === 'origin') {
       setForm((current) => ({ ...current, origin: point }))
     } else {
@@ -201,7 +202,10 @@ export function LoopPlannerPage() {
             isBusy={mutation.isPending}
             retryIn={retryIn}
             pickTarget={pickTarget}
-            onPick={setPickTarget}
+            onPick={(target) => {
+              setPickedOutside(false)
+              setPickTarget(target)
+            }}
             onLocate={locate}
           />
           {mutation.error && !cancelled ? <ErrorState error={mutation.error} /> : null}
@@ -215,12 +219,14 @@ export function LoopPlannerPage() {
               {t(`map.position.${positionNotice}`, { regions: formatRegions(isos) })}
             </p>
           ) : null}
-          {pickTarget !== null ? (
-            <p className="rounded-lg border border-accent/40 bg-accent-soft px-3 py-2 text-sm">
-              {t('map.pickOnMapHint')}
-            </p>
-          ) : null}
         </div>
+      }
+      mapNotice={
+        pickTarget === null
+          ? null
+          : pickedOutside
+            ? t('map.position.pickedOutside', { regions: formatRegions(isos) })
+            : t('map.pickOnMapHint')
       }
       map={
         <LazyMap

@@ -15,6 +15,7 @@ type Props = {
   /** Eyebrow and title above the form. */
   heading?: ReactNode
   result?: ReactNode
+  mapNotice?: ReactNode
   /** Collapsed by the user to see the whole map. Desktop only. */
   resultCollapsed?: boolean
   onResultCollapsedChange?: (collapsed: boolean) => void
@@ -31,6 +32,7 @@ export function PlannerLayout({
   map,
   heading,
   result,
+  mapNotice,
   resultCollapsed: collapsed = false,
   onResultCollapsedChange,
 }: Props) {
@@ -48,6 +50,14 @@ export function PlannerLayout({
   const dragged = useRef(false)
   const step = (delta: number) =>
     setSheet((current) => SHEETS[Math.min(SHEETS.length - 1, Math.max(0, SHEETS.indexOf(current) + delta))])
+  const notice = mapNotice ? (
+    <p
+      role="status"
+      className="max-w-md rounded-2xl bg-overlay/90 px-4 py-2.5 text-center text-sm text-foreground ring-1 ring-border backdrop-blur-xl"
+    >
+      {mapNotice}
+    </p>
+  ) : null
   const sheetLabel = { full: t('planner.sheetFold'), peek: t('planner.sheetExpand'), hidden: t('planner.sheetShow') }[sheet]
 
   return (
@@ -61,6 +71,9 @@ export function PlannerLayout({
         )}
         style={drag ? { transform: `translateY(${Math.max(drag, -DRAG_STEP * 2)}px)` } : undefined}
       >
+        {notice ? (
+          <div className="pointer-events-none absolute inset-x-4 bottom-full mb-3 flex justify-center lg:hidden">{notice}</div>
+        ) : null}
         <button
           type="button"
           aria-expanded={sheet !== 'hidden'}
@@ -125,31 +138,34 @@ export function PlannerLayout({
         <div className="relative h-full">
           {map}
 
-          {result ? (
-            <div className="pointer-events-none absolute bottom-3 left-10 right-3 z-10 hidden lg:block">
-              <div className="pointer-events-auto overflow-hidden rounded-3xl bg-overlay/90 ring-1 ring-border backdrop-blur-xl">
-                {/* Sheet handle: toggles the panel; its label lives in aria-label. */}
-                <button
-                  type="button"
-                  onClick={() => onResultCollapsedChange?.(!collapsed)}
-                  aria-expanded={!collapsed}
-                  aria-label={collapsed ? t('result.show') : t('result.hide')}
-                  className="flex w-full flex-col items-center gap-1 pb-1 pt-2 transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
-                >
-                  <span className="h-1 w-9 rounded-full bg-border" aria-hidden="true" />
-                  <ChevronIcon
-                    className={
-                      collapsed
-                        ? 'text-muted transition-transform'
-                        : 'rotate-180 text-muted transition-transform'
-                    }
-                  />
-                </button>
+          {result || notice ? (
+            <div className="pointer-events-none absolute bottom-3 left-10 right-3 z-10 hidden flex-col items-center gap-3 lg:flex">
+              {notice}
+              {result ? (
+                <div className="pointer-events-auto w-full overflow-hidden rounded-3xl bg-overlay/90 ring-1 ring-border backdrop-blur-xl">
+                  {/* Sheet handle: toggles the panel; its label lives in aria-label. */}
+                  <button
+                    type="button"
+                    onClick={() => onResultCollapsedChange?.(!collapsed)}
+                    aria-expanded={!collapsed}
+                    aria-label={collapsed ? t('result.show') : t('result.hide')}
+                    className="flex w-full flex-col items-center gap-1 pb-1 pt-2 transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+                  >
+                    <span className="h-1 w-9 rounded-full bg-border" aria-hidden="true" />
+                    <ChevronIcon
+                      className={
+                        collapsed
+                          ? 'text-muted transition-transform'
+                          : 'rotate-180 text-muted transition-transform'
+                      }
+                    />
+                  </button>
 
-                {collapsed ? null : (
-                  <div className="max-h-[56vh] overflow-y-auto px-7 pb-6">{result}</div>
-                )}
-              </div>
+                  {collapsed ? null : (
+                    <div className="max-h-[56vh] overflow-y-auto px-7 pb-6">{result}</div>
+                  )}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

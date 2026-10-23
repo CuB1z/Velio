@@ -39,12 +39,13 @@ export function RoutePlannerPage() {
   const { focusPoint, onProfileHover } = useProfileFocus()
   const [waypoints, setWaypoints] = useState<LatLon[]>(DEFAULT_WAYPOINTS)
   const [focus, setFocus] = useState<{ center: [number, number]; key: number }>()
-  const [coverageNotice, setCoverageNotice] = useState<'outside' | 'pickedOutside' | null>(null)
+  const [positionOutside, setPositionOutside] = useState(false)
+  const [pickedOutside, setPickedOutside] = useState(false)
   const { covers, isos } = useCoverage()
   // Browser position replaces the first point unless the user already edited the list.
   useInitialPosition(async (position) => {
     if (!(await covers(position))) {
-      setCoverageNotice('outside')
+      setPositionOutside(true)
       return
     }
     setWaypoints((current) => (current === DEFAULT_WAYPOINTS ? [position, ...current.slice(1)] : current))
@@ -117,10 +118,10 @@ export function RoutePlannerPage() {
     if (pickTarget === null) return
     const point = { lat: coordinate[1], lon: coordinate[0] }
     if (!(await covers(point))) {
-      setCoverageNotice('pickedOutside')
+      setPickedOutside(true)
       return
     }
-    setCoverageNotice(null)
+    setPickedOutside(false)
     setWaypoints((current) => current.map((item, index) => (index === pickTarget ? point : item)))
     setPickTarget(null)
   }
@@ -149,7 +150,10 @@ export function RoutePlannerPage() {
             value={waypoints}
             onChange={setWaypoints}
             pickTarget={pickTarget}
-            onPick={setPickTarget}
+            onPick={(target) => {
+              setPickedOutside(false)
+              setPickTarget(target)
+            }}
           />
 
           <BikePicker bike={bike} hills={hills} onBikeChange={setBike} onHillsChange={setHills} />
@@ -203,9 +207,9 @@ export function RoutePlannerPage() {
           </div>
 
           {mutation.error ? <ErrorState error={mutation.error} /> : null}
-          {coverageNotice ? (
+          {positionOutside ? (
             <p className="text-sm text-muted" role="status">
-              {t(`map.position.${coverageNotice}`, { regions: formatRegions(isos) })}
+              {t('map.position.outside', { regions: formatRegions(isos) })}
             </p>
           ) : null}
           {exportError ? (
@@ -213,12 +217,14 @@ export function RoutePlannerPage() {
               {exportError}
             </p>
           ) : null}
-          {pickTarget !== null ? (
-            <p className="rounded-lg border border-accent/40 bg-accent-soft px-3 py-2 text-sm">
-              {t('map.pickOnMapHint')}
-            </p>
-          ) : null}
         </form>
+      }
+      mapNotice={
+        pickTarget === null
+          ? null
+          : pickedOutside
+            ? t('map.position.pickedOutside', { regions: formatRegions(isos) })
+            : t('map.pickOnMapHint')
       }
       map={
         <LazyMap
