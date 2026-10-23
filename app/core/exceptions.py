@@ -98,6 +98,18 @@ class OutOfCoverageError(AppError):
         )
 
 
+class CountryAlreadyCoveredError(AppError):
+    """A coverage request for a country the routing graph already covers (409)."""
+
+    def __init__(self, country: str):
+        super().__init__(
+            message="This country is already covered",
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="ALREADY_COVERED",
+            details={"country": country},
+        )
+
+
 class OAuthError(AppError):
     """The OAuth round trip was rejected (bad state, code or scope) (400)."""
 

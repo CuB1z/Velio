@@ -24,12 +24,14 @@ from app.engine.coverage import Coverage
 from app.engine.dem import DemSource
 from app.engine.restricted import RestrictedAreas
 from app.models import User
+from app.repositories.coverage_request_repository import CoverageRequestRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.saved_route_repository import SavedRouteRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.verification_code_repository import VerificationCodeRepository
 from app.services.account_service import AccountService, ensure_active
 from app.services.analysis_service import RouteAnalysisService
+from app.services.coverage_request_service import CoverageRequestService
 from app.services.loop_service import LoopService
 from app.services.oauth_service import OAuthService
 from app.services.route_service import RouteService
@@ -82,6 +84,13 @@ def get_refresh_token_repository(
     return RefreshTokenRepository(db)
 
 
+def get_coverage_request_repository(
+    db: AsyncSession = Depends(get_db),
+) -> CoverageRequestRepository:
+    """Provide a CoverageRequestRepository bound to the request session."""
+    return CoverageRequestRepository(db)
+
+
 def get_verification_code_repository(
     db: AsyncSession = Depends(get_db),
 ) -> VerificationCodeRepository:
@@ -116,9 +125,18 @@ def get_account_service(
     codes: VerificationCodeRepository = Depends(get_verification_code_repository),
     tokens: RefreshTokenRepository = Depends(get_refresh_token_repository),
     mail: MailSender = Depends(get_mail_sender),
+    coverage_requests: CoverageRequestRepository = Depends(
+        get_coverage_request_repository
+    ),
 ) -> AccountService:
     """Compose the account lifecycle service (OTP + credentials)."""
-    return AccountService(users=users, codes=codes, tokens=tokens, mail=mail)
+    return AccountService(
+        users=users,
+        codes=codes,
+        tokens=tokens,
+        mail=mail,
+        coverage_requests=coverage_requests,
+    )
 
 
 def get_session_service(
@@ -149,6 +167,14 @@ def get_loop_service(
     return LoopService(
         valhalla=valhalla, dem=dem, restricted=restricted, coverage=coverage
     )
+
+
+def get_coverage_request_service(
+    requests: CoverageRequestRepository = Depends(get_coverage_request_repository),
+    coverage: Coverage = Depends(get_coverage),
+) -> CoverageRequestService:
+    """Compose the request store and the covered regions."""
+    return CoverageRequestService(requests=requests, coverage=coverage)
 
 
 def get_route_service(

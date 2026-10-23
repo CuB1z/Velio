@@ -58,6 +58,7 @@ RULES: dict[str, dict[Literal["ip", "user"], int | None]] = {
     "/api/v1/loops": {"ip": None, "user": 60},
     "/api/v1/loops/stream": {"ip": None, "user": 60},
     "/api/v1/coverage": {"ip": 60, "user": None},
+    "/api/v1/coverage/requests": {"ip": 10, "user": 10},
 }
 
 # Courtesy ceiling applied by middleware to every route, ruled or not.

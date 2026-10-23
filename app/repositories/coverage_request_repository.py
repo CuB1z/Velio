@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,10 +36,16 @@ class CoverageRequestRepository:
             return False
         return True
 
-    async def delete_by_email(self, email: str) -> int:
+    async def delete_for_person(self, user_id: uuid.UUID, email: str) -> int:
+        """Every request of an account: signed in, or anonymous with its email."""
         result = await self.db.execute(
             delete(CoverageRequest)
-            .where(CoverageRequest.email == email.lower())
+            .where(
+                or_(
+                    CoverageRequest.user_id == user_id,
+                    CoverageRequest.email == email.lower(),
+                )
+            )
             .returning(CoverageRequest.id)
             .execution_options(synchronize_session=False)
         )

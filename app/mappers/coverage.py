@@ -1,7 +1,12 @@
 """Engine coverage -> covered-regions HTTP schema."""
 
 from app.engine.coverage import Coverage
-from app.schemas.coverage import CoverageGeometry, CoverageRegion, CoverageResponse
+from app.schemas.coverage import (
+    CoverageGeometry,
+    CoverageRegion,
+    CoverageRequestResponse,
+    CoverageResponse,
+)
 
 
 class CoverageMapper:
@@ -21,3 +26,7 @@ class CoverageMapper:
                 else None
             ),
         )
+
+    @staticmethod
+    def request_out(country: str, recorded: bool) -> CoverageRequestResponse:
+        return CoverageRequestResponse(country=country, recorded=recorded)

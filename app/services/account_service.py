@@ -29,6 +29,7 @@ from app.core.security import (
     verify_password,
 )
 from app.models import User, UserStatus
+from app.repositories.coverage_request_repository import CoverageRequestRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.repositories.verification_code_repository import (
@@ -80,11 +81,13 @@ class AccountService:
         codes: VerificationCodeRepository,
         tokens: RefreshTokenRepository,
         mail: MailSender | None = None,
+        coverage_requests: CoverageRequestRepository | None = None,
     ):
         self._users = users
         self._codes = codes
         self._tokens = tokens
         self._mail = mail
+        self._coverage_requests = coverage_requests
 
     async def register(
         self, *, email: str, password: str, full_name: str = ""
@@ -246,6 +249,8 @@ class AccountService:
 
         Revokes all sessions, removes the Brevo contact, then deletes the
         user row (cascades to identities, tokens, codes and saved routes).
+        Coverage requests go first, signed-in ones and anonymous ones made
+        with the same email.
         """
         stored = await self._codes.find_active(
             user.id, purpose=ACCOUNT_DELETE_PURPOSE
@@ -265,6 +270,8 @@ class AccountService:
                 await self._mail.delete_contact(user.email)
         except Exception as exc:  # noqa: BLE001 - CRM failure must not block deletion
             logger.warning(f"contact deletion for {user.email} failed: {exc}")
+        if self._coverage_requests is not None:
+            await self._coverage_requests.delete_for_person(user.id, user.email)
         await self._users.delete(user)
 
     # Internals --------------------------------------------------------------

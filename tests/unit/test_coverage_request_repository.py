@@ -38,7 +38,7 @@ def test_one_row_per_person_and_country():
             assert not await repo.add(country="TV", user_id=user.id)
             await db.commit()
 
-            assert await repo.delete_by_email(email.upper()) == 2
+            assert await repo.delete_for_person(user.id, email.upper()) == 3
             await db.commit()
 
     asyncio.run(scenario())
@@ -60,7 +60,7 @@ def test_ranking_counts_people_once_across_accounts_and_emails():
 
             after = counts(await repo.ranking())
             assert after["TV"] - before.get("TV", 0) == 2
-            await repo.delete_by_email(email)
+            await repo.delete_for_person(user.id, email)
             await db.delete(user)
             await db.commit()
 
