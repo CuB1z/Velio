@@ -21,6 +21,7 @@ export function useCoverage() {
   const query = useQuery(COVERAGE_QUERY)
   const client = useQueryClient()
   const bounds = useMemo(() => mapBoundsOf(query.data), [query.data])
+  const isos = useMemo(() => query.data?.regions.map((region) => region.iso) ?? [], [query.data])
   const covers = useCallback(
     async (point: LatLon) => {
       try {
@@ -31,5 +32,5 @@ export function useCoverage() {
     },
     [client],
   )
-  return { coverage: query.data, bounds, covers }
+  return { coverage: query.data, bounds, isos, covers }
 }

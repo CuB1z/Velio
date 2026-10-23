@@ -15,8 +15,9 @@ import {
   type LoopFormValue,
 } from '@/components/planner/loopFormValue'
 import { RouteResultPanel } from '@/components/route/routeResultPanel'
-import { formatDistance } from '@/lib/format'
+import { formatDistance, formatRegions } from '@/lib/format'
 import { minimumLoopKm } from '@/lib/geo'
+import { useCoverage } from '@/hooks/useCoverage'
 import { positionFailure, useInitialPosition, type PositionFailure } from '@/hooks/useInitialPosition'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { useProfileFocus } from '@/hooks/useProfileFocus'
@@ -35,7 +36,8 @@ export function LoopPlannerPage() {
   const [selected, setSelected] = useState(0)
   const [exportError, setExportError] = useState<string | null>(null)
   // Why the user's position is missing, if it is.
-  const [positionNotice, setPositionNotice] = useState<PositionFailure | null>(null)
+  const [positionNotice, setPositionNotice] = useState<PositionFailure | 'outside' | 'pickedOutside' | null>(null)
+  const { covers, isos } = useCoverage()
   // Bumped to refit the map, only when a new result arrives.
   const [fitKey, setFitKey] = useState(0)
   // Centres the map on a point (the user's position).
@@ -111,9 +113,14 @@ export function LoopPlannerPage() {
     return list
   }, [form.origin, form.via])
 
-  function handleMapClick(coordinate: [number, number]) {
+  async function handleMapClick(coordinate: [number, number]) {
     if (pickTarget === null) return
     const point = { lat: coordinate[1], lon: coordinate[0] }
+    if (!(await covers(point))) {
+      setPositionNotice('pickedOutside')
+      return
+    }
+    setPositionNotice(null)
     if (pickTarget === 'origin') {
       setForm((current) => ({ ...current, origin: point }))
     } else {
@@ -132,7 +139,11 @@ export function LoopPlannerPage() {
 
   // On load, use the browser position unless the user already changed the origin.
   useInitialPosition(
-    (position) => {
+    async (position) => {
+      if (!(await covers(position))) {
+        setPositionNotice('outside')
+        return
+      }
       setPositionNotice(null)
       setForm((current) => {
         const untouched =
@@ -150,9 +161,14 @@ export function LoopPlannerPage() {
       return
     }
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
+        const point = { lat: position.coords.latitude, lon: position.coords.longitude }
+        if (!(await covers(point))) {
+          setPositionNotice('outside')
+          return
+        }
         setPositionNotice(null)
-        placeOrigin({ lat: position.coords.latitude, lon: position.coords.longitude })
+        placeOrigin(point)
       },
       (error) => {
         console.warn('[velio] geolocation failed', error.code, error.message)
@@ -196,7 +212,7 @@ export function LoopPlannerPage() {
           ) : null}
           {positionNotice ? (
             <p className="text-sm text-muted" role="status">
-              {t(`map.position.${positionNotice}`)}
+              {t(`map.position.${positionNotice}`, { regions: formatRegions(isos) })}
             </p>
           ) : null}
           {pickTarget !== null ? (

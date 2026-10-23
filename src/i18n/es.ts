@@ -317,11 +317,13 @@ export default {
     pickOnMap: 'Elegir en el mapa',
     pickOnMapHint: 'Pulsa en el mapa para colocar el punto',
     position: {
-      denied: 'Sin permiso de ubicación: empezamos en Madrid centro.',
+      denied: 'Sin permiso de ubicación: empezamos desde el centro de la península.',
       unavailable:
-        'El navegador no ha podido determinar tu posición (en Linux, Brave y Chromium suelen no tener servicio de localización). Empezamos en Madrid centro.',
-      timeout: 'Tu posición ha tardado demasiado; empezamos en Madrid centro.',
-      unsupported: 'Este navegador no ofrece geolocalización; empezamos en Madrid centro.',
+        'El navegador no ha podido determinar tu posición (en Linux, Brave y Chromium suelen no tener servicio de localización). Empezamos desde el centro de la península.',
+      timeout: 'Tu posición ha tardado demasiado; empezamos desde el centro de la península.',
+      unsupported: 'Este navegador no ofrece geolocalización; empezamos desde el centro de la península.',
+      outside: 'Tu ubicación queda fuera de la zona que cubrimos por ahora ({{regions}}), así que no la usamos como punto de partida.',
+      pickedOutside: 'Ese punto queda fuera de la zona que cubrimos por ahora ({{regions}}). Elige otro en el mapa.',
     },
   },
 
@@ -486,6 +488,7 @@ export default {
     VALIDATION_ERROR: 'Revisa los datos: algo no es válido.',
     NOT_FOUND: 'No encontramos lo que buscabas.',
     CONFLICT: 'Ese cambio choca con algo que ya existe.',
+    OUT_OF_COVERAGE: 'Algún punto queda fuera de la zona que cubrimos por ahora ({{regions}}).',
     ROUTING_ERROR: 'No existe una ruta así desde ese punto. Prueba a cambiar la distancia o el origen.',
     SERVICE_UNAVAILABLE: 'El motor de rutas no responde ahora mismo. Inténtalo en un momento.',
     INTERNAL_ERROR: 'Error interno. Ya estamos en ello.',

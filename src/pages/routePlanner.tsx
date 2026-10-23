@@ -13,9 +13,11 @@ import { SliderField } from '@/components/planner/sliderField'
 import { WaypointEditor } from '@/components/planner/waypointEditor'
 import { InsetGroup, InsetRow } from '@/components/common/insetGroup'
 import { RouteResultPanel } from '@/components/route/routeResultPanel'
+import { useCoverage } from '@/hooks/useCoverage'
 import { useInitialPosition } from '@/hooks/useInitialPosition'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { useProfileFocus } from '@/hooks/useProfileFocus'
+import { formatRegions } from '@/lib/format'
 import { mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
@@ -37,8 +39,14 @@ export function RoutePlannerPage() {
   const { focusPoint, onProfileHover } = useProfileFocus()
   const [waypoints, setWaypoints] = useState<LatLon[]>(DEFAULT_WAYPOINTS)
   const [focus, setFocus] = useState<{ center: [number, number]; key: number }>()
+  const [coverageNotice, setCoverageNotice] = useState<'outside' | 'pickedOutside' | null>(null)
+  const { covers, isos } = useCoverage()
   // Browser position replaces the first point unless the user already edited the list.
-  useInitialPosition((position) => {
+  useInitialPosition(async (position) => {
+    if (!(await covers(position))) {
+      setCoverageNotice('outside')
+      return
+    }
     setWaypoints((current) => (current === DEFAULT_WAYPOINTS ? [position, ...current.slice(1)] : current))
     setFocus({ center: [position.lon, position.lat], key: Date.now() })
   })
@@ -105,13 +113,15 @@ export function RoutePlannerPage() {
     [waypoints],
   )
 
-  function handleMapClick(coordinate: [number, number]) {
+  async function handleMapClick(coordinate: [number, number]) {
     if (pickTarget === null) return
-    setWaypoints((current) =>
-      current.map((item, index) =>
-        index === pickTarget ? { lat: coordinate[1], lon: coordinate[0] } : item,
-      ),
-    )
+    const point = { lat: coordinate[1], lon: coordinate[0] }
+    if (!(await covers(point))) {
+      setCoverageNotice('pickedOutside')
+      return
+    }
+    setCoverageNotice(null)
+    setWaypoints((current) => current.map((item, index) => (index === pickTarget ? point : item)))
     setPickTarget(null)
   }
 
@@ -193,6 +203,11 @@ export function RoutePlannerPage() {
           </div>
 
           {mutation.error ? <ErrorState error={mutation.error} /> : null}
+          {coverageNotice ? (
+            <p className="text-sm text-muted" role="status">
+              {t(`map.position.${coverageNotice}`, { regions: formatRegions(isos) })}
+            </p>
+          ) : null}
           {exportError ? (
             <p className="text-sm text-danger" role="alert">
               {exportError}

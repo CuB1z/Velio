@@ -124,3 +124,9 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${number(bytes / 1024, 0)}${NBSP}KB`
   return `${number(bytes / (1024 * 1024), 1)}${NBSP}MB`
 }
+
+export function formatRegions(isos: string[]): string {
+  const names = new Intl.DisplayNames([locale()], { type: 'region' })
+  const list = [...new Set(isos)].map((iso) => names.of(iso) ?? iso).sort((a, b) => a.localeCompare(b, locale()))
+  return new Intl.ListFormat(locale(), { type: 'conjunction' }).format(list)
+}

@@ -316,11 +316,13 @@ export default {
     pickOnMap: 'Pick on the map',
     pickOnMapHint: 'Click the map to place the point',
     position: {
-      denied: 'No location permission: starting from central Madrid.',
+      denied: 'No location permission: starting from the centre of the peninsula.',
       unavailable:
-        'The browser could not determine your position (on Linux, Brave and Chromium often have no location service). Starting from central Madrid.',
-      timeout: 'Your position took too long; starting from central Madrid.',
-      unsupported: 'This browser offers no geolocation; starting from central Madrid.',
+        'The browser could not determine your position (on Linux, Brave and Chromium often have no location service). Starting from the centre of the peninsula.',
+      timeout: 'Your position took too long; starting from the centre of the peninsula.',
+      unsupported: 'This browser offers no geolocation; starting from the centre of the peninsula.',
+      outside: 'Your location is outside the area we cover for now ({{regions}}), so it is not used as the start.',
+      pickedOutside: 'That point is outside the area we cover for now ({{regions}}). Pick another one on the map.',
     },
   },
 
@@ -485,6 +487,7 @@ export default {
     VALIDATION_ERROR: 'Check the details: something is not valid.',
     NOT_FOUND: 'We could not find what you were looking for.',
     CONFLICT: 'That change clashes with something that already exists.',
+    OUT_OF_COVERAGE: 'A point is outside the area we cover for now ({{regions}}).',
     ROUTING_ERROR: 'No route like that exists from there. Try changing the distance or the start.',
     SERVICE_UNAVAILABLE: 'The routing engine is not responding right now. Try again in a moment.',
     INTERNAL_ERROR: 'Internal error. We are on it.',
