@@ -10,6 +10,8 @@ function renderControls(styleId: 'map' | 'satellite', onStyleChange = vi.fn()) {
     <MapControls
       styleId={styleId}
       onStyleChange={onStyleChange}
+      relief={false}
+      onReliefChange={vi.fn()}
       onZoomIn={vi.fn()}
       onZoomOut={vi.fn()}
     />,
@@ -53,5 +55,33 @@ describe('MapControls', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Satélite' }))
 
     expect(onStyleChange).toHaveBeenCalledWith('satellite')
+  })
+
+  it('toggles the relief layer', async () => {
+    const onReliefChange = vi.fn()
+    render(
+      <MapControls
+        styleId="map"
+        onStyleChange={vi.fn()}
+        relief={false}
+        onReliefChange={onReliefChange}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
+      />,
+    )
+    const button = screen.getByRole('button', { name: 'Relieve' })
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+
+    await userEvent.click(button)
+
+    expect(onReliefChange).toHaveBeenCalledWith(true)
+  })
+
+  it('disables the relief over the satellite imagery', () => {
+    renderControls('satellite')
+
+    const button = screen.getByRole('button', { name: 'Relieve' })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAttribute('aria-pressed', 'false')
   })
 })

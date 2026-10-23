@@ -2,6 +2,7 @@ import { Button, Tooltip } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 
 import { SegmentedControl } from '@/components/common/segmentedControl'
+import { cn } from '@/lib/cn'
 import type { MapStyleId } from '@/lib/mapStyles'
 
 const STYLES: { id: MapStyleId; labelKey: string }[] = [
@@ -12,6 +13,8 @@ const STYLES: { id: MapStyleId; labelKey: string }[] = [
 type Props = {
   styleId: MapStyleId
   onStyleChange: (id: MapStyleId) => void
+  relief: boolean
+  onReliefChange: (on: boolean) => void
   onZoomIn: () => void
   onZoomOut: () => void
   onFit?: () => void
@@ -22,12 +25,15 @@ type Props = {
 export function MapControls({
   styleId,
   onStyleChange,
+  relief,
+  onReliefChange,
   onZoomIn,
   onZoomOut,
   onFit,
   onLocate,
 }: Props) {
   const { t } = useTranslation()
+  const reliefOn = relief && styleId === 'map'
 
   return (
     <div className="pointer-events-none absolute right-3 top-3 z-10 flex flex-col items-end gap-2">
@@ -39,6 +45,23 @@ export function MapControls({
         onChange={onStyleChange}
         className="pointer-events-auto bg-overlay/85 ring-1 ring-border backdrop-blur-xl [&>button]:px-3.5"
       />
+
+      <button
+        type="button"
+        aria-pressed={reliefOn}
+        disabled={styleId !== 'map'}
+        onClick={() => onReliefChange(!relief)}
+        className={cn(
+          'pointer-events-auto flex min-h-11 items-center gap-1.5 rounded-full px-3.5 text-sm ring-1 ring-border backdrop-blur-xl transition-colors duration-150 ease-enter disabled:opacity-50',
+          'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+          reliefOn
+            ? 'bg-foreground font-semibold text-background'
+            : 'bg-overlay/85 font-medium text-muted enabled:hover:text-foreground',
+        )}
+      >
+        <ReliefIcon />
+        {t('map.relief')}
+      </button>
 
       <div className="pointer-events-auto flex flex-col overflow-hidden rounded-full bg-overlay/85 ring-1 ring-border backdrop-blur-xl">
         <Tooltip>
@@ -113,6 +136,14 @@ function PlusIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true">
       <path d="M8 3.5v9M3.5 8h9" />
+    </svg>
+  )
+}
+
+function ReliefIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1.5 13 6 5.5l3 5 1.8-2.8L14.5 13z" />
     </svg>
   )
 }

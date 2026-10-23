@@ -1,4 +1,5 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { beforeEach, expect, it, vi } from 'vitest'
 
 import { MapView } from '@/components/map/mapView'
@@ -14,6 +15,7 @@ const fake = vi.hoisted(() => {
     handlers = new Map<string, Set<Handler>>()
     sources = new Map<string, { setData: (data: unknown) => void; data: unknown }>()
     layers = new Set<string>()
+    added: { id: string; type?: string; beforeId?: string }[] = []
     removed = false
     style = { _loaded: true }
     tilesLoaded: boolean
@@ -46,8 +48,15 @@ const fake = vi.hoisted(() => {
     getSource(id: string) {
       return this.sources.get(id)
     }
-    addLayer(layer: { id: string }) {
+    addLayer(layer: { id: string; type?: string }, beforeId?: string) {
       this.layers.add(layer.id)
+      this.added.push({ id: layer.id, type: layer.type, beforeId })
+    }
+    removeLayer(id: string) {
+      this.layers.delete(id)
+    }
+    removeSource(id: string) {
+      this.sources.delete(id)
     }
     getLayer(id: string) {
       return this.layers.has(id) ? { id } : undefined
@@ -203,4 +212,33 @@ it('moves a single focus marker with its label and hides it when the hover ends'
 
   rerender(<MapView styleId="map" focusPoint={null} />)
   expect(fake.FakeMarker.added).toBe(0)
+})
+
+it('draws the relief under the basemap buildings and removes it when toggled off', async () => {
+  render(<MapView styleId="map" onStyleChange={vi.fn()} />)
+  const map = fake.FakeMap.instances[0]
+  map.layers.add('building')
+  const button = screen.getByRole('button', { name: 'Relieve' })
+
+  await userEvent.click(button)
+  expect(map.added.find((layer) => layer.id === 'velio-relief')).toEqual({
+    id: 'velio-relief',
+    type: 'hillshade',
+    beforeId: 'building',
+  })
+  expect(map.sources.has('velio-relief')).toBe(true)
+
+  await userEvent.click(button)
+  expect(map.layers.has('velio-relief')).toBe(false)
+  expect(map.sources.has('velio-relief')).toBe(false)
+})
+
+it('leaves the relief off a basemap without buildings, such as the imagery', async () => {
+  render(<MapView styleId="map" onStyleChange={vi.fn()} />)
+  const map = fake.FakeMap.instances[0]
+
+  await userEvent.click(screen.getByRole('button', { name: 'Relieve' }))
+
+  expect(map.layers.has('velio-relief')).toBe(false)
+  expect(map.sources.has('velio-relief')).toBe(false)
 })

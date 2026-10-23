@@ -1,4 +1,9 @@
-import type { Map as MapLibreMap, StyleSpecification } from 'maplibre-gl'
+import type {
+  HillshadeLayerSpecification,
+  Map as MapLibreMap,
+  RasterDEMSourceSpecification,
+  StyleSpecification,
+} from 'maplibre-gl'
 
 export type MapStyleId = 'map' | 'satellite'
 
@@ -32,6 +37,34 @@ const satelliteStyle: StyleSpecification = {
     },
   },
   layers: [{ id: 'imagery', type: 'raster', source: 'imagery' }],
+}
+
+export const RELIEF_SOURCE = 'velio-relief'
+
+export const reliefSource: RasterDEMSourceSpecification = {
+  type: 'raster-dem',
+  tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+  encoding: 'terrarium',
+  tileSize: 256,
+  maxzoom: 11,
+  attribution:
+    '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md" target="_blank" rel="noreferrer">EU-DEM</a>, produced using Copernicus data and information funded by the European Union',
+}
+
+export function reliefPaint(dark: boolean): HillshadeLayerSpecification['paint'] {
+  return dark
+    ? {
+        'hillshade-shadow-color': '#000000',
+        'hillshade-highlight-color': '#3a3a3a',
+        'hillshade-accent-color': '#000000',
+        'hillshade-exaggeration': 0.6,
+      }
+    : {
+        'hillshade-shadow-color': '#4b5563',
+        'hillshade-highlight-color': '#ffffff',
+        'hillshade-accent-color': '#4b5563',
+        'hillshade-exaggeration': 0.4,
+      }
 }
 
 /** The "map" style follows the theme; satellite is the same in both. */

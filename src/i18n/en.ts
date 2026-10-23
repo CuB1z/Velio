@@ -308,6 +308,7 @@ export default {
     style: 'Map style',
     styleMap: 'Map',
     styleSatellite: 'Satellite',
+    relief: 'Terrain',
     zoomIn: 'Zoom in',
     zoomOut: 'Zoom out',
     fitRoute: 'Fit the route',

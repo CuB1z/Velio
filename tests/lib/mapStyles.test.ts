@@ -1,7 +1,7 @@
 import type { StyleSpecification } from 'maplibre-gl'
 import { describe, expect, it } from 'vitest'
 
-import { styleFor, tintStyle, tintToCharcoal } from '@/lib/mapStyles'
+import { reliefSource, styleFor, tintStyle, tintToCharcoal } from '@/lib/mapStyles'
 
 describe('tintToCharcoal', () => {
   it('moves every colour notation onto neutral greys and keeps alpha', () => {
@@ -49,5 +49,12 @@ describe('satellite style', () => {
 
   it('credits the imagery provider', () => {
     expect((style.sources.imagery as { attribution: string }).attribution).toContain('Esri')
+  })
+})
+
+describe('relief source', () => {
+  it('reads Terrarium DEM tiles capped at z11 and credits EU-DEM', () => {
+    expect(reliefSource).toMatchObject({ type: 'raster-dem', encoding: 'terrarium', maxzoom: 11 })
+    expect(reliefSource.attribution).toContain('EU-DEM')
   })
 })

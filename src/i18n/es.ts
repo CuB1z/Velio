@@ -309,6 +309,7 @@ export default {
     style: 'Estilo de mapa',
     styleMap: 'Mapa',
     styleSatellite: 'Satélite',
+    relief: 'Relieve',
     zoomIn: 'Acercar',
     zoomOut: 'Alejar',
     fitRoute: 'Centrar la ruta',

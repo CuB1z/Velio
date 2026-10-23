@@ -171,6 +171,7 @@ and `VelioLogo` the full lockup; both inherit `currentColor`.
   Portugal), so there is no colour seam at the border. It uses Esri's public
   tile endpoint for now; Esri's terms ask for an ArcGIS account in production,
   so switch to an ArcGIS Location Platform key (free tier) before deploying.
+- **Relief**: an optional hillshade over the map style (not the imagery) from AWS Terrain Tiles (Terrarium), capped at z11 to keep each view near +0.5 MB.
 
 None needs credentials. Styles are changed in `src/lib/mapStyles.ts`.
 
@@ -271,3 +272,4 @@ contributors, tiles and styles by [OpenFreeMap](https://openfreemap.org/)
 © [OpenMapTiles](https://www.openmaptiles.org/).
 Satellite imagery: Esri World Imagery (Esri, Maxar, Earthstar Geographics, and the GIS User Community), credited in the map attribution.
 Elevation: Copernicus DEM GLO-30, via the backend.
+Relief shading: AWS Terrain Tiles; in Europe EU-DEM, produced using Copernicus data and information funded by the European Union, credited in the map attribution.

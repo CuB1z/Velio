@@ -6,12 +6,20 @@ import {
   type MapMouseEvent,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { cn } from '@/lib/cn'
 import { useTheme } from '@/hooks/useTheme'
 import { accent, categorical, ink } from '@/lib/chartPalette'
-import { applyBaseStyle, DEFAULT_CENTER, DEFAULT_ZOOM, type MapStyleId } from '@/lib/mapStyles'
+import {
+  applyBaseStyle,
+  DEFAULT_CENTER,
+  DEFAULT_ZOOM,
+  RELIEF_SOURCE,
+  reliefPaint,
+  reliefSource,
+  type MapStyleId,
+} from '@/lib/mapStyles'
 import { MapControls } from './mapControls'
 import { ARROW_LAYOUT, routeArrowImage } from './routeArrow'
 import type { LngLat } from '@/lib/polyline'
@@ -160,6 +168,7 @@ export function MapView({
 
   const { resolved } = useTheme()
   const dark = resolved === 'dark'
+  const [relief, setRelief] = useState(false)
 
   const collection = useMemo(
     () => ({
@@ -293,6 +302,18 @@ export function MapView({
       } else if (arrow && instance.getLayoutProperty(LAYER_SELECTED_ARROWS, 'icon-image') !== arrow) {
         instance.setLayoutProperty(LAYER_SELECTED_ARROWS, 'icon-image', arrow)
       }
+
+      const showRelief = relief && Boolean(instance.getLayer('building'))
+      if (showRelief && !instance.getLayer(RELIEF_SOURCE)) {
+        if (!instance.getSource(RELIEF_SOURCE)) instance.addSource(RELIEF_SOURCE, reliefSource)
+        instance.addLayer(
+          { id: RELIEF_SOURCE, type: 'hillshade', source: RELIEF_SOURCE, paint: reliefPaint(resolved === 'dark') },
+          'building',
+        )
+      } else if (!showRelief && instance.getLayer(RELIEF_SOURCE)) {
+        instance.removeLayer(RELIEF_SOURCE)
+        instance.removeSource(RELIEF_SOURCE)
+      }
     }
 
     ensure()
@@ -304,7 +325,7 @@ export function MapView({
       instance.off('styledata', ensure)
       instance.off('idle', ensure)
     }
-  }, [resolved, colorExpression, collection])
+  }, [resolved, colorExpression, collection, relief])
 
   // Only set the style on a real change: the constructor already set the initial
   // one, and setting it again is a no-op that emits no styledata.
@@ -447,6 +468,8 @@ export function MapView({
         <MapControls
           styleId={styleId}
           onStyleChange={onStyleChange}
+          relief={relief}
+          onReliefChange={setRelief}
           onZoomIn={() => map.current?.zoomIn()}
           onZoomOut={() => map.current?.zoomOut()}
           onFit={routes.length > 0 ? fitToRoutes : undefined}
