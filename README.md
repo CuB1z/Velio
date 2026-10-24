@@ -44,9 +44,9 @@ Cycling routes on open data for Spain, Portugal and Andorra. Tell Velio how far 
 
 ```mermaid
 flowchart LR
-    osm[("OpenStreetMap<br/>Spain · Portugal · Andorra")] --> graph["Valhalla graph<br/>(built offline)"]
+    osm[("OpenStreetMap<br/>Spain · Portugal · Andorra")] --> tiles["Valhalla graph<br/>(built offline)"]
     dem[("Copernicus DEM<br/>GLO-30")] --> engine
-    graph --> valhalla["Valhalla<br/>routing service"]
+    tiles --> valhalla["Valhalla<br/>routing service"]
     valhalla <--> engine["FastAPI engine<br/>ring · repair · scoring"]
     engine <--> db[("Postgres<br/>accounts · saved routes")]
     engine <--> web["React app<br/>planner · analyse · saved"]
