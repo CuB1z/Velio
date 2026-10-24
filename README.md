@@ -23,18 +23,6 @@ Cycling routes on open data for Spain, Portugal and Andorra. Tell Velio how far 
 
 ---
 
-<p align="center">
-  <img src="docs/assets/showcase-desktop.png" alt="The loop planner on desktop: a 66.6 km gravel loop from Manzanares el Real scored 7.9 out of 10" width="100%">
-</p>
-
----
-
-<p align="center">
-  <img src="docs/assets/showcase-mobile.png" alt="Velio on a phone: the landing, the loop planner, a route's score and surface, saved routes and a point-to-point route" width="100%">
-</p>
-
----
-
 ## 📚 Documentation
 
 1. [Development Guide](docs/01_development.md)
