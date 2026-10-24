@@ -2,9 +2,22 @@
 schema built once per session by the real Alembic migrations."""
 
 import asyncio
+import gzip
 import os
+import struct
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _synthetic_elevation_dir() -> str:
+    root = tempfile.mkdtemp(prefix="velio-dem-")
+    os.makedirs(os.path.join(root, "N40"))
+    values = [600 + 10 * (row + col) for row in range(11) for col in range(11)]
+    with gzip.open(os.path.join(root, "N40", "N40W004.hgt.gz"), "wb") as fh:
+        fh.write(struct.pack(f">{len(values)}h", *values))
+    return root
+
 
 # --- Hermetic environment ----------------------------------------------------
 # Pinned before the app import so pydantic-settings never falls back to the
@@ -20,7 +33,7 @@ HERMETIC_ENV = {
     "DB_PASSWORD": "test",
     "JWT_SECRET_KEY": "test-secret-key-for-testing-only",
     "VALHALLA_URL": "http://localhost:8002",
-    "VALHALLA_ELEVATION_DIR": os.path.join(ROOT, "valhalla", "elevation"),
+    "VALHALLA_ELEVATION_DIR": _synthetic_elevation_dir(),
     "BREVO_API_KEY": "",
     "BREVO_LIST_ID": "0",
     "MAIL_FROM": "no-reply@test.dev",

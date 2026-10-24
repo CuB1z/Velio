@@ -6,10 +6,12 @@ from pathlib import Path
 
 import pytest
 
+from app.core.config import settings
+
 BASE_URL = os.environ.get("VALHALLA_URL", "http://localhost:8002")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ELEVATION_DIR = Path(
-    os.environ.get("VALHALLA_ELEVATION_DIR", REPO_ROOT / "valhalla" / "elevation")
+    os.environ.get("E2E_ELEVATION_DIR", REPO_ROOT / "valhalla" / "elevation")
 )
 
 
@@ -23,8 +25,9 @@ def base_url():
     return BASE_URL
 
 
-@pytest.fixture(scope="session")
-def elevation_dir():
+@pytest.fixture
+def elevation_dir(monkeypatch):
     if not ELEVATION_DIR.exists():
         pytest.skip(f"elevation tiles not present at {ELEVATION_DIR}")
+    monkeypatch.setattr(settings, "elevation_dir", ELEVATION_DIR)
     return ELEVATION_DIR
