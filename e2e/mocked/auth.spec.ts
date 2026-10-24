@@ -37,6 +37,7 @@ test('registering needs a valid password and the terms, then asks for the emaile
 
   await expect(page).toHaveURL(/\/verify\?email=marta%40velio\.cc$/)
   await expect(page.getByRole('heading', { name: 'Confirma tu correo' })).toBeVisible()
+  await expect(page.getByText('Código incorrecto')).toHaveCount(0)
 })
 
 test('a rate limited login counts the Retry-After down before allowing another try', async ({ page }) => {

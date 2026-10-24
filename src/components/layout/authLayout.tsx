@@ -30,7 +30,7 @@ export function AuthLayout({ eyebrow, title, subtitle, children, footer }: Props
     <div className="flex min-h-full bg-background text-foreground [--field-background:var(--surface)]">
       <div className="flex w-full flex-col px-4 py-5 sm:px-10 lg:w-1/2">
         <div className="flex items-center justify-between gap-4">
-          <Link to={to('/')} aria-label="Velio" className="inline-flex rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+          <Link to={to('/')} aria-label="Velio" className="inline-flex min-h-11 items-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
             <VelioLogo height={26} />
           </Link>
           {footer ? <span className="hidden text-sm text-muted lg:inline">{footer}</span> : null}
@@ -44,11 +44,15 @@ export function AuthLayout({ eyebrow, title, subtitle, children, footer }: Props
             </h1>
             {subtitle ? <p className="mt-3 text-base text-muted text-pretty">{subtitle}</p> : null}
             <div className="mt-8">{children}</div>
-            {footer ? <p className="mt-8 border-t border-border pt-5 text-sm text-muted lg:hidden">{footer}</p> : null}
+            {footer ? (
+              <p className="mt-8 border-t border-border pt-5 text-sm text-muted lg:hidden [&_a]:-my-3 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center">
+                {footer}
+              </p>
+            ) : null}
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-2">
           <LanguageToggle />
           <ThemeToggle />
         </div>

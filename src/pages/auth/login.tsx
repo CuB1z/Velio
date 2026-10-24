@@ -83,7 +83,7 @@ export function LoginPage() {
           isRequired
           errorMessage={error ?? undefined}
           labelAction={
-            <Link to={to('/forgot-password')} className="text-xs">
+            <Link to={to('/forgot-password')} className="-my-3 inline-flex min-h-11 items-center text-xs">
               {t('auth.forgot')}
             </Link>
           }

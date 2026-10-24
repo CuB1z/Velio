@@ -107,8 +107,6 @@ export function VerifyEmailPage() {
             </Button>
           )}
         </div>
-
-        <p className="eyebrow border-t border-border pt-5">{t('auth.verifyAttempts')}</p>
       </form>
     </AuthLayout>
   )

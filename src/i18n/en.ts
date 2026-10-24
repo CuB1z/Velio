@@ -88,7 +88,6 @@ export default {
     verifyResend: 'Send another code',
     verifyResendIn: 'You can ask for another in {{seconds}} s',
     verifyResent: 'Code resent.',
-    verifyAttempts: 'Wrong code. Check it and try again.',
     verifyDone: 'Email confirmed. You can sign in now.',
     verifyOtherEmail: 'Use another email',
     checkingSession: 'Checking your session',

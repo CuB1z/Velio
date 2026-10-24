@@ -89,7 +89,6 @@ export default {
     verifyResend: 'Enviar otro código',
     verifyResendIn: 'Puedes pedir otro en {{seconds}} s',
     verifyResent: 'Código reenviado.',
-    verifyAttempts: 'Código incorrecto. Revísalo y vuelve a intentarlo.',
     verifyDone: 'Correo confirmado. Ya puedes entrar.',
     verifyOtherEmail: 'Usar otro correo',
     checkingSession: 'Comprobando la sesión',
