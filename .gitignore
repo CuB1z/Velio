@@ -1,0 +1,3 @@
+# Environment files for running the root compose locally
+.env*
+!.env.example

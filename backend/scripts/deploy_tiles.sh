@@ -4,7 +4,7 @@
 #
 # Usage:
 #   scripts/deploy_tiles.sh --local
-#   scripts/deploy_tiles.sh --host user@vps [--path /srv/cycling-router]
+#   scripts/deploy_tiles.sh --host user@vps [--path /srv/velio]
 #                          [--with-elevation] [--dry-run]
 #
 # The remote restart is a hook so Dokploy/SSH flows can be plugged in:
@@ -18,7 +18,7 @@ SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPTS_DIR}/lib/common.sh"
 
 VALHALLA_DIR="${ROOT_DIR}/valhalla"
-REMOTE_PATH="/srv/cycling-router"
+REMOTE_PATH="/srv/velio"
 HOST=""
 WITH_ELEVATION=false
 DRY_RUN=false
@@ -84,7 +84,7 @@ restart_remote_service() {
 
 restart_local_service() {
   log_step "Restarting local stack (docker compose up -d valhalla)"
-  (cd "${ROOT_DIR}" && docker compose up -d valhalla)
+  docker compose -f "${ROOT_DIR}/../docker/docker-compose.dev.yaml" up -d valhalla
 }
 
 wait_for_status() {

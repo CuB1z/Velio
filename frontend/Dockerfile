@@ -11,7 +11,7 @@ ENV SITE_URL=$SITE_URL
 RUN pnpm build && pnpm prerender
 
 FROM nginx:1.27-alpine
-ENV API_UPSTREAM=http://velio-api:8000
+ENV API_UPSTREAM=http://backend:8000
 COPY nginx/velio.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80

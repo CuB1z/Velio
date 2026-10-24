@@ -106,7 +106,7 @@ fi
 
 if (( DO_START )); then
   log_step "Starting Valhalla service"
-  (cd "${ROOT_DIR}" && docker compose up -d --force-recreate valhalla)
+  docker compose -f "${ROOT_DIR}/../docker/docker-compose.dev.yaml" up -d --force-recreate valhalla
 
   log_info "Waiting for service readiness (timeout: ${WAIT_TIMEOUT}s)"
   start_ts="$(date +%s)"

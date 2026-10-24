@@ -2,7 +2,7 @@
 # dev conveniences on (OTP_TEST_MODE) and rate limiting backed by Redis.
 # Run it INSTEAD of the main stack.
 #
-#   docker compose -f docker/docker-compose.test.yaml up -d --build api
+#   docker compose -f docker/docker-compose.test.yaml up -d --build api   (from the repo root)
 #
 # Relative paths resolve against THIS file's folder, hence the ../ prefixes.
 
@@ -47,12 +47,12 @@ services:
     ports:
       - "8002:8002"
     volumes:
-      - ../valhalla:/data
+      - ../backend/valhalla:/data
     restart: unless-stopped
 
   api:
     build:
-      context: ..
+      context: ../backend
       dockerfile: Dockerfile
     container_name: velio-api-test
     depends_on:
@@ -88,7 +88,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../valhalla/elevation:/data/elevation:ro
+      - ../backend/valhalla/elevation:/data/elevation:ro
     restart: unless-stopped
 
 volumes:

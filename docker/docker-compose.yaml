@@ -1,0 +1,97 @@
+# Full stack built from source, the same shape as the Dokploy deployment
+# (docker-compose.dokploy.yaml) but with the frontend on localhost. From the
+# repo root:
+#
+#   JWT_SECRET_KEY=... DB_USER=velio DB_PASSWORD=... \
+#     docker compose -f docker/docker-compose.yaml up -d --build
+#
+# It reads the Valhalla graph and the elevation tiles from backend/valhalla
+# (VALHALLA_DIR); they are not in git: build them with
+# backend/scripts/build_tiles.sh (backend/docs/03_valhalla.md).
+
+name: velio-local
+
+services:
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        SITE_URL: ${SITE_URL:-https://velio.cub1z.es}
+    environment:
+      API_UPSTREAM: http://backend:8000
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build: ../backend
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      valhalla:
+        condition: service_started
+    environment:
+      ENV: prod
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_BACKEND: redis
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
+      REDIS_URL: redis://redis:6379/0
+      VALHALLA_URL: http://valhalla:8002
+      VALHALLA_ELEVATION_DIR: /data/elevation
+      DB_DRIVER: postgresql+asyncpg
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_NAME: ${DB_NAME:-velio}
+      CORS_ORIGINS: ${CORS_ORIGINS:-["https://velio.cub1z.es"]}
+      AUTH_REDIRECT_BASE: ${AUTH_REDIRECT_BASE:-https://velio.cub1z.es}
+      OAUTH_SUCCESS_REDIRECT: ${OAUTH_SUCCESS_REDIRECT:-https://velio.cub1z.es/oauth/callback}
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID:-}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_LIST_ID: ${BREVO_LIST_ID:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+    volumes:
+      - ${VALHALLA_DIR:-../backend/valhalla}/elevation:/data/elevation:ro
+    restart: unless-stopped
+
+  valhalla:
+    image: ghcr.io/valhalla/valhalla:3.8.2
+    command: ["valhalla_service", "/data/config/valhalla.json", "${VALHALLA_THREADS:-2}"]
+    volumes:
+      - ${VALHALLA_DIR:-../backend/valhalla}:/data:ro
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-velio}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:

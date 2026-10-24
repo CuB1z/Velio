@@ -1,0 +1,130 @@
+# Dokploy deployment: prebuilt images from Docker Hub (.github/workflows/cd-build.yaml).
+# Traefik routes velio.cub1z.es to the frontend; everything else stays on the
+# private network. Secrets come from the Dokploy environment.
+
+services:
+  frontend:
+    image: cub1z/velio-frontend:${VELIO_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - velio-network
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.velio-front.rule=Host(`velio.cub1z.es`)"
+      - "traefik.http.routers.velio-front.entrypoints=websecure"
+      - "traefik.http.routers.velio-front.tls.certresolver=letsencrypt"
+      - "traefik.http.services.velio-front.loadbalancer.server.port=80"
+
+  backend:
+    image: cub1z/velio-backend:${VELIO_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      valhalla:
+        condition: service_started
+    environment:
+      ENV: prod
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_BACKEND: redis
+      UVICORN_WORKERS: ${UVICORN_WORKERS:-1}
+      REDIS_URL: redis://redis:6379/0
+      VALHALLA_URL: http://valhalla:8002
+      VALHALLA_ELEVATION_DIR: /data/elevation
+      DB_DRIVER: postgresql+asyncpg
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:?DB_USER is required}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      DB_NAME: ${DB_NAME:-velio}
+      CORS_ORIGINS: '["https://velio.cub1z.es"]'
+      AUTH_REDIRECT_BASE: https://velio.cub1z.es
+      OAUTH_SUCCESS_REDIRECT: https://velio.cub1z.es/oauth/callback
+      OAUTH_GOOGLE_CLIENT_ID: ${OAUTH_GOOGLE_CLIENT_ID:-}
+      OAUTH_GOOGLE_CLIENT_SECRET: ${OAUTH_GOOGLE_CLIENT_SECRET:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_LIST_ID: ${BREVO_LIST_ID:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+    volumes:
+      - ${VALHALLA_DIR:-/srv/velio/valhalla}/elevation:/data/elevation:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - velio-network
+
+  valhalla:
+    image: ghcr.io/valhalla/valhalla:3.8.2
+    restart: unless-stopped
+    command: ["valhalla_service", "/data/config/valhalla.json", "${VALHALLA_THREADS:-2}"]
+    volumes:
+      - ${VALHALLA_DIR:-/srv/velio/valhalla}:/data:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - velio-network
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-velio}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - velio-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - velio-network
+
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  velio-network:
+    driver: bridge
+  dokploy-network:
+    external: true

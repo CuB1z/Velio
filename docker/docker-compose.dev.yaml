@@ -1,7 +1,8 @@
-# Main stack compose. All infra wiring and defaults are self-contained;
-# only secrets and overrides come from a .env file:
+# Local development stack (backend side). All infra wiring and defaults are
+# self-contained; only secrets and overrides come from backend/.env. From the
+# repo root:
 #
-#   docker compose --env-file .env -f docker/docker-compose.yaml up -d --build api
+#   docker compose --env-file backend/.env -f docker/docker-compose.dev.yaml up -d --build api
 
 name: velio
 
@@ -26,7 +27,7 @@ services:
     ports:
       - "8002:8002"
     volumes:
-      - ../valhalla:/data
+      - ../backend/valhalla:/data
     restart: unless-stopped
 
   db:
@@ -49,7 +50,7 @@ services:
 
   api:
     build:
-      context: ..
+      context: ../backend
       dockerfile: Dockerfile
     container_name: velio-api
     depends_on:
@@ -85,7 +86,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ../valhalla/elevation:/data/elevation:ro
+      - ../backend/valhalla/elevation:/data/elevation:ro
     restart: unless-stopped
 
 volumes:
