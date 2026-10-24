@@ -12,6 +12,18 @@ test('the landing fits the screen without horizontal scroll', async ({ page }) =
   expect(await overflow(page)).toBeLessThanOrEqual(0)
 })
 
+test('the footer keeps the logo and the toggles on one line', async ({ page }) => {
+  await mockApi(page)
+  await page.goto('/es')
+  const footer = page.getByRole('contentinfo')
+  const logo = (await footer.getByRole('link', { name: 'Velio' }).boundingBox())!
+  const toggles = (await footer.getByRole('button').last().boundingBox())!
+  const middle = (box: { y: number; height: number }) => box.y + box.height / 2
+
+  expect(Math.abs(middle(logo) - middle(toggles))).toBeLessThan(2)
+  expect(toggles.x).toBeGreaterThan(logo.x + logo.width)
+})
+
 test('the login keeps only the form, without the product panel', async ({ page }) => {
   await mockApi(page)
   await page.goto('/es/login')

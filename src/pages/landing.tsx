@@ -1,9 +1,10 @@
 import { useOverlayState } from '@heroui/react'
-import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
+import { SegmentedControl } from '@/components/common/segmentedControl'
 import { RequestCountryDialog } from '@/components/coverage/requestCountryDialog'
 import { Bento, BentoCell, BentoLabel } from '@/components/landing/bento'
 import { CountUp } from '@/components/landing/countUp'
@@ -50,13 +51,13 @@ const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const pill = `inline-flex min-h-12 items-center justify-center rounded-full px-7 text-base font-semibold ${fluid} ${focus}`
 const primaryPill = `${pill} bg-accent text-accent-foreground hover:opacity-90`
 const sectionTitle = 'text-4xl font-semibold leading-none tracking-[-0.03em] text-balance sm:text-5xl'
-const footerLink = 'inline-flex min-h-10 items-center text-sm text-muted transition-colors duration-150 hover:text-foreground'
 
 export function LandingPage() {
   const { t, i18n } = useTranslation()
   const { status } = useAuth()
   const to = useLangPath()
   const askDialog = useOverlayState()
+  const [bike, setBike] = useState<(typeof BIKES)[number]>('road')
   const origin = window.location.origin
   const scrollToTop = () => window.scrollTo({ top: 0 })
   useDocumentHead({
@@ -88,7 +89,7 @@ export function LandingPage() {
     <div className="min-h-full overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
         <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
-          <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`flex items-center rounded-md ${focus}`}>
+          <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`flex min-h-11 items-center rounded-md ${focus}`}>
             <VelioLogo height={20} decorative />
           </Link>
 
@@ -107,7 +108,7 @@ export function LandingPage() {
           <div className="ms-auto flex items-center md:ms-6">
             <Link
               to={to(primary.to)}
-              className={`inline-flex min-h-10 items-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground hover:opacity-90 ${fluid} ${focus}`}
+              className={`inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground hover:opacity-90 ${fluid} ${focus}`}
             >
               {authenticated ? t('landing.openApp') : t('landing.getStarted')}
             </Link>
@@ -119,7 +120,7 @@ export function LandingPage() {
         <section className="px-4 pt-14 sm:px-6 sm:pt-20">
           <div className="mx-auto flex max-w-[860px] flex-col items-center gap-6 text-center">
             <span className="eyebrow">{t('landing.heroEyebrow')}</span>
-            <h1 className="text-hero text-4xl font-semibold leading-[1] tracking-[-0.03em] whitespace-pre-line text-balance sm:text-5xl lg:text-6xl">
+            <h1 className="text-hero text-4xl font-semibold leading-[1] tracking-[-0.03em] text-balance sm:text-5xl sm:whitespace-pre-line lg:text-6xl">
               {t('landing.heroTitle')}
             </h1>
             <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.heroBody')}</p>
@@ -127,12 +128,11 @@ export function LandingPage() {
               <Link to={to(primary.to)} className={primaryPill}>
                 {primary.label}
               </Link>
-              <a href={`#${ids.product}`} className={`inline-flex items-center gap-2 text-base font-medium ${focus} rounded-md`}>
+              <a href={`#${ids.product}`} className={`inline-flex min-h-11 items-center gap-2 text-base font-medium ${focus} rounded-md`}>
                 {t('landing.heroSecondary')}
                 <ArrowIcon />
               </a>
             </div>
-            <p className="eyebrow">{t('landing.heroNote')}</p>
           </div>
 
           <div className="mx-auto mt-12 max-w-[1400px] sm:mt-16">
@@ -170,28 +170,21 @@ export function LandingPage() {
               <Bento>
                 <BentoCell span={8} glow>
                   <div className="relative flex flex-col gap-6">
-                    <div
-                      role="presentation"
-                      className="grid max-w-[560px] grid-cols-4 gap-1 rounded-full bg-surface-secondary p-1"
-                    >
-                      {BIKES.map((bike, index) => (
-                        <span
-                          key={bike}
-                          className={
-                            index === 0
-                              ? 'rounded-full bg-foreground px-4 py-2.5 text-center text-sm font-semibold text-background'
-                              : 'rounded-full px-4 py-2.5 text-center text-sm font-medium text-muted'
-                          }
-                        >
-                          {t(`bike.${bike}`)}
-                        </span>
-                      ))}
-                    </div>
+                    <SegmentedControl
+                      label={t('bike.label')}
+                      options={BIKES.map((id) => ({ id, label: t(`bike.${id}`) }))}
+                      value={bike}
+                      onChange={setBike}
+                      className="max-w-[560px] [&>button]:px-2 [&>button]:text-xs sm:[&>button]:px-3 sm:[&>button]:text-sm"
+                    />
                     <ul className="grid gap-x-6 gap-y-3 text-sm text-muted sm:grid-cols-2">
-                      {BIKES.map((bike) => (
-                        <li key={bike}>
-                          <span className="font-medium text-foreground">{t(`bike.${bike}`)}.</span>{' '}
-                          {t(`bike.${bike}Hint`)}
+                      {BIKES.map((id) => (
+                        <li
+                          key={id}
+                          className={`transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${id === bike ? 'opacity-100' : 'opacity-40'}`}
+                        >
+                          <span className="font-medium text-foreground">{t(`bike.${id}`)}.</span>{' '}
+                          {t(`bike.${id}Hint`)}
                         </li>
                       ))}
                     </ul>
@@ -300,7 +293,7 @@ export function LandingPage() {
                       href={source.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
+                      className="-my-2 inline-flex min-h-11 items-center self-start text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
                     >
                       {source.label}
                     </a>
@@ -348,68 +341,20 @@ export function LandingPage() {
       </main>
 
       <footer className="border-t border-border">
-        <div className="mx-auto grid max-w-6xl gap-12 px-4 py-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))]">
-          <div className="flex flex-col items-start gap-4">
-            <Link to={to('/')} onClick={scrollToTop} aria-label="Velio">
-              <VelioLogo height={20} decorative />
+        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+          <div className="flex items-center justify-between gap-4">
+            <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`inline-flex min-h-11 items-center rounded-md ${focus}`}>
+              <VelioLogo height={24} decorative />
             </Link>
-            <p className="max-w-xs text-sm text-muted">{t('landing.footerRights')}</p>
-          </div>
-
-          <FooterColumn title={t('landing.footerProduct')}>
-            {anchors.map((anchor) => (
-              <a key={anchor.href} href={anchor.href} className={footerLink}>
-                {anchor.label}
-              </a>
-            ))}
-          </FooterColumn>
-
-          <FooterColumn title={t('landing.footerApp')}>
-            {(
-              [
-                ['/loops', 'nav.loops'],
-                ['/routes', 'nav.routes'],
-                ['/analyze', 'nav.analyze'],
-                ['/saved', 'nav.saved'],
-              ] as const
-            ).map(([path, label]) => (
-              <Link key={path} to={to(path)} className={footerLink}>
-                {t(label)}
-              </Link>
-            ))}
-            <button type="button" onClick={askDialog.open} className={`${footerLink} text-left`}>
-              {t('coverage.ask')}
-            </button>
-          </FooterColumn>
-
-          <FooterColumn title={t('landing.footerData')}>
-            {DATA_SOURCES.map((source) => (
-              <a key={source.href} href={source.href} target="_blank" rel="noreferrer" className={footerLink}>
-                {source.label}
-              </a>
-            ))}
-          </FooterColumn>
-        </div>
-
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 pb-6 text-sm text-muted sm:px-6">
-          <span>© {new Date().getFullYear()} Velio</span>
-          <div className="flex items-center gap-1">
-            <LanguageToggle />
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </footer>
       <RequestCountryDialog state={askDialog} />
     </div>
-  )
-}
-
-function FooterColumn({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <nav aria-label={title} className="flex flex-col items-start">
-      <h2 className="eyebrow mb-3">{title}</h2>
-      {children}
-    </nav>
   )
 }
 

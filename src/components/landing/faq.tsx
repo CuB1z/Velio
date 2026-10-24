@@ -10,7 +10,7 @@ export function Faq({ onAskCountry }: { onAskCountry: () => void }) {
   return (
     <Accordion variant="surface" className="divide-y divide-border rounded-none bg-transparent shadow-none ring-0">
       {QUESTIONS.map((key) => (
-        <Accordion.Item key={key} id={key} className="border-0 bg-transparent">
+        <Accordion.Item key={key} id={key} className="border-0 bg-transparent after:start-0! after:w-full! last:after:hidden">
           <Accordion.Heading>
             <Accordion.Trigger className="min-h-16 rounded-none! gap-6 px-0 py-6 text-xl font-medium tracking-tight transition-colors hover:bg-transparent! hover:text-muted data-[hovered=true]:bg-transparent!">
               {t(`landing.faq.${key}.q`)}

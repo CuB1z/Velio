@@ -77,3 +77,12 @@ test('the logo brings the page back to the top', async ({ page }) => {
   await page.locator('header').getByRole('link', { name: 'Velio' }).click()
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
 })
+
+test('picking a bike highlights what it means', async ({ page }) => {
+  await page.goto('/es')
+  const picker = page.getByRole('group', { name: 'Tu bici' })
+  await picker.getByRole('button', { name: 'Gravel' }).click()
+  await expect(picker.getByRole('button', { name: 'Gravel' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('listitem').filter({ hasText: 'Gravel.' })).toHaveCSS('opacity', '1')
+  await expect(page.getByRole('listitem').filter({ hasText: 'Carretera.' })).toHaveCSS('opacity', '0.4')
+})
