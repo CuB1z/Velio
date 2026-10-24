@@ -40,7 +40,7 @@ export function Showcase({ example }: { example: LandingExample }) {
             {metrics.map((metric) => (
               <div key={metric.label} className="flex flex-col gap-1">
                 <dt className="eyebrow">{metric.label}</dt>
-                <dd className="code text-3xl font-medium tracking-tight">{metric.value}</dd>
+                <dd className="tnum text-3xl font-medium tracking-tight">{metric.value}</dd>
               </div>
             ))}
           </dl>

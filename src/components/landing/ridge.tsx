@@ -71,7 +71,7 @@ export function Ridge({ example }: { example: LandingExample }) {
           style={{ left: `${ridge.peak.left}%`, top: `${ridge.peak.top}%`, background: color }}
         />
         <span
-          className="code absolute -translate-y-1/2 translate-x-4 whitespace-nowrap text-xs"
+          className="tnum absolute -translate-y-1/2 translate-x-4 whitespace-nowrap text-xs"
           style={{ left: `${ridge.peak.left}%`, top: `${ridge.peak.top}%` }}
         >
           {formatElevation(ridge.high)}

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { cn } from '@/lib/cn'
 
-/** Form section: a mono eyebrow over hairline-separated rows, no container. */
+/** Form section: an eyebrow over hairline-separated rows, no container. */
 export function InsetGroup({
   title,
   children,

@@ -276,7 +276,7 @@ function NumberFieldRow({
       <Label className="text-[13px] text-muted">{label}</Label>
       <NumberField.Group className="flex items-center">
         <NumberField.DecrementButton className="size-11 shrink-0" />
-        <NumberField.Input className="code w-full text-center" />
+        <NumberField.Input className="tnum w-full text-center" />
         <NumberField.IncrementButton className="size-11 shrink-0" />
       </NumberField.Group>
     </NumberField>

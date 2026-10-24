@@ -39,7 +39,7 @@ export function UserMenu() {
             onAccount && 'ring-2 ring-accent ring-offset-2 ring-offset-background',
           )}
         >
-          <Avatar.Fallback className="code text-xs font-semibold text-accent-soft-foreground">
+          <Avatar.Fallback className="text-xs font-semibold text-accent-soft-foreground">
             {initials}
           </Avatar.Fallback>
         </Avatar>

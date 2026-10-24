@@ -55,7 +55,7 @@ export function SliderField({
             unit={unit}
           />
         ) : (
-          <Slider.Output className="code text-3xl font-medium tracking-tight">{display}</Slider.Output>
+          <Slider.Output className="tnum text-3xl font-medium tracking-tight">{display}</Slider.Output>
         )}
         <Slider.Track className="h-0.5 rounded-full bg-border">
           <Slider.Fill className="rounded-full bg-foreground" />
@@ -101,7 +101,7 @@ function EditableValue({
   }
 
   return (
-    <span className="code flex items-baseline gap-1.5 text-3xl font-medium tracking-tight">
+    <span className="tnum flex items-baseline gap-1.5 text-3xl font-medium tracking-tight">
       <input
         type="text"
         inputMode="decimal"

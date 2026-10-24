@@ -38,7 +38,7 @@ export function ScoreCard({ score, className, compact, large, hideElevation }: P
         <div className="mt-1 flex items-baseline gap-2">
           <span
             className={cn(
-              'code font-medium leading-none tracking-tight text-accent-text',
+              'tnum font-medium leading-none tracking-tight text-accent-text',
               large ? 'text-7xl tracking-[-0.04em]' : 'text-4xl',
             )}
           >
@@ -66,7 +66,7 @@ export function ScoreCard({ score, className, compact, large, hideElevation }: P
                 <Meter.Track className="h-0.5 flex-1 bg-border">
                   <Meter.Fill className={cn('h-0.5', bar.penalty ? 'bg-danger' : 'bg-foreground')} />
                 </Meter.Track>
-                <span className="code w-9 shrink-0 text-right text-sm">
+                <span className="tnum w-9 shrink-0 text-right text-sm">
                   {bar.penalty && bar.value > 0 ? '−' : ''}
                   {formatScore(bar.value)}
                 </span>

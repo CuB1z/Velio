@@ -56,7 +56,7 @@ export function BentoCell({
   )
 }
 
-/** Shared cell footer: a mono eyebrow, the title and one sentence. */
+/** Shared cell footer: an eyebrow, the title and one sentence. */
 export function BentoLabel({ eyebrow, title, body }: { eyebrow: string; title: string; body?: string }) {
   return (
     <div className="relative flex flex-col gap-2">

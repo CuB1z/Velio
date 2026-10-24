@@ -308,7 +308,6 @@ export default {
 
   coverage: {
     ask: 'Ask for your country',
-    faqAsk: 'Your country is not there? Ask for it',
     title: 'Ask for your country',
     body: 'Coverage grows where riders ask for it. Tell us where you want to ride.',
     country: 'Country',

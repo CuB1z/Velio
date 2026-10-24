@@ -204,13 +204,13 @@ export function SavedRouteDetailPage() {
                 <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-border pt-6">
                   <div className="flex flex-col gap-1">
                     <dt className="eyebrow">{t('metric.maxGrade')}</dt>
-                    <dd className="code text-2xl font-medium tracking-tight">
+                    <dd className="tnum text-2xl font-medium tracking-tight">
                       {formatPercent(result.score.max_grade_pct)}
                     </dd>
                   </div>
                   <div className="flex flex-col gap-1">
                     <dt className="eyebrow">{t('metric.climbLoad')}</dt>
-                    <dd className="code text-2xl font-medium tracking-tight">
+                    <dd className="tnum text-2xl font-medium tracking-tight">
                       {Math.round(result.score.climb_load_m)} m
                     </dd>
                   </div>

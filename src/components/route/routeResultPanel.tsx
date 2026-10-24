@@ -123,12 +123,12 @@ export function RouteResultPanel({
         {figures.map((figure) => (
           <div key={figure.label} className="flex flex-col gap-1 @xl:border-s @xl:border-border @xl:ps-5 @xl:first:border-s-0 @xl:first:ps-0">
             <dt className="eyebrow">{figure.label}</dt>
-            <dd className="code text-3xl font-medium tracking-tight">{figure.value}</dd>
+            <dd className="tnum text-3xl font-medium tracking-tight">{figure.value}</dd>
           </div>
         ))}
         <div className="flex flex-col gap-1 @xl:border-s @xl:border-border @xl:ps-5">
           <dt className="eyebrow">{t('metric.score')}</dt>
-          <dd className="code text-3xl font-medium tracking-tight text-accent-text">
+          <dd className="tnum text-3xl font-medium tracking-tight text-accent-text">
             {result.cycling_score ? (
               <>
                 {formatScore(result.cycling_score.total)}
@@ -142,7 +142,7 @@ export function RouteResultPanel({
         <div className="flex flex-col gap-1 @xl:border-s @xl:border-border @xl:ps-5">
           <dt className="eyebrow">{t('metric.surface')}</dt>
           <dd className="flex flex-col gap-2">
-            <span className="code text-3xl font-medium tracking-tight">
+            <span className="tnum text-3xl font-medium tracking-tight">
               {result.score ? (
                 <>
                   {formatScore(result.score.comfort, 0)}

@@ -33,7 +33,7 @@ export function SurfaceBar({ score, distanceKm, className }: Props) {
       <div className="flex items-baseline justify-between gap-3">
         <span className="eyebrow">{t('metric.surface')}</span>
         <span className="text-sm">
-          <span className="code font-semibold">{formatScore(score.comfort, 0)}</span>
+          <span className="tnum font-semibold">{formatScore(score.comfort, 0)}</span>
           <span className="text-muted"> / 100 · {t(comfortLabelKey(score.comfort))}</span>
         </span>
       </div>
@@ -61,7 +61,7 @@ export function SurfaceBar({ score, distanceKm, className }: Props) {
             <span className="text-foreground">
               {t(`surface.${segment.key}`, { defaultValue: segment.key.replace(/_/g, ' ') })}
             </span>
-            <span className="code text-muted">
+            <span className="tnum text-muted">
               {formatDistance(segment.km)} · {formatRatio(segment.share, 0)}
             </span>
           </li>

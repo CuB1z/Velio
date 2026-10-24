@@ -309,7 +309,6 @@ export default {
 
   coverage: {
     ask: 'Pide tu país',
-    faqAsk: '¿Tu país no está? Pídelo',
     title: 'Pide tu país',
     body: 'Ampliamos la cobertura donde más se pide. Dinos dónde quieres pedalear.',
     country: 'País',

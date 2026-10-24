@@ -161,7 +161,7 @@ export function AnalyzePage() {
                 placeholder={t('analyze.polylinePlaceholder')}
                 aria-label={t('analyze.polylineLabel')}
                 rows={4}
-                className="code w-full text-xs"
+                className="w-full text-xs"
               />
               <p className="text-[11px] text-muted">{t('analyze.polylinePrecision')}</p>
               {encoded.trim().length > 0 && coordinates.length < 2 ? (

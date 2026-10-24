@@ -86,7 +86,7 @@ export function LandingPage() {
   ]
 
   return (
-    <div className="min-h-full overflow-x-clip bg-background text-foreground [&_.code]:font-sans! [&_.eyebrow]:font-sans [&_.eyebrow]:font-medium">
+    <div className="min-h-full overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
         <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
           <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`flex min-h-11 items-center rounded-md ${focus}`}>
@@ -193,7 +193,7 @@ export function LandingPage() {
                 </BentoCell>
 
                 <BentoCell span={4}>
-                  <p className="code flex items-center gap-4 pt-6 text-5xl font-medium tracking-[-0.04em]">
+                  <p className="tnum flex items-center gap-4 pt-6 text-5xl font-medium tracking-[-0.04em]">
                     <span className="text-muted line-through">{formatRatio(LANDING_REPAIR.before.overlap, 0)}</span>
                     <ArrowIcon className="text-muted" />
                     <span className="text-accent-text">{formatRatio(LANDING_REPAIR.after.overlap, 0)}</span>
@@ -208,7 +208,7 @@ export function LandingPage() {
 
                 <BentoCell span={4}>
                   <div className="flex flex-col gap-3 pt-6">
-                    <p className="code text-6xl font-medium tracking-[-0.04em]">
+                    <p className="tnum text-6xl font-medium tracking-[-0.04em]">
                       <CountUp value={0.62} decimals={2} suffix=" m" />
                     </p>
                     <span className="eyebrow">{t('landing.accuracyUnit')}</span>
@@ -230,7 +230,7 @@ export function LandingPage() {
                         </span>
                       ))}
                     </div>
-                    <ul className="code flex flex-col gap-1.5 text-xs text-muted">
+                    <ul className="tnum flex flex-col gap-1.5 text-xs text-muted">
                       {DEVICES.map((device) => (
                         <li key={device} className="flex justify-between gap-4">
                           <span className="text-foreground">{device}</span>
@@ -277,7 +277,7 @@ export function LandingPage() {
                 {STATS.map((stat) => (
                   <div key={stat.label} className="flex flex-col-reverse gap-3">
                     <dt className="eyebrow">{t(stat.label)}</dt>
-                    <dd className="code text-5xl font-medium leading-none tracking-[-0.04em] sm:text-6xl">
+                    <dd className="tnum text-5xl font-medium leading-none tracking-[-0.04em] sm:text-6xl">
                       <CountUp value={stat.value} decimals={stat.decimals} suffix={stat.suffix} />
                     </dd>
                   </div>

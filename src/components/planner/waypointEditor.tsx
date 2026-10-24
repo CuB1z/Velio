@@ -52,14 +52,14 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
             <li key={index} className="flex min-h-14 items-center gap-3 py-1">
               <span
                 aria-hidden="true"
-                className="code flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background"
+                className="flex size-7 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background"
               >
                 {LETTERS[index] ?? index + 1}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="sr-only">{t('planner.stopLetter', { letter: LETTERS[index] })}</span>
-                <span className="code block text-sm leading-tight text-foreground">{lat}</span>
-                <span className="code block text-sm leading-tight text-foreground">{lon}</span>
+                <span className="tnum block text-sm leading-tight text-foreground">{lat}</span>
+                <span className="tnum block text-sm leading-tight text-foreground">{lon}</span>
               </span>
               <Button
                 variant={pickTarget === index ? 'primary' : 'ghost'}

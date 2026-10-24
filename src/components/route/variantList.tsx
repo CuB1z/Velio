@@ -49,7 +49,7 @@ export function VariantList({ variants, selected, onSelect, className }: Props) 
             />
             {index === 0 ? t('result.variantMain') : t('result.variantAlternative', { index })}
             {variant.cycling_score ? (
-              <span className="code font-semibold">{formatScore(variant.cycling_score.total)}</span>
+              <span className="tnum font-semibold">{formatScore(variant.cycling_score.total)}</span>
             ) : null}
           </button>
         )

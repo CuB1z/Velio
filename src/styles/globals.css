@@ -123,7 +123,6 @@
 
 @theme inline {
   --font-sans: "Geist Variable", Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "Geist Mono Variable", "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Tailwind v4 only generates utilities from --color-* tokens, so custom
      tokens need their mapping here. */
@@ -168,7 +167,8 @@
     background-color: var(--foreground) !important;
   }
   .eyebrow {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-weight: 500;
     font-size: 11px;
     line-height: 16px;
     letter-spacing: 0.14em;
@@ -249,7 +249,7 @@ body {
   color: var(--foreground);
 }
 
-h1, h2, h3 {
+h1:not(.eyebrow), h2:not(.eyebrow), h3:not(.eyebrow) {
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -272,14 +272,8 @@ h1, h2, h3 {
   --shadow-raised: 0 0 0 1px var(--border), 0 18px 44px -12px rgba(0, 0, 0, 0.7);
 }
 
-/* Tabular figures in the UI font so metric columns don't jitter; use
-   .code for actual code. */
+/* Tabular figures in the UI font so metric columns don't jitter. */
 .tnum {
-  font-variant-numeric: tabular-nums;
-}
-
-.code {
-  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

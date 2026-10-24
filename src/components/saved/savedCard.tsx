@@ -46,7 +46,7 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
           {kind === 'loop' ? t('saved.kindLoop') : t('saved.kindRoute')}
         </span>
         {score !== undefined ? (
-          <span className="code text-sm font-semibold text-accent-text">
+          <span className="tnum text-sm font-semibold text-accent-text">
             {formatScore(score)}
             <span className="font-normal text-muted"> /10</span>
           </span>
@@ -107,7 +107,7 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
           <div className="mt-auto flex flex-col gap-2">
             <div className="flex items-baseline justify-between">
               <span className="eyebrow">{t('metric.surface')}</span>
-              <span className="code text-xs text-muted">
+              <span className="tnum text-xs text-muted">
                 <span className="font-semibold text-foreground">{formatScore(result.score.comfort, 0)}</span> / 100
               </span>
             </div>
@@ -144,7 +144,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <dt className="eyebrow truncate">{label}</dt>
-      <dd className="code mt-1 truncate text-base font-medium">{value}</dd>
+      <dd className="tnum mt-1 truncate text-base font-medium">{value}</dd>
     </div>
   )
 }

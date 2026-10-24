@@ -12,14 +12,14 @@ function Tile({ label, value, hint, tone }: Tile) {
       <div className="eyebrow">{label}</div>
       <div
         className={cn(
-          'code truncate text-2xl font-medium tracking-tight',
+          'tnum truncate text-2xl font-medium tracking-tight',
           tone === 'good' && 'text-success',
           tone === 'critical' && 'text-danger',
         )}
       >
         {value}
       </div>
-      {hint ? <div className="code truncate text-xs text-muted">{hint}</div> : null}
+      {hint ? <div className="tnum truncate text-xs text-muted">{hint}</div> : null}
     </div>
   )
 }

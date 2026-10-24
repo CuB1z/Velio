@@ -152,7 +152,7 @@ export function AccountPage() {
             <div className="flex items-center gap-5">
               <span
                 aria-hidden="true"
-                className="code flex size-16 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xl font-semibold text-accent-soft-foreground"
+                className="flex size-16 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xl font-semibold text-accent-soft-foreground"
               >
                 {initials}
               </span>
@@ -171,7 +171,7 @@ export function AccountPage() {
                 {user ? <ProfileForm key={user.full_name} name={user.full_name} /> : null}
               </SettingRow>
               <SettingRow label={t('account.email')} description={t('account.emailHint')} className="border-b border-border">
-                <span className="code min-w-0 text-sm break-all">{user?.email}</span>
+                <span className="min-w-0 text-sm break-all">{user?.email}</span>
                 {user?.status === 'active' ? <span className="eyebrow text-accent-text">{t('account.verified')}</span> : null}
               </SettingRow>
             </div>
