@@ -1,0 +1,379 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Velio theme: black ground, near-black surfaces separated by hairlines, a
+   pistachio accent. Light is a cool off-white ground that keeps the pistachio
+   for fills and CTAs (ink on top) and uses ink wherever the accent is text
+   (--velio-accent-text). Colour pairs are checked for WCAG AA (4.5:1); recheck
+   when changing them. */
+
+@layer base {
+  :root,
+  .light,
+  [data-theme="light"] {
+    --velio-accent: #c6de30;
+    --velio-accent-text: #0a0a0a;
+
+    --background: #f7f8fa;
+    --foreground: #0a0a0a;
+
+    --surface: #ffffff;
+    --surface-foreground: var(--foreground);
+    --surface-secondary: #eceef2;
+    --surface-tertiary: #f1f3f6;
+    /* Hover tint, one step below --surface. */
+    --surface-hover: #e6e9ee;
+
+    --overlay: #ffffff;
+    --overlay-foreground: var(--foreground);
+    --overlay-shadow: 0 0 0 1px var(--border), 0 2px 4px rgba(0, 0, 0, 0.04), 0 16px 40px -12px rgba(0, 0, 0, 0.16);
+
+    --muted: #68707c;
+
+    --accent: var(--velio-accent);
+    --accent-foreground: #0a0a0a;
+    --accent-soft: #edf4c7;
+    --accent-soft-foreground: #0a0a0a;
+
+    /* HeroUI fields ship borderless, so the border width is restored here.
+       --field-shadow must stay a valid transparent shadow: `none` breaks the
+       composed ring-2 focus ring. */
+    --field-background: #ffffff;
+    --field-foreground: var(--foreground);
+    --field-border: #dde1e7;
+    --field-border-width: 1px;
+    --border-width-field: 1px;
+    --field-shadow: 0 0 0 0 transparent;
+    --field-focus: #ffffff;
+
+    --default: #eceef2;
+    --default-foreground: var(--foreground);
+
+    --border: #e3e6eb;
+    --separator: #eceef2;
+
+    /* Chart series: the accent comes first and nothing else resembles it. */
+    --chart-1: #9bba10;
+    --chart-2: #6366f1;
+    --chart-3: #d97706;
+    --chart-4: #db2777;
+    --chart-5: #16a34a;
+    --chart-neutral: #a4aab4;
+    --link: var(--velio-accent-text);
+
+    /* Inverted landing sections: dark in both themes, so defined once here
+       and not repeated under .dark. */
+    --ink: #0c0c0c;
+    --ink-muted: #a3a3a3;
+    --ink-accent: #d1ec31;
+  }
+
+  .dark,
+  [data-theme="dark"] {
+    --velio-accent: #d1ec31;
+    --velio-accent-text: #d1ec31;
+
+    --background: #000000;
+    --foreground: #ffffff;
+
+    --surface: #0c0c0c;
+    --surface-foreground: var(--foreground);
+    --surface-secondary: #161616;
+    --surface-tertiary: #111111;
+    --surface-hover: #1c1c1c;
+
+    --overlay: #080808;
+    --overlay-foreground: var(--foreground);
+    --overlay-shadow: 0 0 0 1px var(--border), 0 18px 44px -12px rgba(0, 0, 0, 0.7);
+
+    --muted: #a3a3a3;
+
+    --accent: var(--velio-accent);
+    --accent-foreground: #000000;
+    --accent-soft: color-mix(in srgb, var(--velio-accent) 16%, #141414);
+    --accent-soft-foreground: var(--velio-accent-text);
+
+    /* Light :root values leak in here (that block follows HeroUI's .dark in
+       the cascade), so every override above must be repeated below. */
+    --field-background: #161616;
+    --field-foreground: var(--foreground);
+    --field-border: #262626;
+    --field-border-width: 1px;
+    --border-width-field: 1px;
+    --field-shadow: 0 0 0 0 transparent;
+    --field-focus: #1c1c1c;
+
+    --default: #161616;
+    --default-foreground: var(--foreground);
+
+    --border: #202020;
+    --separator: #1a1a1a;
+
+    --chart-1: #d1ec31;
+    --chart-2: #818cf8;
+    --chart-3: #f59e0b;
+    --chart-4: #f472b6;
+    --chart-5: #4ade80;
+    --chart-neutral: #525252;
+    --link: var(--velio-accent-text);
+  }
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", Geist, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Tailwind v4 only generates utilities from --color-* tokens, so custom
+     tokens need their mapping here. */
+  --color-surface-hover: var(--surface-hover);
+  --color-accent-text: var(--velio-accent-text);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-accent: var(--ink-accent);
+
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+}
+
+/* Pill buttons. The components layer beats HeroUI's styles while
+   utilities (rounded-none on map controls) still win. */
+@layer components {
+  .button {
+    border-radius: 9999px;
+  }
+  /* Primary actions are accent-on-ink in both themes. */
+  .button--primary {
+    background-color: var(--accent);
+    color: var(--accent-foreground);
+  }
+  .button--primary:hover {
+    background-color: color-mix(in srgb, var(--accent) 86%, var(--accent-foreground));
+  }
+  .button--primary:disabled,
+  .button--primary[aria-disabled='true'] {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--accent) 28%, var(--background));
+    color: color-mix(in srgb, var(--foreground) 55%, var(--background));
+  }
+  .switch {
+    flex-direction: row;
+  }
+  /* The knob is the thumb's ::after; HeroUI paints it accent-foreground, which inverts on dark. */
+  .slider__thumb,
+  .slider__thumb:before,
+  .slider__thumb:after {
+    background-color: var(--foreground) !important;
+  }
+  .eyebrow {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 11px;
+    line-height: 16px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+@layer base {
+  @supports (-moz-appearance: none) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) transparent;
+    }
+  }
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklch, var(--foreground) 30%, transparent);
+  }
+
+  /* Rounded panels: a thin bar that only shows while hovering, inset from the corners. */
+  .panel-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .panel-scroll:hover {
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  .panel-scroll::-webkit-scrollbar {
+    width: 10px;
+  }
+  .panel-scroll::-webkit-scrollbar-track {
+    margin: 24px 0;
+  }
+  .panel-scroll::-webkit-scrollbar-thumb {
+    background-color: transparent;
+  }
+  .panel-scroll:hover::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+  }
+}
+
+/* Smooth anchor scrolling with room for the sticky header. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+@layer base {
+  h1, h2, h3 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Tailwind v4 dropped the pointer cursor on buttons; restore it for
+   enabled clickable elements. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) {
+    cursor: pointer;
+  }
+}
+
+/* Shadows vanish on a black ground: surfaces separate by hairline there. */
+.dark {
+  --shadow-card: 0 0 0 1px var(--border);
+  --shadow-raised: 0 0 0 1px var(--border), 0 18px 44px -12px rgba(0, 0, 0, 0.7);
+}
+
+/* Tabular figures in the UI font so metric columns don't jitter. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* MapLibre attribution follows the theme; the near-opaque background keeps
+   it AA over the orthophoto. */
+.maplibregl-ctrl-attrib {
+  background: color-mix(in oklab, var(--background) 94%, transparent) !important;
+  color: color-mix(in oklab, var(--foreground) 72%, var(--background)) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 10px !important;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: color-mix(in oklab, var(--foreground) 72%, var(--background)) !important;
+}
+
+.maplibregl-canvas:focus {
+  outline: none;
+}
+
+/* Planner: the bottom sheet or the result card covers the map's foot, so the
+   attribution moves up, clear of the panel that overlaps the map on desktop. */
+.planner-map .maplibregl-ctrl-bottom-right {
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: auto;
+  max-width: calc(100% - 15rem);
+}
+@media (width >= 64rem) {
+  .planner-map .maplibregl-ctrl-bottom-right {
+    left: 1.5rem;
+  }
+}
+
+/* Motion curves: enter decelerates, exit accelerates, move is continuous.
+   Durations are not a Tailwind namespace: classes use duration-150/300. */
+@theme inline {
+  /* Elevation is the main separation between surfaces. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px -8px rgba(16, 24, 40, 0.10);
+  --shadow-raised: 0 2px 4px rgba(16, 24, 40, 0.05), 0 16px 40px -12px rgba(16, 24, 40, 0.16);
+  --ease-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+}
+:root {
+  --duration-fast: 150ms;
+  --duration-base: 300ms;
+  --duration-slow: 700ms;
+}
+
+/* Landing motion: a slow, heavy fade up; the reduced-motion rule at the end
+   makes it instant. */
+.reveal {
+  opacity: 0;
+  translate: 0 64px;
+  filter: blur(12px);
+  transition:
+    opacity 800ms var(--ease-fluid),
+    translate 800ms var(--ease-fluid),
+    filter 800ms var(--ease-fluid);
+}
+.reveal[data-visible="true"] {
+  opacity: 1;
+  translate: 0 0;
+  filter: none;
+}
+
+:root {
+  --hero-from: #000000;
+  --hero-to: #666666;
+}
+.dark,
+[data-theme="dark"] {
+  --hero-from: #ffffff;
+  --hero-to: #9b9b9b;
+}
+.text-hero {
+  background-image: linear-gradient(90deg, var(--hero-from), var(--hero-to));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
