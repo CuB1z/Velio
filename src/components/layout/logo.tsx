@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn"
 
 /**
  * Velio logo. Single color: both paths inherit currentColor, so it works on
- * light, dark or brand-blue backgrounds. Paths copied untouched from public/velio.svg.
+ * light, dark or pistachio backgrounds. Paths copied untouched from public/velio.svg.
  */
 
 const MARK_D =
