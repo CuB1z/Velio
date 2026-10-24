@@ -20,6 +20,7 @@ export default {
     cancel: 'Cancel',
     confirm: 'Confirm',
     continue: 'Continue',
+    opensInNewTab: '(opens in a new tab)',
     delete: 'Delete',
     loading: 'Loading…',
     of: 'of',
@@ -468,7 +469,6 @@ export default {
     exportEyebrow: 'Export',
     compatible: 'compatible',
     ctaEyebrow: 'Start today',
-    ctaNote: 'Free · no card · nothing to install',
   },
 
   error: {

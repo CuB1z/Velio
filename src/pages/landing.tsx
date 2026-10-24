@@ -86,7 +86,7 @@ export function LandingPage() {
   ]
 
   return (
-    <div className="min-h-full overflow-x-clip bg-background text-foreground">
+    <div className="min-h-full overflow-x-clip bg-background text-foreground [&_.code]:font-sans! [&_.eyebrow]:font-sans [&_.eyebrow]:font-medium">
       <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
         <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
           <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`flex min-h-11 items-center rounded-md ${focus}`}>
@@ -293,9 +293,11 @@ export function LandingPage() {
                       href={source.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="-my-2 inline-flex min-h-11 items-center self-start text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
+                      className="-my-2 inline-flex min-h-11 items-center gap-1.5 self-start text-lg font-semibold tracking-tight underline-offset-4 hover:underline"
                     >
                       {source.label}
+                      <ArrowIcon external className="size-4 text-muted" />
+                      <span className="sr-only">{t('common.opensInNewTab')}</span>
                     </a>
                     <p className="text-muted text-pretty">{t(`landing.data${source.key}Body`)}</p>
                   </li>
@@ -332,10 +334,14 @@ export function LandingPage() {
               {t('landing.ctaTitle')}
             </h2>
             <p className="max-w-[560px] text-lg text-muted text-pretty">{t('landing.ctaBody')}</p>
-            <Link to={to(primary.to)} className={primaryPill}>
-              {primary.label}
-            </Link>
-            <span className="eyebrow">{t('landing.ctaNote')}</span>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link to={to(primary.to)} className={primaryPill}>
+                {primary.label}
+              </Link>
+              <button type="button" onClick={askDialog.open} className={`${pill} bg-surface-secondary text-foreground hover:bg-surface-hover`}>
+                {t('coverage.ask')}
+              </button>
+            </div>
           </Reveal>
         </section>
       </main>
@@ -358,7 +364,7 @@ export function LandingPage() {
   )
 }
 
-function ArrowIcon({ className }: { className?: string }) {
+function ArrowIcon({ className, external }: { className?: string; external?: boolean }) {
   return (
     <svg
       width="16"
@@ -372,7 +378,7 @@ function ArrowIcon({ className }: { className?: string }) {
       aria-hidden="true"
       className={className}
     >
-      <path d="M5 12h14m-6-6 6 6-6 6" />
+      <path d={external ? 'M7 17 17 7M8 7h9v9' : 'M5 12h14m-6-6 6 6-6 6'} />
     </svg>
   )
 }

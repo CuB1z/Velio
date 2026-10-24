@@ -21,6 +21,7 @@ export default {
     cancel: 'Cancelar',
     confirm: 'Confirmar',
     continue: 'Continuar',
+    opensInNewTab: '(se abre en otra pestaña)',
     delete: 'Eliminar',
     loading: 'Cargando…',
     of: 'de',
@@ -469,7 +470,6 @@ export default {
     exportEyebrow: 'Exportar',
     compatible: 'compatible',
     ctaEyebrow: 'Empieza hoy',
-    ctaNote: 'Gratis · sin tarjeta · sin instalar nada',
   },
 
   error: {

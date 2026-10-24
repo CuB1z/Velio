@@ -86,3 +86,10 @@ test('picking a bike highlights what it means', async ({ page }) => {
   await expect(page.getByRole('listitem').filter({ hasText: 'Gravel.' })).toHaveCSS('opacity', '1')
   await expect(page.getByRole('listitem').filter({ hasText: 'Carretera.' })).toHaveCSS('opacity', '0.4')
 })
+
+test('the closing call to action also asks for a country', async ({ page }) => {
+  await page.goto('/es')
+  const closing = page.locator('section', { has: page.getByRole('heading', { name: 'Tu próxima vuelta sale de tu puerta' }) })
+  await closing.getByRole('button', { name: 'Pide tu país' }).click()
+  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Pide tu país' })).toBeVisible()
+})
