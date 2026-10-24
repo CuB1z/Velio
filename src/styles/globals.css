@@ -249,9 +249,11 @@ body {
   color: var(--foreground);
 }
 
-h1:not(.eyebrow), h2:not(.eyebrow), h3:not(.eyebrow) {
-  font-weight: 600;
-  letter-spacing: -0.02em;
+@layer base {
+  h1, h2, h3 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
 }
 
 /* Tailwind v4 dropped the pointer cursor on buttons; restore it for
