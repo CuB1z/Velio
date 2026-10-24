@@ -1,4 +1,4 @@
-# Velio
+# Velio · backend
 
 Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla/valhalla)
 and OpenStreetMap data. Goal: point-to-point and circular cycling routes,
@@ -29,7 +29,7 @@ Working today:
 - FastAPI HTTP service (`app/main.py`): circular loops and point-to-point
   routes over REST, geometry as encoded polylines, DEM gain/loss and quality
   score included — plus per-user saved routes for replaying past results —
-  see [docs/api.md](docs/api.md)
+  see [docs/05_api.md](docs/05_api.md)
 
 ## Architecture
 
@@ -46,7 +46,7 @@ The routing graph carries baked-in elevation (`mjolnir.use_elevation`), so
 slope weighs on route calculation through the bicycle costing options (e.g.
 `use_hills`). The Python elevation engine (`app/engine/`) reads the same DEM
 tiles directly for high-resolution profiles and metrics. Details in
-[docs/elevation.md](docs/elevation.md).
+[docs/04_elevation.md](docs/04_elevation.md).
 
 ## Requirements
 
@@ -56,7 +56,7 @@ tiles directly for high-resolution profiles and metrics. Details in
 - ~11 GB free disk to build the dataset (extracts, merged PBF, tiles,
   elevation); the server keeps ~3.9 GB of it
 - ~8 GB of free RAM for the build (see
-  [docs/data.md](docs/data.md#resources))
+  [docs/02_data.md](docs/02_data.md#resources))
 
 ## Quick start
 
@@ -148,7 +148,7 @@ the Valhalla bicycle costing.
 ## HTTP service
 
 The engine also runs as a FastAPI service exposing circular loops and
-point-to-point routes. Full endpoint reference in [docs/api.md](docs/api.md).
+point-to-point routes. Full endpoint reference in [docs/05_api.md](docs/05_api.md).
 
 ```bash
 # Start (reads VALHALLA_URL / VALHALLA_ELEVATION_DIR, defaults to localhost:8002
@@ -176,7 +176,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H "Authorization: Bearer $TOKEN" \
 # Health and docs
 curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.34.0"}
 
-# Prometheus metrics (closed unless METRICS_ENABLED=true; see docs/api.md)
+# Prometheus metrics (closed unless METRICS_ENABLED=true; see docs/05_api.md)
 curl -s localhost:8000/metrics -H "Authorization: Bearer $METRICS_TOKEN" | head
 open localhost:8000/docs
 
@@ -185,11 +185,11 @@ curl -s -X POST 'localhost:8000/api/v1/loops?format=gpx' \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"origin":{"lat":40.5964,"lon":-3.6318},"distance_km":70}' -o loop.gpx
 
-# Or run everything containerised: API on :8000, Valhalla on :8002,
-# sharing the ./valhalla data directory. Compose files live in docker/;
-# configuration comes from your environment (--env-file), never from the
-# compose files themselves.
-docker compose --env-file .env -f docker/docker-compose.yaml up -d --build api
+# Or run everything containerised from the repo root: API on :8000,
+# Valhalla on :8002, sharing the backend/valhalla data directory. Compose
+# files live in the root docker/ folder; configuration comes from your
+# environment (--env-file), never from the compose files themselves.
+docker compose --env-file backend/.env -f docker/docker-compose.dev.yaml up -d --build api
 
 # Isolated TEST stack (dev conveniences on: any code verifies accounts).
 # Point --env-file at your own env file for the stack:
@@ -208,7 +208,7 @@ through `POST /api/v1/auth/change-password` or recovered without a
 session via `POST /api/v1/auth/forgot-password` + `POST /api/v1/auth/reset-password`
 (both revoke live sessions), and
 activated riders are filed into a Brevo contacts list when `BREVO_LIST_ID`
-is set — full flow in [docs/api.md](docs/api.md).
+is set — full flow in [docs/05_api.md](docs/05_api.md).
 Logging is structured one-dict-per-line on stdout (`app/core/logging.py`):
 service events carry their fields, uvicorn's own records flow through the
 same pipeline, and every HTTP request emits one access event with
@@ -261,9 +261,9 @@ Install the dev extras (`pip install -r requirements-dev.txt`) to get `mypy`;
 
 | Document | Contents |
 |---|---|
-| [docs/data.md](docs/data.md) | Data lifecycle: what lives where, build vs runtime needs, production checklist |
-| [docs/valhalla.md](docs/valhalla.md) | Build pipeline, runtime configuration, HTTP API |
-| [docs/elevation.md](docs/elevation.md) | Elevation source, tiles, `/height`, grade caveats, `app/engine` pipeline |
+| [docs/02_data.md](docs/02_data.md) | Data lifecycle: what lives where, build vs runtime needs, production checklist |
+| [docs/03_valhalla.md](docs/03_valhalla.md) | Build pipeline, runtime configuration, HTTP API |
+| [docs/04_elevation.md](docs/04_elevation.md) | Elevation source, tiles, `/height`, grade caveats, `app/engine` pipeline |
 
 ## License / data attribution
 

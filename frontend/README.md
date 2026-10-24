@@ -1,6 +1,6 @@
-# Velio · web
+# Velio · frontend
 
-Web interface for [Velio](../../cycling-router): generates loop and
+Web interface for [Velio](../README.md): generates loop and
 point-to-point cycling routes on top of the engine's FastAPI API, scores them
 by surface, safety and elevation, and saves them.
 
@@ -42,7 +42,7 @@ development; in production set it to the backend's absolute public URL.
 ```
 src/
   api/         HTTP client and one module per API area
-  types/api.ts API contract, mirrors cycling-router/docs/api.md
+  types/api.ts API contract, mirrors backend/docs/05_api.md
   auth/        Session, token storage and route guards
   components/  common · layout · map · planner · route · auth · landing
   pages/       One per screen
@@ -54,7 +54,7 @@ tests/         Vitest suites, mirroring src/ (setup in tests/setup.ts)
 
 ### The data layer rules
 
-`src/types/api.ts` is a literal mirror of the backend's `docs/api.md`. If the
+`src/types/api.ts` is a literal mirror of the backend's `docs/05_api.md`. If the
 API changes, change it there first and the compiler flags the rest.
 
 `tests/api/contract.test.ts` checks those types, and every path the frontend
@@ -250,19 +250,18 @@ Playwright, in `e2e/`, two kinds:
 - `pnpm e2e:live` runs `e2e/live/` against a real backend through the Vite
   proxy: sign up, verify, generate a loop, save, export GPX, analyse that GPX,
   delete, sign out. It needs the backend test stack (`OTP_TEST_MODE` lets any
-  six digit code verify), started from `~/Dev/cycling-router` with
-  `docker compose --env-file .env -f docker/docker-compose.test.yaml up -d`.
+  six digit code verify), started from the repo root with
+  `docker compose -f docker/docker-compose.test.yaml up -d --build api`.
 
 `E2E_BASE_URL` points either suite at another origin, e.g. the production
-image on `http://localhost:8088` (see [docs/deploy.md](docs/deploy.md)). The
+image on `http://localhost:8088` (see [docs/01_deploy.md](../docs/01_deploy.md)). The
 first run needs `pnpm exec playwright install chromium`.
 
 ## Deploy
 
 One container: the `Dockerfile` builds the SPA, prerenders the landing per language (`pnpm prerender`, Playwright) and serves it from nginx
 (`nginx/velio.conf.template`), which proxies `/api` to the backend on the same
-origin. Deployed on Dokploy from `main`; DNS, backend env, Google console and
-the smoke test are in [docs/deploy.md](docs/deploy.md).
+origin. It ships with the backend in `docker/docker-compose.yaml`, deployed on Dokploy from `main`; DNS, environment, Google console and the smoke test are in [docs/01_deploy.md](../docs/01_deploy.md).
 
 ## Data licences
 

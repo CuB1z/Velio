@@ -113,7 +113,7 @@ Mount the directory as `/data` and run:
 valhalla_service /data/config/valhalla.json <threads>
 ```
 
-That is what `docker-compose.yaml` does with `./valhalla:/data`.
+That is what `docker/docker-compose.dev.yaml` does with `../backend/valhalla:/data`.
 
 The coverage and restricted-areas GeoJSON files are copied into the API image
 by the `Dockerfile`, so a data refresh also needs a new API image.

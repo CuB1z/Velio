@@ -6,10 +6,10 @@ Self-hosted cycling route engine built on [Valhalla](https://github.com/valhalla
 
 | Document | Description |
 |---|---|
-| [api.md](api.md) | HTTP API reference: auth (OTP verification, OAuth), loops, routes, analysis, configuration |
-| [data.md](data.md) | Data lifecycle: what exists, where it lives, build-time vs runtime requirements, production deployment checklist |
-| [valhalla.md](valhalla.md) | Valhalla setup: build pipeline, Docker runtime, HTTP API endpoints used by the project |
-| [elevation.md](elevation.md) | Elevation: DEM data source, elevation tiles, `/height` endpoint, grade attributes, and the `app/engine` elevation pipeline |
+| [05_api.md](05_api.md) | HTTP API reference: auth (OTP verification, OAuth), loops, routes, analysis, configuration |
+| [02_data.md](02_data.md) | Data lifecycle: what exists, where it lives, build-time vs runtime requirements, production deployment checklist |
+| [03_valhalla.md](03_valhalla.md) | Valhalla setup: build pipeline, Docker runtime, HTTP API endpoints used by the project |
+| [04_elevation.md](04_elevation.md) | Elevation: DEM data source, elevation tiles, `/height` endpoint, grade attributes, and the `app/engine` elevation pipeline |
 
 ## Repository layout
 
@@ -81,10 +81,11 @@ valhalla/                 Runtime state, mounted into the container at /data
 requirements.txt          Runtime dependencies
 requirements-dev.txt      Development dependencies (pytest, ruff)
 docs/                     This documentation
-docker-compose.yaml       Full stack: API (:8000), Valhalla (:8002), Postgres (:5432)
+Dockerfile                API image
+../docker/                Compose files (dev stack: API :8000, Valhalla :8002, Postgres :5432)
 ```
 
-See [data.md](data.md) for the full data lifecycle and the production
+See [02_data.md](02_data.md) for the full data lifecycle and the production
 deployment checklist.
 
 ## Quick start
@@ -100,7 +101,7 @@ deployment checklist.
 ./scripts/download_osm.sh spain   # download an OSM extract only
 ./scripts/build_tiles.sh          # rebuild config + routing tiles from data/coverage.osm.pbf
 ./scripts/download_elevation.sh   # download elevation tiles only
-docker compose up -d valhalla     # start the service
+docker compose -f ../docker/docker-compose.dev.yaml up -d valhalla   # start the service
 
 # Verify
 ./scripts/smoke_test_height.sh

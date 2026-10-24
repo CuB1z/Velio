@@ -33,7 +33,7 @@ Current build stats (2026-10-11, Spain + Canary Islands + Portugal + Andorra):
 | Tiles generated | 2107 |
 | Build time | ~13 min (`build_tiles.sh`, 6 threads) |
 
-Sizes, timings and RAM for every step are in [data.md](data.md#resources).
+Sizes, timings and RAM for every step are in [02_data.md](02_data.md#resources).
 
 Docker image: `ghcr.io/valhalla/valhalla:3.8.2` (pinned in all scripts).
 
@@ -59,7 +59,7 @@ Takes the PBF as its only argument (default `data/coverage.osm.pbf`) and
 needs a populated `valhalla/elevation/` (`download_elevation.sh`): without
 elevation tiles the build still succeeds but edges carry no grades.
 
-## Runtime (`docker-compose.yaml`)
+## Runtime (`docker/docker-compose.dev.yaml`)
 
 ```yaml
 image:    ghcr.io/valhalla/valhalla:3.8.2
@@ -84,7 +84,7 @@ End-to-end setup used after a fresh clone or a data refresh:
 4. Build config + tiles (`build_tiles.sh`)
 5. Download elevation tiles (`download_elevation.sh`) and, when that added
    files, build the tiles again so their grades are baked in
-6. `docker compose up -d --force-recreate valhalla` and wait for readiness
+6. `docker compose -f docker/docker-compose.dev.yaml up -d --force-recreate valhalla` (from the repo root) and wait for readiness
 7. Validate `/status` and `/height` with real coordinates
 
 Flags: `--regions <keys>` (default `spain,canary-islands,portugal,andorra`),
@@ -142,12 +142,12 @@ Example body — note it takes the **encoded polyline** from a previous
 
 A ~3 km test route returned 80 edges with all road attributes populated;
 grade attributes carry real values since elevation is baked into the graph
-(see [elevation.md](elevation.md#grade-attributes)).
+(see [04_elevation.md](04_elevation.md#grade-attributes)).
 
 ### `/height` (POST)
 
 Returns elevation values for arbitrary points using the downloaded elevation
-tiles. See [elevation.md](elevation.md).
+tiles. See [04_elevation.md](04_elevation.md).
 
 ## Known limitations
 

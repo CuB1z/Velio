@@ -1,5 +1,5 @@
 /**
- * Velio API contract, mirroring cycling-router/docs/api.md: don't invent fields.
+ * Velio API contract, mirroring backend/docs/05_api.md: don't invent fields.
  * Everything lives under /api/v1 except /api/health.
  */
 
