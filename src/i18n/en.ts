@@ -456,6 +456,7 @@ export default {
     anchorHow: 'how-it-works',
     anchorData: 'the-data',
     anchorFaq: 'faq',
+    ogImageAlt: 'Loops cut to your distance, scored before you ride: the Velio tagline over the elevation profile of a real loop',
     metaDescription: 'Velio builds loop and point-to-point cycling routes from real surface, safety and elevation data.',
     heroEyebrow: 'Cycling routes on open data · Spain, Portugal and Andorra',
     showcaseEyebrow: 'The result',

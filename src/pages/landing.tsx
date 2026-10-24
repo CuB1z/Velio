@@ -17,7 +17,7 @@ import { VelioLogo } from '@/components/layout/logo'
 import { LanguageToggle } from '@/components/layout/languageToggle'
 import { ThemeToggle } from '@/components/layout/themeToggle'
 import { useDocumentHead } from '@/hooks/useDocumentHead'
-import { DEFAULT_LANGUAGE, LANGUAGES } from '@/i18n/languages'
+import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_INFO, LANGUAGES } from '@/i18n/languages'
 import { SurfaceBar } from '@/components/route/surfaceBar'
 import { formatDistance, formatRatio } from '@/lib/format'
 import { useLangPath, withLang } from '@/lib/paths'
@@ -60,12 +60,22 @@ export function LandingPage() {
   const [bike, setBike] = useState<(typeof BIKES)[number]>('road')
   const origin = window.location.origin
   const scrollToTop = () => window.scrollTo({ top: 0 })
+  const language = isLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE
+  const canonical = origin + withLang('/', language)
   useDocumentHead({
     description: t('landing.metaDescription'),
-    canonical: origin + withLang('/', i18n.language),
+    canonical,
     alternates: {
       ...Object.fromEntries(LANGUAGES.map((lang) => [lang, origin + withLang('/', lang)])),
       'x-default': origin + withLang('/', DEFAULT_LANGUAGE),
+    },
+    social: {
+      title: `Velio · ${t('landing.heroTitle').replace('\n', ' ')}`,
+      description: t('landing.metaDescription'),
+      url: canonical,
+      image: `${origin}/og-${language}.png`,
+      imageAlt: t('landing.ogImageAlt'),
+      locale: LANGUAGE_INFO[language].locale.replace('-', '_'),
     },
   })
   const authenticated = status === 'authenticated'

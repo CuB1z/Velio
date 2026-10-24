@@ -457,6 +457,7 @@ export default {
     anchorHow: 'como-funciona',
     anchorData: 'los-datos',
     anchorFaq: 'preguntas',
+    ogImageAlt: 'Circuitos a tu medida, puntuados antes de salir: el lema de Velio sobre el perfil de elevación de un circuito real',
     metaDescription: 'Velio genera rutas ciclistas circulares y punto a punto con datos reales de firme, seguridad y desnivel.',
     heroEyebrow: 'Rutas ciclistas sobre datos abiertos · España, Portugal y Andorra',
     showcaseEyebrow: 'El resultado',

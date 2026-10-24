@@ -64,3 +64,27 @@ it('replaces head tags left by a prerendered page', () => {
   unmount()
   expect(links()).toEqual([])
 })
+
+it('adds the Open Graph and Twitter card tags while mounted', () => {
+  const property = (name: string) => document.head.querySelector(`meta[property="${name}"]`)?.getAttribute('content')
+  const { unmount } = renderHook(() =>
+    useDocumentHead({
+      social: {
+        title: 'Velio · Circuitos',
+        description: 'Rutas',
+        url: 'https://velio.test/',
+        image: 'https://velio.test/og-es.png',
+        imageAlt: 'Perfil',
+        locale: 'es_ES',
+      },
+    }),
+  )
+
+  expect(property('og:title')).toBe('Velio · Circuitos')
+  expect(property('og:image')).toBe('https://velio.test/og-es.png')
+  expect(property('og:locale')).toBe('es_ES')
+  expect(document.head.querySelector('meta[name="twitter:card"]')?.getAttribute('content')).toBe('summary_large_image')
+
+  unmount()
+  expect(document.head.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]')).toHaveLength(0)
+})
