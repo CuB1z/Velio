@@ -1,0 +1,26 @@
+name: CD - Manual build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.set-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate tag
+        id: set-tag
+        run: |
+          TAG="${GITHUB_REF_NAME//\//-}-$(date +%Y%m%d-%H%M)-$(git rev-parse --short HEAD)"
+          echo "Generated tag: $TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    uses: ./.github/workflows/cd-build.yaml
+    secrets: inherit
+    with:
+      tag: ${{ needs.prepare.outputs.tag }}

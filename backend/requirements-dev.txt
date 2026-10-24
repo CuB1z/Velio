@@ -4,3 +4,4 @@ aiosqlite==0.22.1
 fakeredis==2.26.2
 mypy>=1.15
 osmium>=4.0
+ruff==0.16.2

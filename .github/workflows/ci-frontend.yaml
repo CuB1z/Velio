@@ -1,15 +1,20 @@
-name: CI
+name: CI - Frontend
 
 on:
   pull_request:
+    paths: [frontend/**, .github/workflows/ci-frontend.yaml]
   push:
-    branches: [dev]
+    branches: [dev, main]
+    paths: [frontend/**, .github/workflows/ci-frontend.yaml]
   workflow_dispatch:
 
 jobs:
   ci:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -19,6 +24,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck

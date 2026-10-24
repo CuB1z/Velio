@@ -1,0 +1,17 @@
+name: CD - Publish dev build
+
+on:
+  push:
+    branches:
+      - dev
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/cd-*.yaml'
+
+jobs:
+  publish-dev:
+    uses: ./.github/workflows/cd-build.yaml
+    secrets: inherit
+    with:
+      tag: dev
