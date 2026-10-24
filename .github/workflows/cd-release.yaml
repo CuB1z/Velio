@@ -18,7 +18,7 @@ jobs:
     with:
       tag: latest
 
-  trigger-dokploy:
+  deploy:
     needs: release-latest
     runs-on: ubuntu-latest
     steps:
@@ -43,3 +43,28 @@ jobs:
           application_id: ${{ secrets.DOKPLOY_COMPOSE_ID }}
           dokploy_url: ${{ secrets.DOKPLOY_URL }}
           service_type: compose
+
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.configured == 'true'
+
+      - name: Wait for the release on velio.cub1z.es
+        if: steps.check.outputs.configured == 'true'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          want="${TAG#v}"
+          got=""
+          for _ in $(seq 1 90); do
+            got=$(curl -sf https://velio.cub1z.es/api/health | jq -r .version || true)
+            if [ "$got" = "$want" ]; then
+              echo "velio.cub1z.es runs $got"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "velio.cub1z.es still reports '${got:-nothing}' after 15 minutes; expected $want (the backend version in backend/app/core/config.py)"
+          exit 1
+
+      - name: Smoke test
+        if: steps.check.outputs.configured == 'true'
+        run: frontend/scripts/smoke.sh https://velio.cub1z.es
