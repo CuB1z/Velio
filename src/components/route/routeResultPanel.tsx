@@ -182,7 +182,7 @@ export function RouteResultPanel({
             type="button"
             onClick={() => setDetail((open) => !open)}
             aria-expanded={detail}
-            className="flex items-center gap-1.5 rounded-md text-sm font-medium text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="-my-3 flex min-h-11 items-center gap-1.5 rounded-md text-sm font-medium text-muted transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             {t(detail ? 'result.detailHide' : 'result.detail')}
             <ChevronIcon className={cn('transition-transform', detail && 'rotate-180')} />

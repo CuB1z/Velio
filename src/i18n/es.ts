@@ -157,6 +157,8 @@ export default {
     tabPolyline: 'Polilínea',
     drop: 'Arrastra aquí tu GPX',
     dropBrowse: 'o búscalo en tu equipo',
+    dropTouch: 'Elige tu GPX',
+    dropTouchHint: 'Toca para abrir tus archivos',
     dropInvalid: 'Ese archivo no parece un GPX con puntos de ruta.',
     points: '{{count}} puntos',
     polylineLabel: 'Polilínea codificada',

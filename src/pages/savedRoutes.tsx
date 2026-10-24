@@ -103,7 +103,7 @@ export function SavedRoutesPage() {
                   <SearchField.SearchIcon className="m-0 text-current" />
                 </span>
                 <SearchField.Input placeholder={t('saved.searchPlaceholder')} />
-                <SearchField.ClearButton />
+                <SearchField.ClearButton className="size-11" />
               </SearchField.Group>
             </SearchField>
             {meta?.total && !selecting ? (

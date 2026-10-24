@@ -156,6 +156,8 @@ export default {
     tabPolyline: 'Polyline',
     drop: 'Drop your GPX here',
     dropBrowse: 'or browse your computer',
+    dropTouch: 'Choose your GPX',
+    dropTouchHint: 'Tap to open your files',
     dropInvalid: 'That file does not look like a GPX with track points.',
     points: '{{count}} points',
     polylineLabel: 'Encoded polyline',

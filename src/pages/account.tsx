@@ -128,7 +128,7 @@ export function AccountPage() {
         <nav
           ref={navRef}
           aria-label={t('account.heading')}
-          className="no-scrollbar sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-border bg-background/90 px-4 py-2 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:top-10 lg:mx-0 lg:flex-col lg:self-start lg:overflow-visible lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
+          className="no-scrollbar sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-border bg-background/90 px-4 py-2 pe-12 backdrop-blur-sm [mask-image:linear-gradient(to_right,black_calc(100%-2rem),transparent)] sm:-mx-6 sm:px-6 sm:pe-12 lg:top-10 lg:[mask-image:none] lg:mx-0 lg:flex-col lg:self-start lg:overflow-visible lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none"
         >
           {SECTIONS.map((section) => (
             <a
@@ -136,7 +136,7 @@ export function AccountPage() {
               href={`#${section.id}`}
               aria-current={active === section.id ? 'true' : undefined}
               className={cn(
-                'shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+                'inline-flex min-h-11 shrink-0 items-center whitespace-nowrap rounded-full px-3 text-sm font-medium lg:min-h-9 transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
                 active === section.id
                   ? 'bg-surface-hover text-foreground'
                   : 'text-muted hover:bg-surface-hover hover:text-foreground',
@@ -171,7 +171,7 @@ export function AccountPage() {
                 {user ? <ProfileForm key={user.full_name} name={user.full_name} /> : null}
               </SettingRow>
               <SettingRow label={t('account.email')} description={t('account.emailHint')} className="border-b border-border">
-                <span className="code text-sm">{user?.email}</span>
+                <span className="code min-w-0 text-sm break-all">{user?.email}</span>
                 {user?.status === 'active' ? <span className="eyebrow text-accent-text">{t('account.verified')}</span> : null}
               </SettingRow>
             </div>

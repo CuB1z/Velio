@@ -115,7 +115,7 @@ export function PlannerLayout({
             dragStart.current = null
             setDrag(null)
           }}
-          className="flex w-full shrink-0 touch-none justify-center pb-3 pt-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent lg:hidden"
+          className="flex min-h-11 w-full shrink-0 touch-none items-center justify-center focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent lg:hidden"
         >
           <span className="h-1 w-10 rounded-full bg-border" aria-hidden="true" />
         </button>

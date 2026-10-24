@@ -37,7 +37,7 @@ export function WaypointEditor({ value, onChange, pickTarget, onPick }: Props) {
         <Button
           variant="ghost"
           size="sm"
-          className="min-h-9 text-sm text-accent-text"
+          className="min-h-11 text-sm text-accent-text md:min-h-9"
           onPress={() => onChange([...value].reverse())}
           isDisabled={value.length < 2}
         >

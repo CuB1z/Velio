@@ -120,8 +120,10 @@ export function AnalyzePage() {
                 )}
               >
                 <UploadIcon />
-                <span className="text-sm font-semibold">{t('analyze.drop')}</span>
-                <span className="text-xs text-muted">{t('analyze.dropBrowse')}</span>
+                <span className="text-sm font-semibold pointer-coarse:hidden">{t('analyze.drop')}</span>
+                <span className="text-xs text-muted pointer-coarse:hidden">{t('analyze.dropBrowse')}</span>
+                <span className="hidden text-sm font-semibold pointer-coarse:inline">{t('analyze.dropTouch')}</span>
+                <span className="hidden text-xs text-muted pointer-coarse:inline">{t('analyze.dropTouchHint')}</span>
               </button>
               <input
                 ref={inputRef}

@@ -23,7 +23,7 @@ type Props = { state: ReturnType<typeof useOverlayState> }
 export function AskCountryButton({ onPress, className }: { onPress: () => void; className?: string }) {
   const { t } = useTranslation()
   return (
-    <Button variant="secondary" size="sm" onPress={onPress} className={cn('min-h-9', className)}>
+    <Button variant="secondary" size="sm" onPress={onPress} className={cn('min-h-11 md:min-h-9', className)}>
       {t('coverage.ask')}
     </Button>
   )

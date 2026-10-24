@@ -78,7 +78,7 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile-only header: on desktop the rail takes over */}
         <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3 md:hidden">
-          <NavLink to={to('/')} className="flex items-center" aria-label={t('app.name')}>
+          <NavLink to={to('/')} className="flex min-h-11 items-center" aria-label={t('app.name')}>
             <VelioLogo height={24} decorative />
           </NavLink>
           <div className="flex items-center gap-1">
@@ -110,7 +110,7 @@ export function AppShell() {
               to={to(item.to)}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition-colors',
+                  'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
                   isActive ? 'text-foreground' : 'text-muted',
                 )
               }

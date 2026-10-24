@@ -33,6 +33,8 @@ const LAYER_LINE = 'velio-routes-line'
 const LAYER_SELECTED_CASING = 'velio-routes-selected-casing'
 const LAYER_SELECTED_LINE = 'velio-routes-selected-line'
 const LAYER_SELECTED_ARROWS = 'velio-routes-selected-arrows'
+const ATTRIBUTION_VISIBLE_MS = 5000
+const COMPACT_MAP_MAX_WIDTH = 640
 
 export type RouteLayer = {
   id: string
@@ -218,8 +220,14 @@ export function MapView({
       clickHandler.current?.([event.lngLat.lng, event.lngLat.lat])
     })
 
+    const collapseAttribution = window.setTimeout(() => {
+      if (instance.getContainer().offsetWidth > COMPACT_MAP_MAX_WIDTH) return
+      instance.getContainer().querySelector('.maplibregl-compact-show')?.classList.remove('maplibregl-compact-show')
+    }, ATTRIBUTION_VISIBLE_MS)
+
     map.current = instance
     return () => {
+      window.clearTimeout(collapseAttribution)
       instance.remove()
       map.current = null
     }
