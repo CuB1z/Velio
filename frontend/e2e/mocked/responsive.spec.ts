@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
-import { json, mockApi, SESSION, signedIn } from '../support/mockApi'
+import { json, LOOP, mockApi, SESSION, signedIn } from '../support/mockApi'
 
 const overflow = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -93,4 +93,25 @@ test('the GPX picker speaks of tapping, not dragging, on a touch screen', async 
   await page.goto('/es/analyze')
   await expect(page.getByText('Elige tu GPX')).toBeVisible()
   await expect(page.getByText('Arrastra aquí tu GPX')).toBeHidden()
+})
+
+test.describe('in English, where the action labels are short', () => {
+  test.use({ locale: 'en-GB' })
+
+  test('a saved route keeps a long title in view next to its actions', async ({ page }) => {
+    const saved = {
+      id: 'r1',
+      name: 'Madrid to Navacerrada',
+      created_at: '2026-10-01T10:00:00Z',
+      updated_at: '2026-10-02T10:00:00Z',
+      payload: LOOP,
+    }
+    await signedIn(page, { '**/api/v1/routes/saved/r1': (route) => route.fulfill(json(saved)) })
+    await page.goto('/saved/r1')
+    const title = page.getByRole('heading', { level: 1, name: 'Madrid to Navacerrada' })
+    await expect(title).toBeVisible()
+    const box = (await title.boundingBox())!
+    expect(box.width).toBeGreaterThan(150)
+    expect(await overflow(page)).toBeLessThanOrEqual(0)
+  })
 })

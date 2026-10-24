@@ -110,7 +110,7 @@ export function SavedRouteDetailPage() {
         >
           <BackIcon />
         </Button>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-[1_1_16rem]">
           <div className="flex items-center gap-2">
             <h1 className="truncate text-xl font-semibold tracking-tight">{route.name}</h1>
             <Button
