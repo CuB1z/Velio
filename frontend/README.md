@@ -254,14 +254,14 @@ Playwright, in `e2e/`, two kinds:
   `docker compose -f docker/docker-compose.test.yaml up -d --build api`.
 
 `E2E_BASE_URL` points either suite at another origin, e.g. the production
-image on `http://localhost:8088` (see [docs/01_deploy.md](../docs/01_deploy.md)). The
+image on `http://localhost:8088` (see [docs/02_deploy.md](../docs/02_deploy.md)). The
 first run needs `pnpm exec playwright install chromium`.
 
 ## Deploy
 
 One container: the `Dockerfile` builds the SPA, prerenders the landing per language (`pnpm prerender`, Playwright) and serves it from nginx
 (`nginx/velio.conf.template`), which proxies `/api` to the backend on the same
-origin. It ships with the backend in `docker/docker-compose.yaml`, deployed on Dokploy from `main`; DNS, environment, Google console and the smoke test are in [docs/01_deploy.md](../docs/01_deploy.md).
+origin. It ships with the backend in `docker/docker-compose.yaml`, deployed on Dokploy from `main`; DNS, environment, Google console and the smoke test are in [docs/02_deploy.md](../docs/02_deploy.md).
 
 ## Data licences
 

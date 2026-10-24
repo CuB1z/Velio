@@ -261,9 +261,11 @@ Install the dev extras (`pip install -r requirements-dev.txt`) to get `mypy`;
 
 | Document | Contents |
 |---|---|
+| [docs/01_overview.md](docs/01_overview.md) | Index of these docs, quick start and project layout |
 | [docs/02_data.md](docs/02_data.md) | Data lifecycle: what lives where, build vs runtime needs, production checklist |
 | [docs/03_valhalla.md](docs/03_valhalla.md) | Build pipeline, runtime configuration, HTTP API |
 | [docs/04_elevation.md](docs/04_elevation.md) | Elevation source, tiles, `/height`, grade caveats, `app/engine` pipeline |
+| [docs/05_api.md](docs/05_api.md) | HTTP API reference: auth, loops, routes, analysis, saved routes, configuration |
 
 ## License / data attribution
 
