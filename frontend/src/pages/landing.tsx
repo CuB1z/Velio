@@ -1,9 +1,10 @@
 import { useOverlayState } from '@heroui/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
+import { fluid, focus } from '@/components/common/interaction'
 import { SegmentedControl } from '@/components/common/segmentedControl'
 import { RequestCountryDialog } from '@/components/coverage/requestCountryDialog'
 import { Bento, BentoCell, BentoLabel } from '@/components/landing/bento'
@@ -13,9 +14,8 @@ import { Reveal } from '@/components/landing/reveal'
 import { Ridge } from '@/components/landing/ridge'
 import { Showcase } from '@/components/landing/showcase'
 import { TaglineReveal } from '@/components/landing/taglineReveal'
-import { VelioLogo } from '@/components/layout/logo'
-import { LanguageToggle } from '@/components/layout/languageToggle'
-import { ThemeToggle } from '@/components/layout/themeToggle'
+import { SiteFooter } from '@/components/layout/siteFooter'
+import { SiteHeader } from '@/components/layout/siteHeader'
 import { useDocumentHead } from '@/hooks/useDocumentHead'
 import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_INFO, LANGUAGES } from '@/i18n/languages'
 import { SurfaceBar } from '@/components/route/surfaceBar'
@@ -46,8 +46,6 @@ const BIKES = ['road', 'city', 'gravel', 'mtb'] as const
 const STEPS = [1, 2, 3] as const
 const DEVICES = ['Garmin Edge', 'Wahoo Elemnt', 'Komoot']
 
-const fluid = 'transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]'
-const focus = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
 const pill = `inline-flex min-h-12 items-center justify-center rounded-full px-7 text-base font-semibold ${fluid} ${focus}`
 const primaryPill = `${pill} bg-accent text-accent-foreground hover:opacity-90`
 const sectionTitle = 'text-4xl font-semibold leading-none tracking-[-0.03em] text-balance sm:text-5xl'
@@ -59,7 +57,6 @@ export function LandingPage() {
   const askDialog = useOverlayState()
   const [bike, setBike] = useState<(typeof BIKES)[number]>('road')
   const origin = window.location.origin
-  const scrollToTop = () => window.scrollTo({ top: 0 })
   const language = isLanguage(i18n.language) ? i18n.language : DEFAULT_LANGUAGE
   const canonical = origin + withLang('/', language)
   useDocumentHead({
@@ -88,43 +85,14 @@ export function LandingPage() {
     data: t('landing.anchorData'),
     faq: t('landing.anchorFaq'),
   }
-  const anchors = [
-    { href: `#${ids.features}`, label: t('landing.navFeatures') },
-    { href: `#${ids.how}`, label: t('landing.navHow') },
-    { href: `#${ids.data}`, label: t('landing.navData') },
-    { href: `#${ids.faq}`, label: t('landing.navFaq') },
-  ]
+  const { hash, key } = useLocation()
+  useEffect(() => {
+    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView()
+  }, [hash, key])
 
   return (
     <div className="min-h-full overflow-x-clip bg-background text-foreground">
-      <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
-        <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
-          <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`flex min-h-11 items-center rounded-md ${focus}`}>
-            <VelioLogo height={20} decorative />
-          </Link>
-
-          <nav className="ms-6 hidden items-center md:flex">
-            {anchors.map((anchor) => (
-              <a
-                key={anchor.href}
-                href={anchor.href}
-                className="inline-flex min-h-10 items-center rounded-full px-3 text-sm font-medium text-muted transition-colors duration-150 hover:text-foreground"
-              >
-                {anchor.label}
-              </a>
-            ))}
-          </nav>
-
-          <div className="ms-auto flex items-center md:ms-6">
-            <Link
-              to={to(primary.to)}
-              className={`inline-flex min-h-11 items-center rounded-full bg-accent px-4 text-sm font-semibold text-accent-foreground hover:opacity-90 ${fluid} ${focus}`}
-            >
-              {authenticated ? t('landing.openApp') : t('landing.getStarted')}
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main>
         <section className="px-4 pt-14 sm:px-6 sm:pt-20">
@@ -356,19 +324,7 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-          <div className="flex items-center justify-between gap-4">
-            <Link to={to('/')} onClick={scrollToTop} aria-label="Velio" className={`inline-flex min-h-11 items-center rounded-md ${focus}`}>
-              <VelioLogo height={24} decorative />
-            </Link>
-            <div className="flex items-center gap-2">
-              <LanguageToggle />
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
       <RequestCountryDialog state={askDialog} />
     </div>
   )

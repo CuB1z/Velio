@@ -13,6 +13,8 @@ import { RegisterPage } from '@/pages/auth/register'
 import { ResetPasswordPage } from '@/pages/auth/resetPassword'
 import { VerifyEmailPage } from '@/pages/auth/verifyEmail'
 import { LandingPage } from '@/pages/landing'
+import { PrivacyPage } from '@/pages/legal/privacy'
+import { TermsPage } from '@/pages/legal/terms'
 
 const AccountPage = lazy(() => import('@/pages/account').then((m) => ({ default: m.AccountPage })))
 const AnalyzePage = lazy(() => import('@/pages/analyze').then((m) => ({ default: m.AnalyzePage })))
@@ -43,6 +45,8 @@ function appRoutes() {
     <>
       {/* Public landing page. */}
       <Route index element={<LandingPage />} />
+      <Route path="privacy" element={<PrivacyPage />} />
+      <Route path="terms" element={<TermsPage />} />
 
       {/* Auth screens, hidden from signed-in users. */}
       <Route element={<RedirectIfAuthenticated />}>

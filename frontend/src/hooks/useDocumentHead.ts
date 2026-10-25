@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 type Social = { title: string; description: string; url: string; image: string; imageAlt: string; locale: string }
 
 type DocumentHead = {
+  title?: string
   description?: string
   canonical?: string
   alternates?: Record<string, string>
@@ -17,7 +18,7 @@ export function useDocumentHead(head: DocumentHead): void {
   const key = JSON.stringify(head)
 
   useEffect(() => {
-    const { description, canonical, alternates = {}, noindex, social } = JSON.parse(key) as DocumentHead
+    const { title, description, canonical, alternates = {}, noindex, social } = JSON.parse(key) as DocumentHead
     for (const stale of document.head.querySelectorAll(MANAGED)) stale.remove()
     const added: Element[] = []
     const add = (tag: string, attrs: Record<string, string>) => {
@@ -27,6 +28,8 @@ export function useDocumentHead(head: DocumentHead): void {
       added.push(element)
     }
 
+    const previousTitle = document.title
+    if (title) document.title = title
     const meta = document.head.querySelector<HTMLMetaElement>('meta[name="description"]')
     const previous = meta?.content
     if (description) {
@@ -53,6 +56,7 @@ export function useDocumentHead(head: DocumentHead): void {
 
     return () => {
       for (const element of added) element.remove()
+      document.title = previousTitle
       if (meta && previous !== undefined) meta.content = previous
     }
   }, [key])

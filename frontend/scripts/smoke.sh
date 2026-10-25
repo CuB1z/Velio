@@ -35,5 +35,9 @@ check_body / '<h1'
 check_body /es '<html lang="es"'
 check_body /es '<h1'
 check_body /es/login '<div id="root"></div>'
+check_body /privacy '<h1'
+check_body /es/privacy '<html lang="es"'
+check_body /terms '<h1'
+check_body /es/terms '<h1'
 
 exit "$fail"

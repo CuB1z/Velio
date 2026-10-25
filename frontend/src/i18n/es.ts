@@ -70,7 +70,8 @@ export default {
     backToLogin: 'Volver a entrar',
     or: 'o',
     google: 'Continuar con Google',
-    terms: 'Acepto que uséis mi correo para identificarme.',
+    terms: 'Acepto las <terms>Condiciones de uso</terms> y la <privacy>Política de privacidad</privacy>.',
+    googleTerms: 'Al continuar con Google aceptas las <terms>Condiciones</terms> y la <privacy>Política de privacidad</privacy>.',
     oauthTitle: 'Terminando de entrar…',
     oauthError: 'No hemos podido completar el acceso con el proveedor.',
     passwordEyebrow: 'Contraseña',
@@ -472,6 +473,14 @@ export default {
     ctaEyebrow: 'Empieza hoy',
   },
 
+  legal: {
+    nav: 'Enlaces del sitio',
+    eyebrow: 'Legal',
+    author: 'Autor',
+    privacy: 'Privacidad',
+    terms: 'Condiciones',
+    updated: 'Última actualización: {{date}}',
+  },
   error: {
     title: 'Algo ha ido mal',
     generic: 'No hemos podido completar la operación. Inténtalo de nuevo.',

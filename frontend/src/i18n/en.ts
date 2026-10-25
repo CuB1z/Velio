@@ -69,7 +69,8 @@ export default {
     backToLogin: 'Back to sign in',
     or: 'or',
     google: 'Continue with Google',
-    terms: 'I accept that my email is used to identify me.',
+    terms: 'I accept the <terms>Terms of service</terms> and the <privacy>Privacy policy</privacy>.',
+    googleTerms: 'By continuing with Google you accept the <terms>Terms</terms> and the <privacy>Privacy policy</privacy>.',
     oauthTitle: 'Finishing sign-in…',
     oauthError: 'We could not complete sign-in with that provider.',
     passwordEyebrow: 'Password',
@@ -471,6 +472,14 @@ export default {
     ctaEyebrow: 'Start today',
   },
 
+  legal: {
+    nav: 'Site links',
+    eyebrow: 'Legal',
+    author: 'Author',
+    privacy: 'Privacy',
+    terms: 'Terms',
+    updated: 'Last updated {{date}}',
+  },
   error: {
     title: 'Something went wrong',
     generic: 'We could not complete that. Please try again.',

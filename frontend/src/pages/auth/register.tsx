@@ -1,11 +1,12 @@
 import { Button, Checkbox } from '@heroui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
 import { GoogleButton } from '@/components/auth/googleButton'
+import { useLegalLinks } from '@/components/auth/legalLinks'
 import { PasswordRules } from '@/components/auth/passwordRules'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/field'
@@ -21,6 +22,7 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const to = useLangPath()
   const describe = useApiErrorMessage()
+  const legalLinks = useLegalLinks()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -90,7 +92,9 @@ export function RegisterPage() {
             <Checkbox.Control className="mt-0.5 [--field-border:color-mix(in_oklch,var(--muted)_70%,transparent)]">
               <Checkbox.Indicator />
             </Checkbox.Control>
-            <span>{t('auth.terms')}</span>
+            <span>
+              <Trans i18nKey="auth.terms" components={legalLinks} />
+            </span>
           </Checkbox.Content>
         </Checkbox>
 
