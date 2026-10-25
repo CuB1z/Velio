@@ -66,6 +66,7 @@ Everything is environment-driven (or `.env`):
 | `BREVO_API_KEY` | — | Brevo transactional API key; without it mail is only logged to console |
 | `BREVO_LIST_ID` | — | Brevo contacts list id; verified riders are filed into it |
 | `MAIL_FROM` | `no-reply@localhost` | Sender address; the display name comes from the sender verified in Brevo |
+| `SITE_URL` | `https://velio.cub1z.es` | Public web origin used in emails: the logo (`/email/velio-wordmark.png`) and the footer links |
 | `OTP_EXPIRE_MINUTES` / `OTP_MAX_ATTEMPTS` | `15` / `5` | Verification code lifetime and wrong-guess budget |
 | `OTP_TEST_MODE` | `false` | Test convenience — requires `ENV=dev` too: confirmation emails are not sent and any 6-digit code verifies the account. Never enable outside local/test stacks |
 | `RATE_LIMIT_ENABLED` | `true` | Per-endpoint budgets (see `app/core/ratelimit.py`) and the global per-IP ceiling; `false` disables both |
@@ -177,6 +178,11 @@ Local accounts stay `pending` until their emailed six digit code is
 confirmed. Codes are single use, expire after `OTP_EXPIRE_MINUTES`
 (default 15) and tolerate up to `OTP_MAX_ATTEMPTS` wrong guesses before
 being spent. Requesting a new code invalidates the previous one.
+
+Every endpoint that sends one of these emails (`register`,
+`resend-verification`, `forgot-password`, `me/delete-request`) writes it
+in the language negotiated from `Accept-Language`: `es` or `en`, English
+for anything else. The web app sends its current language on every call.
 
 | Endpoint | Behaviour |
 |---|---|

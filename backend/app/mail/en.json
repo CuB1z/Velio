@@ -1,0 +1,27 @@
+{
+  "privacy": "Privacy",
+  "verification": {
+    "subject": "Your Velio verification code",
+    "heading": "Confirm your email",
+    "intro": "Enter this code in Velio to finish creating your account.",
+    "code_line": "Your verification code is $code.",
+    "expiry": "It expires in $expire_minutes minutes.",
+    "ignore": "If you did not create an account, you can ignore this email."
+  },
+  "password_reset": {
+    "subject": "Your Velio password reset code",
+    "heading": "Reset your password",
+    "intro": "Enter this code in Velio to choose a new password.",
+    "code_line": "Your reset code is $code.",
+    "expiry": "It expires in $expire_minutes minutes.",
+    "ignore": "If you did not ask for this, ignore this email and your password will stay the same."
+  },
+  "account_delete": {
+    "subject": "Your Velio account deletion code",
+    "heading": "Delete your account",
+    "intro": "Enter this code in Velio to confirm. Your account, your saved routes and your requests are erased for good.",
+    "code_line": "Your account deletion code is $code.",
+    "expiry": "It expires in $expire_minutes minutes.",
+    "ignore": "If you did not ask for this, ignore this email and your account will stay as it is."
+  }
+}

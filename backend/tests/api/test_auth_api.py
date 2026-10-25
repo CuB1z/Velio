@@ -97,6 +97,32 @@ def test_register_creates_pending_account_without_tokens():
     assert "tokens" not in body
 
 
+def test_register_emails_in_the_language_the_app_sends():
+    email = _unique_email()
+    with collect_verification_codes() as messages:
+        resp = TestClient(app).post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": PASSWORD},
+            headers={"Accept-Language": "es-ES,es;q=0.9,en;q=0.8"},
+        )
+    assert resp.status_code == 201
+    logged = "\n".join(messages)
+    assert "Tu código de verificación de Velio" in logged
+    assert re.search(r"Tu código de verificación es \d{6}\.", logged)
+
+
+def test_register_emails_in_english_without_a_supported_language():
+    email = _unique_email()
+    with collect_verification_codes() as messages:
+        resp = TestClient(app).post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": PASSWORD},
+            headers={"Accept-Language": "fr-FR,fr;q=0.9"},
+        )
+    assert resp.status_code == 201
+    assert re.search(r"verification code is \d{6}", "\n".join(messages))
+
+
 def test_duplicate_register_conflicts():
     email = _unique_email()
     _register(email)

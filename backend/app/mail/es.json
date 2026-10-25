@@ -1,0 +1,27 @@
+{
+  "privacy": "Privacidad",
+  "verification": {
+    "subject": "Tu código de verificación de Velio",
+    "heading": "Confirma tu correo",
+    "intro": "Introduce este código en Velio para terminar de crear tu cuenta.",
+    "code_line": "Tu código de verificación es $code.",
+    "expiry": "Caduca en $expire_minutes minutos.",
+    "ignore": "Si no has creado una cuenta, puedes ignorar este correo."
+  },
+  "password_reset": {
+    "subject": "Tu código para cambiar la contraseña de Velio",
+    "heading": "Cambia tu contraseña",
+    "intro": "Introduce este código en Velio para elegir una contraseña nueva.",
+    "code_line": "Tu código para cambiar la contraseña es $code.",
+    "expiry": "Caduca en $expire_minutes minutos.",
+    "ignore": "Si no lo has pedido tú, ignora este correo y tu contraseña seguirá siendo la misma."
+  },
+  "account_delete": {
+    "subject": "Tu código para borrar tu cuenta de Velio",
+    "heading": "Borra tu cuenta",
+    "intro": "Introduce este código en Velio para confirmarlo. Tu cuenta, tus rutas guardadas y tus peticiones se borrarán para siempre.",
+    "code_line": "Tu código para borrar la cuenta es $code.",
+    "expiry": "Caduca en $expire_minutes minutos.",
+    "ignore": "Si no lo has pedido tú, ignora este correo y tu cuenta seguirá como está."
+  }
+}

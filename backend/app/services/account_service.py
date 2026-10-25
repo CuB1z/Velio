@@ -22,6 +22,7 @@ from app.core.exceptions import (
     NotFoundError,
     PasswordResetError,
 )
+from app.core.i18n import DEFAULT_LANGUAGE, Language
 from app.core.security import (
     generate_otp,
     hash_password,
@@ -90,7 +91,12 @@ class AccountService:
         self._coverage_requests = coverage_requests
 
     async def register(
-        self, *, email: str, password: str, full_name: str = ""
+        self,
+        *,
+        email: str,
+        password: str,
+        full_name: str = "",
+        language: Language = DEFAULT_LANGUAGE,
     ) -> User:
         """Create a pending account and deliver its verification code.
 
@@ -102,7 +108,7 @@ class AccountService:
             hashed_password=hash_password(password),
             full_name=full_name,
         )
-        await self._send_verification_code(user)
+        await self._send_verification_code(user, language)
         return user
 
     async def verify_email(self, *, email: str, code: str) -> User:
@@ -129,7 +135,9 @@ class AccountService:
         await register_brevo_contact(self._mail, user)
         return user
 
-    async def resend_verification(self, *, email: str) -> bool:
+    async def resend_verification(
+        self, *, email: str, language: Language = DEFAULT_LANGUAGE
+    ) -> bool:
         """Re-issue and send a code; report whether one was actually sent.
 
         Callers answer 202 regardless so the endpoint cannot probe which
@@ -138,10 +146,12 @@ class AccountService:
         user = await self._users.get_by_email(email)
         if user is None or status_of(user) is not UserStatus.PENDING:
             return False
-        await self._send_verification_code(user)
+        await self._send_verification_code(user, language)
         return True
 
-    async def forgot_password(self, *, email: str) -> bool:
+    async def forgot_password(
+        self, *, email: str, language: Language = DEFAULT_LANGUAGE
+    ) -> bool:
         """Send a reset code to active accounts with a local credential.
 
         Returns whether anything was actually sent; callers answer 202
@@ -166,7 +176,7 @@ class AccountService:
             user,
             purpose=PASSWORD_RESET_PURPOSE,
             compose=lambda code: password_reset_email(
-                user.email, code, settings.otp_expire_minutes
+                user.email, code, settings.otp_expire_minutes, language
             ),
         )
         return True
@@ -229,7 +239,9 @@ class AccountService:
 
     # GDPR deletion ------------------------------------------------------------
 
-    async def request_account_deletion(self, user) -> None:
+    async def request_account_deletion(
+        self, user, *, language: Language = DEFAULT_LANGUAGE
+    ) -> None:
         """Issue a deletion code via email.
 
         Always sends an OTP regardless of login method (password or OAuth).
@@ -240,7 +252,7 @@ class AccountService:
             user,
             purpose=ACCOUNT_DELETE_PURPOSE,
             compose=lambda code: account_delete_email(
-                user.email, code, settings.otp_expire_minutes
+                user.email, code, settings.otp_expire_minutes, language
             ),
         )
 
@@ -276,12 +288,12 @@ class AccountService:
 
     # Internals --------------------------------------------------------------
 
-    async def _send_verification_code(self, user) -> None:
+    async def _send_verification_code(self, user, language: Language) -> None:
         await self._deliver_code(
             user,
             purpose=EMAIL_VERIFY_PURPOSE,
             compose=lambda code: verification_email(
-                user.email, code, settings.otp_expire_minutes
+                user.email, code, settings.otp_expire_minutes, language
             ),
         )
 

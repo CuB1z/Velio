@@ -5,20 +5,29 @@ development use the console adapter (the content lands in the logs),
 production plugs Brevo's transactional API in through settings alone.
 """
 
+import json
 import logging
 from dataclasses import dataclass
+from html import escape
 from pathlib import Path
 from string import Template
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 import httpx
 
 from app.core.config import settings
 from app.core.exceptions import MailDeliveryError
+from app.core.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, Language
 
 logger = logging.getLogger(__name__)
 
 _TEMPLATES_DIR = Path(__file__).parent.parent / "mail"
+_COPY = {
+    language: json.loads((_TEMPLATES_DIR / f"{language}.json").read_text("utf-8"))
+    for language in SUPPORTED_LANGUAGES
+}
+_LAYOUT_HTML = Template((_TEMPLATES_DIR / "layout.html").read_text("utf-8"))
+_LAYOUT_TEXT = Template((_TEMPLATES_DIR / "layout.txt").read_text("utf-8"))
 
 
 @dataclass(frozen=True)
@@ -159,30 +168,45 @@ def build_mail_sender() -> MailSender:
     return ConsoleMailSender()
 
 
-def _render(name: str, **values: object) -> tuple[str, str]:
-    """Fill the raw .txt/.html pair from app/mail."""
-    text = Template((_TEMPLATES_DIR / f"{name}.txt").read_text(encoding="utf-8"))
-    html = Template((_TEMPLATES_DIR / f"{name}.html").read_text(encoding="utf-8"))
-    return text.substitute(**values), html.substitute(**values)
+def _code_email(
+    kind: str, to: str, code: str, expire_minutes: int, language: Language
+) -> Message:
+    lines = {
+        key: Template(value).substitute(code=code, expire_minutes=expire_minutes)
+        for key, value in _COPY[language][kind].items()
+    }
+    site = settings.site_url.rstrip("/")
+    prefix = "" if language == DEFAULT_LANGUAGE else f"/{language}"
+    html = _LAYOUT_HTML.substitute(
+        {key: escape(value) for key, value in lines.items()},
+        lang=language,
+        code=code,
+        logo_url=f"{site}/email/velio-wordmark.png",
+        site_url=site,
+        site_label=urlsplit(site).netloc,
+        privacy_url=f"{site}{prefix}/privacy",
+        privacy_label=escape(_COPY[language]["privacy"]),
+    )
+    text = _LAYOUT_TEXT.substitute(lines)
+    return Message(to=to, subject=lines["subject"], text=text, html=html)
 
 
-def verification_email(to: str, code: str, expire_minutes: int) -> Message:
+def verification_email(
+    to: str, code: str, expire_minutes: int, language: Language = DEFAULT_LANGUAGE
+) -> Message:
     """Compose the account verification email carrying the OTP."""
-    text, html = _render("verification", code=code, expire_minutes=expire_minutes)
-    return Message(to=to, subject="Your Velio verification code", text=text, html=html)
+    return _code_email("verification", to, code, expire_minutes, language)
 
 
-def password_reset_email(to: str, code: str, expire_minutes: int) -> Message:
+def password_reset_email(
+    to: str, code: str, expire_minutes: int, language: Language = DEFAULT_LANGUAGE
+) -> Message:
     """Compose the password reset email carrying the OTP."""
-    text, html = _render("password_reset", code=code, expire_minutes=expire_minutes)
-    return Message(
-        to=to, subject="Your Velio password reset code", text=text, html=html
-    )
+    return _code_email("password_reset", to, code, expire_minutes, language)
 
 
-def account_delete_email(to: str, code: str, expire_minutes: int) -> Message:
+def account_delete_email(
+    to: str, code: str, expire_minutes: int, language: Language = DEFAULT_LANGUAGE
+) -> Message:
     """Compose the account deletion email carrying the OTP."""
-    text, html = _render("account_delete", code=code, expire_minutes=expire_minutes)
-    return Message(
-        to=to, subject="Your Velio account deletion code", text=text, html=html
-    )
+    return _code_email("account_delete", to, code, expire_minutes, language)

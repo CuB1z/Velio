@@ -14,11 +14,13 @@ from app.core.config import settings
 from app.api.dependencies import (
     get_account_service,
     get_current_user,
+    get_language,
     get_oauth_service,
     get_session_service,
     get_session_sid,
 )
 from app.core.exceptions import AppError, NotFoundError
+from app.core.i18n import Language
 from app.mappers.user import UserMapper
 from app.schemas.auth import (
     AuthSession,
@@ -47,11 +49,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 )
 async def register(
     data: RegisterRequest,
+    language: Language = Depends(get_language),
     service: AccountService = Depends(get_account_service),
 ) -> UserResponse:
     """Create a pending account; the verification code arrives by email."""
     user = await service.register(
-        email=data.email, password=data.password, full_name=data.full_name
+        email=data.email,
+        password=data.password,
+        full_name=data.full_name,
+        language=language,
     )
     return UserMapper.out(user)
 
@@ -68,19 +74,22 @@ async def verify_email(
 @router.post("/resend-verification", status_code=status.HTTP_202_ACCEPTED)
 async def resend_verification(
     data: ResendVerificationRequest,
+    language: Language = Depends(get_language),
     service: AccountService = Depends(get_account_service),
 ) -> dict:
     """Always 202 so the endpoint cannot probe registered emails."""
-    await service.resend_verification(email=data.email)
+    await service.resend_verification(email=data.email, language=language)
     return {"detail": "If the account is pending, a new code was sent"}
 
 
 @router.post("/forgot-password", status_code=status.HTTP_202_ACCEPTED)
 async def forgot_password(
-    data: ForgotPasswordRequest, service: AccountService = Depends(get_account_service)
+    data: ForgotPasswordRequest,
+    language: Language = Depends(get_language),
+    service: AccountService = Depends(get_account_service),
 ) -> dict:
     """Always 202 so the endpoint cannot probe registered emails."""
-    await service.forgot_password(email=data.email)
+    await service.forgot_password(email=data.email, language=language)
     return {"detail": "If the account exists, a reset code was sent"}
 
 
@@ -157,10 +166,11 @@ async def update_profile(
 @router.post("/me/delete-request", status_code=status.HTTP_202_ACCEPTED)
 async def request_account_deletion(
     current_user=Depends(get_current_user),
+    language: Language = Depends(get_language),
     service: AccountService = Depends(get_account_service),
 ) -> None:
     """Issue a deletion code via email; always 202."""
-    await service.request_account_deletion(current_user)
+    await service.request_account_deletion(current_user, language=language)
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

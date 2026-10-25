@@ -232,3 +232,64 @@ def test_all_rule_paths_are_importable():
     from app.core.ratelimit import RULES
 
     assert "/api/v1/auth/me/delete-request" in RULES
+
+
+@pytest.mark.parametrize(
+    ("compose", "phrase"),
+    [
+        (verification_email, "Your verification code is 123456."),
+        (password_reset_email, "Your reset code is 123456."),
+        (account_delete_email, "Your account deletion code is 123456."),
+    ],
+)
+def test_code_emails_render_in_english_by_default(compose, phrase):
+    message = compose("rider@example.com", "123456", 15)
+    assert message.subject.startswith("Your Velio")
+    assert phrase in message.text
+    assert "It expires in 15 minutes." in message.text
+    assert '<html lang="en">' in message.html
+    assert "123456" in message.html
+    assert f'href="{settings.site_url}/privacy"' in message.html
+    assert f'src="{settings.site_url}/email/velio-wordmark.png"' in message.html
+    assert "$" not in message.html
+
+
+@pytest.mark.parametrize(
+    ("compose", "subject", "phrase"),
+    [
+        (
+            verification_email,
+            "Tu código de verificación de Velio",
+            "Tu código de verificación es 654321.",
+        ),
+        (
+            password_reset_email,
+            "Tu código para cambiar la contraseña de Velio",
+            "Tu código para cambiar la contraseña es 654321.",
+        ),
+        (
+            account_delete_email,
+            "Tu código para borrar tu cuenta de Velio",
+            "Tu código para borrar la cuenta es 654321.",
+        ),
+    ],
+)
+def test_code_emails_render_in_spanish(compose, subject, phrase):
+    message = compose("rider@example.com", "654321", 15, "es")
+    assert message.subject == subject
+    assert phrase in message.text
+    assert "Caduca en 15 minutos." in message.text
+    assert '<html lang="es">' in message.html
+    assert f'href="{settings.site_url}/es/privacy"' in message.html
+    assert ">Privacidad<" in message.html
+
+
+def test_email_copy_is_escaped_in_the_html(monkeypatch):
+    from app.clients import mail
+
+    verification = {**mail._COPY["en"]["verification"], "heading": "Ride <now> & smile"}
+    copy = {**mail._COPY["en"], "verification": verification}
+    monkeypatch.setitem(mail._COPY, "en", copy)
+    message = verification_email("rider@example.com", "123456", 15)
+    assert "Ride &lt;now&gt; &amp; smile" in message.html
+    assert "Ride <now> & smile" in message.text

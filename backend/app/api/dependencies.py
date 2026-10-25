@@ -3,7 +3,7 @@
 import uuid
 
 import jwt
-from fastapi import Depends, Request, Response
+from fastapi import Depends, Header, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,6 +18,7 @@ from app.core.exceptions import (
     InvalidCredentialsError,
     UnauthorizedError,
 )
+from app.core.i18n import Language, negotiate_language
 from app.core.ratelimit import RULES, client_ip, enforce, match_rule
 from app.core.security import ACCESS_TYPE, decode_token
 from app.engine.coverage import Coverage
@@ -269,6 +270,10 @@ def allow_public_caching(response: Response) -> None:
     response.headers["Cache-Control"] = (
         f"public, max-age={settings.cache_control_max_age}"
     )
+
+
+def get_language(accept_language: str | None = Header(default=None)) -> Language:
+    return negotiate_language(accept_language)
 
 
 def get_session_sid(request: Request) -> str | None:

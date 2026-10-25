@@ -43,15 +43,38 @@
         "summary": "Register",
         "description": "Create a pending account; the verification code arrives by email.",
         "operationId": "register_api_v1_auth_register_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Accept-Language"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RegisterRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -74,12 +97,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/auth/verify": {
@@ -137,15 +155,38 @@
         "summary": "Resend Verification",
         "description": "Always 202 so the endpoint cannot probe registered emails.",
         "operationId": "resend_verification_api_v1_auth_resend_verification_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Accept-Language"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ResendVerificationRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -153,8 +194,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Resend Verification Api V1 Auth Resend Verification Post"
                 }
               }
@@ -170,12 +211,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/auth/forgot-password": {
@@ -186,15 +222,38 @@
         "summary": "Forgot Password",
         "description": "Always 202 so the endpoint cannot probe registered emails.",
         "operationId": "forgot_password_api_v1_auth_forgot_password_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Accept-Language"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ForgotPasswordRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -202,8 +261,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Forgot Password Api V1 Auth Forgot Password Post"
                 }
               }
@@ -219,12 +278,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/auth/reset-password": {
@@ -554,6 +608,29 @@
         "summary": "Request Account Deletion",
         "description": "Issue a deletion code via email; always 202.",
         "operationId": "request_account_deletion_api_v1_auth_me_delete_request_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Accept-Language"
+            }
+          }
+        ],
         "responses": {
           "202": {
             "description": "Successful Response",
@@ -562,13 +639,18 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/auth/{provider}/authorize": {
@@ -1516,8 +1598,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1,
-                "minimum": 0
+                "maximum": 1.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -1529,8 +1611,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1,
-                "minimum": 0
+                "maximum": 1.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -1542,8 +1624,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 1,
-                "minimum": 0
+                "maximum": 1.0,
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -1872,15 +1954,15 @@
           },
           "distance_km": {
             "type": "number",
-            "maximum": 500,
-            "exclusiveMinimum": 0,
+            "maximum": 500.0,
+            "exclusiveMinimum": 0.0,
             "title": "Distance Km"
           },
           "gain_m": {
             "anyOf": [
               {
                 "type": "number",
-                "exclusiveMinimum": 0
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -1898,28 +1980,28 @@
           "tolerance": {
             "type": "number",
             "maximum": 0.5,
-            "exclusiveMinimum": 0,
+            "exclusiveMinimum": 0.0,
             "title": "Tolerance",
             "default": 0.05
           },
           "gain_tolerance": {
             "type": "number",
-            "maximum": 1,
-            "exclusiveMinimum": 0,
+            "maximum": 1.0,
+            "exclusiveMinimum": 0.0,
             "title": "Gain Tolerance",
             "default": 0.2
           },
           "waypoint_count": {
             "type": "integer",
-            "maximum": 50,
-            "minimum": 3,
+            "maximum": 50.0,
+            "minimum": 3.0,
             "title": "Waypoint Count",
             "default": 10
           },
           "max_iterations": {
             "type": "integer",
-            "maximum": 50,
-            "minimum": 1,
+            "maximum": 50.0,
+            "minimum": 1.0,
             "title": "Max Iterations",
             "default": 8
           },
@@ -1958,8 +2040,8 @@
           },
           "routes": {
             "type": "integer",
-            "maximum": 5,
-            "minimum": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
             "title": "Routes",
             "default": 1
           },
@@ -2153,8 +2235,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 500,
-                "exclusiveMinimum": 0
+                "maximum": 500.0,
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -2166,7 +2248,7 @@
             "anyOf": [
               {
                 "type": "number",
-                "exclusiveMinimum": 0
+                "exclusiveMinimum": 0.0
               },
               {
                 "type": "null"
@@ -2417,8 +2499,8 @@
           },
           "alternatives": {
             "type": "integer",
-            "maximum": 2,
-            "minimum": 0,
+            "maximum": 2.0,
+            "minimum": 0.0,
             "title": "Alternatives",
             "default": 0
           }
@@ -2754,14 +2836,14 @@
         "properties": {
           "lat": {
             "type": "number",
-            "maximum": 90,
-            "minimum": -90,
+            "maximum": 90.0,
+            "minimum": -90.0,
             "title": "Lat"
           },
           "lon": {
             "type": "number",
-            "maximum": 180,
-            "minimum": -180,
+            "maximum": 180.0,
+            "minimum": -180.0,
             "title": "Lon"
           }
         },
