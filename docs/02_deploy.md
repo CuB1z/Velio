@@ -38,6 +38,8 @@ In Dokploy, a new **Compose** app (the images are public, so no registry credent
 | Compose path | `./docker/docker-compose.dokploy.yaml` |
 | Auto deploy | off: `cd-release.yaml` triggers the deploy once the images exist |
 
+Dokploy runs `docker compose up -d` without `--pull`, so `frontend` and `backend` set `pull_policy: always`: without it a redeploy keeps the `latest` image already on the server.
+
 The domain comes from the Traefik labels on `frontend` (`Host(velio.cub1z.es)`, `websecure`, Let's Encrypt), not from Dokploy's domain settings. No service publishes a port.
 
 `API_UPSTREAM` (set to `http://backend:8000` by the compose) is read when the frontend container starts (nginx templates), so pointing it elsewhere needs a restart, not a rebuild. The SSE endpoint `/api/v1/loops/stream` has its own nginx location with buffering off; without it the progressive loop results arrive all at once.
