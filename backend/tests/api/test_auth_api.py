@@ -833,3 +833,52 @@ def test_confirm_deletion_requires_auth():
     resp = client.request("DELETE", "/api/v1/auth/me", json={"code": "123456"})
     assert resp.status_code == 401
 
+
+
+async def _link_google(email: str) -> list[str]:
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.core.database import engine
+    from app.mappers.user import UserMapper
+    from app.repositories.user_repository import UserRepository
+
+    async with AsyncSession(engine) as db:
+        user = await UserRepository(db).get_or_create_oauth(
+            provider="google", provider_user_id=f"google-{email}", email=email
+        )
+        providers = UserMapper.providers(user)
+        await db.commit()
+        return providers
+
+
+def test_password_accounts_sign_in_with_the_local_provider():
+    email = _unique_email()
+    client, tokens = _verified_session(email)
+    me = client.get("/api/v1/auth/me", headers=_auth_header(tokens))
+    assert me.json()["providers"] == ["local"]
+    login = client.post(
+        "/api/v1/auth/login", json={"email": email, "password": PASSWORD}
+    )
+    assert login.json()["user"]["providers"] == ["local"]
+
+
+def test_google_accounts_sign_in_with_the_google_provider():
+    account = _create_oauth_user(_unique_email())
+    me = TestClient(app).get(
+        "/api/v1/auth/me", headers=_auth_header(account["tokens"])
+    )
+    assert me.json()["providers"] == ["google"]
+
+
+def test_linking_google_adds_it_to_the_providers():
+    import asyncio
+
+    email = _unique_email()
+    client, tokens = _verified_session(email)
+    assert asyncio.run(_link_google(email)) == ["google", "local"]
+    me = client.get("/api/v1/auth/me", headers=_auth_header(tokens))
+    assert me.json()["providers"] == ["google", "local"]
+    refreshed = client.post(
+        "/api/v1/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+    )
+    assert refreshed.json()["user"]["providers"] == ["google", "local"]

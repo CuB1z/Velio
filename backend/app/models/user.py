@@ -36,6 +36,11 @@ class UserStatus(enum.StrEnum):
     SUSPENDED = "suspended"
 
 
+class AuthProvider(enum.StrEnum):
+    LOCAL = "local"
+    GOOGLE = "google"
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -51,7 +56,7 @@ class User(Base):
     )
 
     identities: Mapped[list["UserIdentity"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan"
+        back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
 
 

@@ -17,6 +17,7 @@ from app.core.exceptions import (
     ProviderNotConfiguredError,
 )
 from app.core.security import create_state_token
+from app.models import AuthProvider
 
 
 @dataclass(frozen=True)
@@ -47,7 +48,7 @@ class ProviderConfig:
 
 def _google() -> ProviderConfig:
     return ProviderConfig(
-        name="google",
+        name=AuthProvider.GOOGLE,
         authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
         token_url="https://oauth2.googleapis.com/token",
         profile_url="https://openidconnect.googleapis.com/v1/userinfo",
@@ -57,7 +58,7 @@ def _google() -> ProviderConfig:
     )
 
 
-_FACTORIES = {"google": _google}
+_FACTORIES = {AuthProvider.GOOGLE: _google}
 
 
 def get_provider(name: str) -> ProviderConfig:

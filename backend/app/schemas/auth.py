@@ -6,6 +6,7 @@ from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 from app.core.security import validate_password_strength
+from app.models import AuthProvider
 
 
 class RegisterRequest(BaseModel):
@@ -79,6 +80,7 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     status: str
+    providers: list[AuthProvider]
 
 
 class TokenPair(BaseModel):

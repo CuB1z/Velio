@@ -113,6 +113,7 @@ class UserRepository:
         except IntegrityError as exc:
             # Lost a unique race: conflict, caller retries.
             raise ConflictError from exc
+        await self.db.refresh(user, ["identities"])
         return user
 
     async def mark_active(self, user: User) -> User:

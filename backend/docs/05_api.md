@@ -113,17 +113,23 @@ curl -s -X POST localhost:8000/api/v1/auth/login \
 Registration and verification answer the user object alone (no tokens):
 
 ```json
-{"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "email": "rider@example.com", "full_name": "", "status": "pending"}
+{"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "email": "rider@example.com", "full_name": "", "status": "pending", "providers": ["local"]}
 ```
 
 Session shape (`login` and `refresh` answer it):
 
 ```json
 {
-  "user": {"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "email": "rider@example.com", "full_name": "", "status": "active"},
+  "user": {"id": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "email": "rider@example.com", "full_name": "", "status": "active", "providers": ["local"]},
   "tokens": {"access_token": "...", "refresh_token": "...", "token_type": "bearer"}
 }
 ```
+
+`providers` says how the account signs in, sorted: `local` (email and
+password) and/or `google`. An account registered with email that later
+signs in with Google under the same address holds both,
+`["google", "local"]`; it has a password exactly when the list contains
+`local`.
 
 Refresh rotates: the used refresh token is revoked and a fresh pair is
 returned. Logging out revokes the given refresh token.
@@ -140,7 +146,7 @@ curl -s -X PATCH localhost:8000/api/v1/auth/me \
   -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"full_name":"Marta Ruiz"}'
-# → 200 {"id":"…","email":"marta@example.com","full_name":"Marta Ruiz","status":"active"}
+# → 200 {"id":"…","email":"marta@example.com","full_name":"Marta Ruiz","status":"active","providers":["local"]}
 ```
 
 ### Sessions

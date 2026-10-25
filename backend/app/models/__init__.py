@@ -3,9 +3,17 @@
 from .base import Base
 from .coverage_request import CoverageRequest
 from .saved_route import SavedRoute
-from .user import RefreshToken, User, UserIdentity, UserStatus, VerificationCode
+from .user import (
+    AuthProvider,
+    RefreshToken,
+    User,
+    UserIdentity,
+    UserStatus,
+    VerificationCode,
+)
 
 __all__ = [
+    "AuthProvider",
     "Base",
     "CoverageRequest",
     "RefreshToken",
