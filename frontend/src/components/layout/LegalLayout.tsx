@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { useDocumentHead } from '@/hooks/useDocumentHead'
-import { DEFAULT_LANGUAGE, isLanguage, LANGUAGES, type Language } from '@/i18n/languages'
+import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_INFO, LANGUAGES, type Language } from '@/i18n/languages'
 import { formatDate } from '@/lib/format'
 import { useLangPath, withLang } from '@/lib/paths'
 import { SITE } from '@/lib/site'
@@ -35,6 +35,14 @@ export function LegalLayout({ doc }: { doc: LegalDocument }) {
     description,
     canonical: url(language),
     alternates: { ...Object.fromEntries(LANGUAGES.map((lang) => [lang, url(lang)])), 'x-default': url(DEFAULT_LANGUAGE) },
+    social: {
+      title: `${title} · Velio`,
+      description,
+      url: url(language),
+      image: `${origin}/og-${language}.png`,
+      imageAlt: t('landing.ogImageAlt'),
+      locale: LANGUAGE_INFO[language].locale.replace('-', '_'),
+    },
   })
 
   return (

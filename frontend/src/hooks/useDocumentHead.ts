@@ -9,16 +9,17 @@ type DocumentHead = {
   alternates?: Record<string, string>
   noindex?: boolean
   social?: Social
+  jsonLd?: Record<string, unknown>
 }
 
 const MANAGED =
-  'link[rel="canonical"], link[rel="alternate"][hreflang], meta[name="robots"], meta[property^="og:"], meta[name^="twitter:"]'
+  'link[rel="canonical"], link[rel="alternate"][hreflang], meta[name="robots"], meta[property^="og:"], meta[name^="twitter:"], script[type="application/ld+json"]'
 
 export function useDocumentHead(head: DocumentHead): void {
   const key = JSON.stringify(head)
 
   useEffect(() => {
-    const { title, description, canonical, alternates = {}, noindex, social } = JSON.parse(key) as DocumentHead
+    const { title, description, canonical, alternates = {}, noindex, social, jsonLd } = JSON.parse(key) as DocumentHead
     for (const stale of document.head.querySelectorAll(MANAGED)) stale.remove()
     const added: Element[] = []
     const add = (tag: string, attrs: Record<string, string>) => {
@@ -52,6 +53,13 @@ export function useDocumentHead(head: DocumentHead): void {
       }
       for (const [property, content] of Object.entries(og)) add('meta', { property: `og:${property}`, content })
       add('meta', { name: 'twitter:card', content: 'summary_large_image' })
+    }
+    if (jsonLd) {
+      const script = document.createElement('script')
+      script.type = 'application/ld+json'
+      script.textContent = JSON.stringify(jsonLd)
+      document.head.append(script)
+      added.push(script)
     }
 
     return () => {

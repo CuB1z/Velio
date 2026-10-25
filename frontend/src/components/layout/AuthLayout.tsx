@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { ProfileCell } from '@/components/landing/ProfileCell'
+import { LANDING_EXAMPLES } from '@/components/landing/landingExamples'
 import { Reveal } from '@/components/landing/Reveal'
 import { ScoreCard } from '@/components/route/ScoreCard'
 import { formatDistance, formatSigned } from '@/lib/format'
+import { useDocumentHead } from '@/hooks/useDocumentHead'
 import { useLangPath } from '@/lib/paths'
-import { LANDING_EXAMPLES } from '@/components/landing/landingExamples'
 import { LanguageToggle } from './LanguageToggle'
 import { VelioLogo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
@@ -25,6 +26,7 @@ const SIERRA = LANDING_EXAMPLES[1]
 export function AuthLayout({ eyebrow, title, subtitle, children, footer }: Props) {
   const { t } = useTranslation()
   const to = useLangPath()
+  useDocumentHead({ noindex: true })
 
   return (
     <div className="flex min-h-full bg-background text-foreground [--field-background:var(--surface)]">

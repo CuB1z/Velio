@@ -74,6 +74,18 @@ export function LandingPage() {
       imageAlt: t('landing.ogImageAlt'),
       locale: LANGUAGE_INFO[language].locale.replace('-', '_'),
     },
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebApplication',
+      name: 'Velio',
+      url: canonical,
+      description: t('landing.metaDescription'),
+      inLanguage: language,
+      applicationCategory: 'SportsApplication',
+      operatingSystem: 'Web',
+      isAccessibleForFree: true,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'EUR' },
+    },
   })
   const authenticated = status === 'authenticated'
   const primary = { to: authenticated ? '/loops' : '/register', label: t(authenticated ? 'landing.openApp' : 'landing.heroCta') }

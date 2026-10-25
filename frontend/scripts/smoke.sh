@@ -39,5 +39,8 @@ check_body /privacy '<h1'
 check_body /es/privacy '<html lang="es"'
 check_body /terms '<h1'
 check_body /es/terms '<h1'
+check_body /robots.txt 'Sitemap: '
+check_body /sitemap.xml '<urlset'
+check_body /sitemap.xml 'hreflang="x-default"'
 
 exit "$fail"
