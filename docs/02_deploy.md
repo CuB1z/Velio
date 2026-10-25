@@ -26,7 +26,7 @@ The workflows in `.github/workflows` build `backend/` and `frontend/` and push t
 | `cd-release.yaml` | a GitHub release is published | the release tag and `latest`, then asks Dokploy to redeploy, waits for the new version and runs the smoke test |
 | `cd-manual.yaml` | run by hand | `<branch>-<date>-<sha>` |
 
-A release is the deploy: fast-forward `dev` into `main`, push, and publish a release from `main` whose tag is the backend version (`app_version` in `backend/app/core/config.py`), with its notes in `docs/releases/<tag>.md` (the same format as the previous ones), e.g. `gh release create v0.35.0 --target main --title "Release v0.35.0" --notes-file docs/releases/v0.35.0.md`. The deploy job runs only when the repo has the `DOKPLOY_URL`, `DOKPLOY_AUTH_TOKEN` and `DOKPLOY_COMPOSE_ID` secrets: it asks Dokploy to redeploy, waits up to 15 minutes until `/api/health` reports the tag's version, and runs the smoke test (section 7). Without the secrets, redeploy from Dokploy and run the smoke test by hand.
+A release is the deploy: fast-forward `dev` into `main`, push, and publish a release from `main` whose tag is the backend version (`app_version` in `backend/app/core/config.py`), with its notes in `docs/releases/<tag>.md` (the same format as the previous ones), e.g. `gh release create vX.Y.Z --target main --title "Release vX.Y.Z" --notes-file docs/releases/vX.Y.Z.md`. The deploy job runs only when the repo has the `DOKPLOY_URL`, `DOKPLOY_AUTH_TOKEN` and `DOKPLOY_COMPOSE_ID` secrets: it asks Dokploy to redeploy, waits up to 15 minutes until `/api/health` reports the tag's version, and runs the smoke test (section 7). Without the secrets, redeploy from Dokploy and run the smoke test by hand.
 
 ## 3. Dokploy compose
 
