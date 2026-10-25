@@ -10,7 +10,7 @@ browser ── https ──> Traefik (Dokploy, TLS) ──> frontend (nginx :80)
                                                   └── /api/*       → backend:8000 ──> valhalla:8002, db, redis
 ```
 
-The language is part of the path: English at the root, Spanish under `/es/...`. The landing URLs (`/`, `/es`) are served prerendered (section 7); every other path gets the SPA shell and the app resolves the language from the URL before its first render.
+The language is part of the path: English at the root, Spanish under `/es/...`. The landing URLs (`/`, `/es`) are served prerendered (section 8); every other path gets the SPA shell and the app resolves the language from the URL before its first render.
 
 ## 1. DNS
 
@@ -26,7 +26,7 @@ The workflows in `.github/workflows` build `backend/` and `frontend/` and push t
 | `cd-release.yaml` | a GitHub release is published | the release tag and `latest`, then asks Dokploy to redeploy, waits for the new version and runs the smoke test |
 | `cd-manual.yaml` | run by hand | `<branch>-<date>-<sha>` |
 
-A release is the deploy: fast-forward `dev` into `main`, push, and publish a release from `main` whose tag is the backend version (`app_version` in `backend/app/core/config.py`), e.g. `gh release create v0.35.0 --target main --generate-notes`. The deploy job runs only when the repo has the `DOKPLOY_URL`, `DOKPLOY_AUTH_TOKEN` and `DOKPLOY_COMPOSE_ID` secrets: it asks Dokploy to redeploy, waits up to 15 minutes until `/api/health` reports the tag's version, and runs the smoke test (section 6). Without the secrets, redeploy from Dokploy and run the smoke test by hand.
+A release is the deploy: fast-forward `dev` into `main`, push, and publish a release from `main` whose tag is the backend version (`app_version` in `backend/app/core/config.py`), e.g. `gh release create v0.34.1 --target main --generate-notes`. The deploy job runs only when the repo has the `DOKPLOY_URL`, `DOKPLOY_AUTH_TOKEN` and `DOKPLOY_COMPOSE_ID` secrets: it asks Dokploy to redeploy, waits up to 15 minutes until `/api/health` reports the tag's version, and runs the smoke test (section 7). Without the secrets, redeploy from Dokploy and run the smoke test by hand.
 
 ## 3. Dokploy compose
 
@@ -54,6 +54,12 @@ OAUTH_GOOGLE_CLIENT_SECRET=...
 BREVO_API_KEY=...
 BREVO_LIST_ID=...
 MAIL_FROM=...
+BACKUP_PASSPHRASE=<long random string, kept in a password manager too>
+BACKUP_S3_ENDPOINT=https://s3.eu-central-003.backblazeb2.com
+BACKUP_S3_REGION=eu-central-003
+BACKUP_S3_BUCKET=velio-backups
+BACKUP_S3_ACCESS_KEY_ID=<B2 keyID>
+BACKUP_S3_SECRET_ACCESS_KEY=<B2 applicationKey>
 ```
 
 The compose fixes `ENV=prod`, `CORS_ORIGINS`, `AUTH_REDIRECT_BASE` and `OAUTH_SUCCESS_REDIRECT` for `https://velio.cub1z.es`. `VELIO_TAG` (default `latest`) pins an image version, `VALHALLA_DIR` (default `/srv/velio/valhalla`), `VALHALLA_THREADS` (default 2, match the vCPUs) and `UVICORN_WORKERS` (default 1) tune the server.
@@ -65,16 +71,52 @@ The same stack built from source runs locally with `docker/docker-compose.yaml` 
 
 ## 4. Routing graph and elevation
 
-Valhalla reads its graph (`tiles.tar`, `config/`) and the elevation tiles (`elevation/`) from `VALHALLA_DIR` on the host, mounted read-only. They are built off the server (merging the regions peaks at 6.4 GB of RAM) with `backend/scripts/build_tiles.sh`, see [backend/docs/03_valhalla.md](../backend/docs/03_valhalla.md), and synced to `/srv/velio/valhalla` with `backend/scripts/deploy_tiles.sh --host <user@vps> --path /srv/velio` (`--with-elevation` the first time).
+Valhalla reads its graph (`tiles.tar`, `config/`) and the elevation tiles (`elevation/`) from `VALHALLA_DIR` on the host, mounted read-only. They are built off the server (merging the regions peaks at 6.4 GB of RAM) with `backend/scripts/build_tiles.sh`, see [backend/docs/03_valhalla.md](../backend/docs/03_valhalla.md). They live outside the Dokploy app folder because Dokploy re-clones the repository on every deploy.
 
-## 5. Google Cloud console
+```sh
+ssh <user@vps> 'sudo mkdir -p /srv/velio/valhalla && sudo chown -R $(whoami): /srv/velio'
+rsync -az --info=progress2 backend/valhalla/config backend/valhalla/tiles.tar backend/valhalla/elevation <user@vps>:/srv/velio/valhalla/
+```
+
+```text
+/srv/velio/valhalla/
+├── config/      valhalla.json, timezones.sqlite, admins.sqlite
+├── tiles.tar    2.8 GB
+└── elevation/   .hgt.gz tiles, 1.2 GB
+```
+
+The unpacked `tiles/` folder is not needed on the server. After replacing the graph, restart the `valhalla` service from Dokploy.
+
+## 5. Database backups
+
+Postgres runs inside the compose with its data in the `pgdata` volume. `db-backup` ([eeshugerman/postgres-backup-s3](https://github.com/eeshugerman/postgres-backup-s3), pinned by digest) dumps it with `pg_dump --format=custom` on `BACKUP_SCHEDULE` (default `@daily`, midnight UTC), encrypts the dump with GPG using `BACKUP_PASSPHRASE` and uploads it to `s3://<bucket>/<BACKUP_S3_PREFIX>/velio_<timestamp>.dump.gpg`. After a successful upload it deletes the dumps older than `BACKUP_KEEP_DAYS` (default 14); a failed dump or upload stops before that, so the last good copies stay.
+
+The bucket is a private Backblaze B2 bucket in `eu-central-003` with B2 server-side encryption and the lifecycle rule *keep prior versions for 7 days*, so a deleted dump can still be recovered for a week. The application key is restricted to that bucket with read and write access. `BACKUP_S3_PREFIX` (default `velio/prod`) keeps environments apart in the same bucket. Without `BACKUP_PASSPHRASE` the dumps cannot be decrypted: keep it outside the server.
+
+Take a backup now (after the first deploy, or before a risky migration) and list what is stored:
+
+```sh
+docker exec <db-backup container> sh backup.sh
+docker exec <db-backup container> sh -c 'source ./env.sh; aws $aws_args s3 ls s3://$S3_BUCKET/$S3_PREFIX/'
+```
+
+Restore the latest dump, or the one with a given timestamp. `pg_restore --clean --if-exists` drops and re-creates every object, so the database ends up exactly as it was in the dump and anything written after it is lost:
+
+```sh
+docker exec <db-backup container> sh restore.sh
+docker exec <db-backup container> sh restore.sh 2026-10-25T00:00:00
+```
+
+To move to another server, deploy the same compose there with the same environment, then run `restore.sh` before opening it to traffic.
+
+## 6. Google Cloud console
 
 In the OAuth client used by `OAUTH_GOOGLE_CLIENT_ID`:
 
 - Authorised redirect URI: `https://velio.cub1z.es/api/v1/auth/google/callback` (`AUTH_REDIRECT_BASE` + `/api/v1/auth/google/callback`).
 - Authorised JavaScript origin: `https://velio.cub1z.es`.
 
-## 6. Smoke test
+## 7. Smoke test
 
 The release workflow runs it after every deploy; run it by hand after a manual redeploy:
 
@@ -93,7 +135,7 @@ docker run --rm -p 8088:80 --add-host=host.docker.internal:host-gateway \
 frontend/scripts/smoke.sh http://localhost:8088
 ```
 
-## 7. Prerendered landing
+## 8. Prerendered landing
 
 The landing is a client-rendered SPA, so crawlers would otherwise get an empty `#root`. The frontend image build runs `pnpm prerender` after `vite build`: `frontend/scripts/prerender.mjs` starts `vite preview`, opens `/` and `/<lang>` for every non-default language in headless Chromium, scrolls so every section reveals, and writes the rendered document to `dist/prerender/index.html` and `dist/prerender/<lang>.html` with `<html lang>`, canonical, `hreflang` alternates, the localised description and the Open Graph tags already in the HTML. `dist/index.html` stays the clean shell for every other route.
 

@@ -107,6 +107,34 @@ services:
     networks:
       - velio-network
 
+  db-backup:
+    image: eeshugerman/postgres-backup-s3:16@sha256:cfcaa57732c13d0724312a2eea1ad3e385f5ed049de3c626d1ef28ecc13cdddb
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SCHEDULE: ${BACKUP_SCHEDULE:-@daily}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      PASSPHRASE: ${BACKUP_PASSPHRASE:?BACKUP_PASSPHRASE is required}
+      S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:?BACKUP_S3_ENDPOINT is required}
+      S3_REGION: ${BACKUP_S3_REGION:?BACKUP_S3_REGION is required}
+      S3_BUCKET: ${BACKUP_S3_BUCKET:?BACKUP_S3_BUCKET is required}
+      S3_PREFIX: ${BACKUP_S3_PREFIX:-velio/prod}
+      S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:?BACKUP_S3_ACCESS_KEY_ID is required}
+      S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:?BACKUP_S3_SECRET_ACCESS_KEY is required}
+      POSTGRES_HOST: db
+      POSTGRES_DATABASE: ${DB_NAME:-velio}
+      POSTGRES_USER: ${DB_USER:?DB_USER is required}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - velio-network
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
