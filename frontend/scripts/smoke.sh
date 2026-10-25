@@ -42,5 +42,8 @@ check_body /es/terms '<h1'
 check_body /robots.txt 'Sitemap: '
 check_body /sitemap.xml '<urlset'
 check_body /sitemap.xml 'hreflang="x-default"'
+check_body /llms.txt '# Velio'
+check_body /.well-known/security.txt 'Contact: mailto:'
+check_body /es/login 'property="og:image"'
 
 exit "$fail"

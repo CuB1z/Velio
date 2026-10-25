@@ -48,6 +48,8 @@ export function useDocumentHead(head: DocumentHead): void {
         description: social.description,
         url: social.url,
         image: social.image,
+        'image:width': '1200',
+        'image:height': '630',
         'image:alt': social.imageAlt,
         locale: social.locale,
       }

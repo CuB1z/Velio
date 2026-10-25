@@ -1,0 +1,26 @@
+# Velio
+
+> Cycling route planner on open data for Spain, Portugal and Andorra. Tell it how far and how much climbing: it draws a loop back to your door, or a route through your stops, and scores it before you ride, with the surface kilometre by kilometre, the traffic, the climbing and any road ridden twice. Free, with no ads.
+
+Velio is built and run by Diego Sanchez as a personal project. Routing runs on Valhalla over OpenStreetMap data, and elevation comes from the Copernicus DEM GLO-30 at 30 m. The web app is in English and Spanish.
+
+- Loops: choose the distance, the climbing (flat, rolling or hilly) and the bike (road, city, gravel or mountain); compare up to four loops.
+- Point-to-point routes through up to 20 stops, with up to two scored alternatives.
+- A cycling score out of 10 (distance accuracy, traffic, surface for the bike, climbing, repeated road), the surface kilometre by kilometre and a real elevation profile.
+- Analyse any GPX or encoded polyline, save routes, and export them as GPX with elevation or as GeoJSON.
+- Coverage: Spain (Canary Islands included), Portugal (Azores and Madeira included) and Andorra; riders can ask for their country.
+
+## Use it
+
+- [Velio](https://velio.cub1z.es/): landing page in English, with how it works and the FAQ.
+- [Velio en español](https://velio.cub1z.es/es): the same page in Spanish.
+- [Create an account](https://velio.cub1z.es/register): free sign-up with an email or Google; the planner is behind the login.
+
+## Policies
+
+- [Privacy policy](https://velio.cub1z.es/privacy): what Velio stores, why, and how to delete it.
+- [Terms of service](https://velio.cub1z.es/terms): the rules for using Velio and checking routes before riding.
+
+## About
+
+- [Author's portfolio](https://cub1z.es/): Diego Sanchez, software engineer.

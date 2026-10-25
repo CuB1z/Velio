@@ -5,6 +5,7 @@ import { chromium } from '@playwright/test'
 import { preview } from 'vite'
 
 import { DEFAULT_LANGUAGE, LANGUAGES } from '../src/i18n/languages.ts'
+import { SITE } from '../src/lib/site.ts'
 
 const siteUrl = (process.env.SITE_URL ?? 'https://velio.cub1z.es').replace(/\/$/, '')
 const outDir = path.resolve('dist/prerender')
@@ -64,7 +65,13 @@ try {
   ].join('\n')
   await writeFile(path.resolve('dist/sitemap.xml'), sitemap)
   await writeFile(path.resolve('dist/robots.txt'), `User-agent: *\nDisallow: /api/\n\nSitemap: ${siteUrl}/sitemap.xml\n`)
-  console.log(`sitemap.xml (${pages.length} urls) and robots.txt → dist/`)
+  const expires = new Date(Date.now() + 365 * 24 * 3600 * 1000).toISOString().replace(/\.\d{3}Z$/, 'Z')
+  await mkdir(path.resolve('dist/.well-known'), { recursive: true })
+  await writeFile(
+    path.resolve('dist/.well-known/security.txt'),
+    `Contact: mailto:${SITE.contactEmail}\nExpires: ${expires}\nPreferred-Languages: en, es\nCanonical: ${siteUrl}/.well-known/security.txt\n`,
+  )
+  console.log(`sitemap.xml (${pages.length} urls), robots.txt and .well-known/security.txt → dist/`)
 } finally {
   await browser.close()
   await server.close()
