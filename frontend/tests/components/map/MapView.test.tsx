@@ -116,7 +116,7 @@ const fake = vi.hoisted(() => {
   return { FakeMap, FakeMarker }
 })
 
-vi.mock('maplibre-gl', () => ({ Map: fake.FakeMap, Marker: fake.FakeMarker }))
+vi.mock('maplibre-gl', () => ({ Map: fake.FakeMap, Marker: fake.FakeMarker, setWorkerUrl: () => {} }))
 vi.mock('maplibre-gl/dist/maplibre-gl.css', () => ({}))
 
 beforeEach(async () => {

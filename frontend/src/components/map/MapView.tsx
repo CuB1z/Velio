@@ -1,11 +1,13 @@
 import {
   Map as MapLibreMap,
   Marker,
+  setWorkerUrl,
   type GeoJSONSource,
   type LngLatBoundsLike,
   type MapMouseEvent,
 } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { cn } from '@/lib/cn'
@@ -26,6 +28,8 @@ import { MapControls } from './MapControls'
 import { ARROW_LAYOUT, routeArrowImage } from './routeArrow'
 import type { LngLat } from '@/lib/polyline'
 import { boundsOf } from '@/lib/polyline'
+
+setWorkerUrl(workerUrl)
 
 const ROUTES_SOURCE = 'velio-routes'
 const LAYER_CASING = 'velio-routes-casing'

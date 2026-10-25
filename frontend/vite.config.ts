@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   // Pre-bundling maplibre-gl rewrites its worker path: 404 in dev and a blank map.
   optimizeDeps: { exclude: ['maplibre-gl'] },
+  worker: { format: 'es' },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
