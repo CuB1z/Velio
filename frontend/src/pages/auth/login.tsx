@@ -6,13 +6,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { isApiError } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
+import { Divider } from '@/components/auth/divider'
 import { GoogleButton } from '@/components/auth/googleButton'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/field'
 import { AuthLayout } from '@/components/layout/authLayout'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { useLangPath } from '@/lib/paths'
-import { Divider } from './divider'
 
 export function LoginPage() {
   const { t } = useTranslation()

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/hooks/useTheme'
 import { categorical } from '@/lib/chartPalette'
 import { formatElevation } from '@/lib/format'
-import type { LandingExample } from '@/pages/landingExamples'
+import type { LandingExample } from './landingExamples'
 
 const VIEW = { width: 1000, height: 120, top: 8, bottom: 8 }
 

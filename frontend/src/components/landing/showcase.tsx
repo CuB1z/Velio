@@ -5,7 +5,7 @@ import { ScoreCard } from '@/components/route/scoreCard'
 import { SurfaceBar } from '@/components/route/surfaceBar'
 import { formatDistance, formatDuration, formatSigned } from '@/lib/format'
 import type { LngLat } from '@/lib/polyline'
-import type { LandingExample } from '@/pages/landingExamples'
+import type { LandingExample } from './landingExamples'
 
 /** The engine's own output for one loop, shown once and large. */
 export function Showcase({ example }: { example: LandingExample }) {

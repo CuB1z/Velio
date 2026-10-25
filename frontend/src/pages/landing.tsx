@@ -10,6 +10,7 @@ import { RequestCountryDialog } from '@/components/coverage/requestCountryDialog
 import { Bento, BentoCell, BentoLabel } from '@/components/landing/bento'
 import { CountUp } from '@/components/landing/countUp'
 import { Faq } from '@/components/landing/faq'
+import { LANDING_EXAMPLES, LANDING_REPAIR } from '@/components/landing/landingExamples'
 import { Reveal } from '@/components/landing/reveal'
 import { Ridge } from '@/components/landing/ridge'
 import { Showcase } from '@/components/landing/showcase'
@@ -21,7 +22,6 @@ import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_INFO, LANGUAGES } from '@/i18n/l
 import { SurfaceBar } from '@/components/route/surfaceBar'
 import { formatDistance, formatRatio } from '@/lib/format'
 import { useLangPath, withLang } from '@/lib/paths'
-import { LANDING_EXAMPLES, LANDING_REPAIR } from './landingExamples'
 
 const SIERRA = LANDING_EXAMPLES[1]
 const ALGETE = LANDING_EXAMPLES[2]

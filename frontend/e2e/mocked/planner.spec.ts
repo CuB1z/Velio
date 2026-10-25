@@ -1,7 +1,7 @@
 import polyline from '@mapbox/polyline'
 import { expect, test } from '@playwright/test'
 
-import { LANDING_EXAMPLES } from '../../src/pages/landingExamples'
+import { LANDING_EXAMPLES } from '../../src/components/landing/landingExamples'
 import { json, LOOP, signedIn, sse } from '../support/mockApi'
 import { visible } from '../support/locators'
 

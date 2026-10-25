@@ -5,6 +5,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
+import { Divider } from '@/components/auth/divider'
 import { GoogleButton } from '@/components/auth/googleButton'
 import { useLegalLinks } from '@/components/auth/legalLinks'
 import { PasswordRules } from '@/components/auth/passwordRules'
@@ -14,7 +15,6 @@ import { AuthLayout } from '@/components/layout/authLayout'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { isPasswordValid } from '@/lib/passwordPolicy'
 import { useLangPath } from '@/lib/paths'
-import { Divider } from './divider'
 
 export function RegisterPage() {
   const { t } = useTranslation()
