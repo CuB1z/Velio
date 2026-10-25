@@ -125,7 +125,7 @@ button classes instead raises a second problem: `.dropdown__trigger` forces
 background looks offset.
 
 `src/components/common/dropdownTrigger.ts` fixes both at once; use it for any
-button-like trigger. There is a regression test in `themeToggle.test.tsx`,
+button-like trigger. There is a regression test in `ThemeToggle.test.tsx`,
 because neither the compiler nor the linter catches either bug.
 
 ### Three map traps
@@ -158,7 +158,7 @@ the bottom, or the route is framed in the centre and ends up behind it.
 
 ### The logo
 
-`src/components/layout/logo.tsx` is **generated** from `public/velio.svg`: the
+`src/components/layout/Logo.tsx` is **generated** from `public/velio.svg`: the
 two paths are copied as-is, not transcribed. If the logo changes, regenerate it
 instead of editing it by hand. `VelioMark` is just the symbol (rail, favicon)
 and `VelioLogo` the full lockup; both inherit `currentColor`.
@@ -176,7 +176,7 @@ and `VelioLogo` the full lockup; both inherit `currentColor`.
 None needs credentials. Styles are changed in `src/lib/mapStyles.ts`.
 
 `maplibre-gl` weighs close to a megabyte, so it loads in its own chunk
-(`src/components/map/lazyMap.tsx`): the access screens do not download it.
+(`src/components/map/LazyMap.tsx`): the access screens do not download it.
 
 ## Data colours
 
@@ -190,7 +190,7 @@ surface type keeps a fixed slot, so asphalt is the same colour on every route.
 that is hard to tell apart with tritanopia (the validator flagged it in the
 fallback palette at ΔE 5.0 light / 3.7 dark). It is only acceptable with
 secondary encoding, so every segment of the surface bar carries a direct label
-and segments are separated by 2 px. A test guards it (`surfaceBar.test.tsx`);
+and segments are separated by 2 px. A test guards it (`SurfaceBar.test.tsx`);
 if the labels disappear, the chart is no longer accessible.
 
 ## Terminology
@@ -224,7 +224,7 @@ Everything goes through `src/lib/format.ts`.
   is where the API sends the browser afterwards. Without the second one, the
   callback answers JSON and the user lands on a raw page.
   The tokens arrive in the **fragment** (`#`), which never reaches the server:
-  `src/pages/auth/oauthCallback.tsx` adopts them, calls `/auth/me` and clears
+  `src/pages/auth/OAuthCallback.tsx` adopts them, calls `/auth/me` and clears
   the address bar straight away.
 - **Saved-route search filters the loaded page, not the whole set**: the API
   has no search endpoint.

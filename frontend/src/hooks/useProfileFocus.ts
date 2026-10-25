@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 
-import type { MapFocusPoint } from '@/components/map/mapView'
+import type { MapFocusPoint } from '@/components/map/MapView'
 import { formatDistance, formatElevation, formatPercent } from '@/lib/format'
 import type { ElevationPoint } from '@/types/api'
 
