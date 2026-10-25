@@ -132,7 +132,7 @@ The release workflow runs it after every deploy; run it by hand after a manual r
 frontend/scripts/smoke.sh https://velio.cub1z.es
 ```
 
-It checks the landing in both languages (status and prerendered content: `<html lang>`, `<h1>`), the prerendered privacy policy and terms, that `/es/login` still gets the SPA shell, two deep links (`/saved`, `/loops`), `/api/health` through the proxy and that `/api/v1/auth/me` answers `401` without a token.
+It checks the landing in both languages (status and prerendered content: `<html lang>`, `<h1>`), the prerendered privacy policy and terms, `robots.txt` and `sitemap.xml`, that `/es/login` still gets the SPA shell, two deep links (`/saved`, `/loops`), `/api/health` through the proxy and that `/api/v1/auth/me` answers `401` without a token.
 
 The frontend image can be checked locally against a backend on the host:
 
@@ -152,3 +152,11 @@ The app is a client-rendered SPA, so crawlers (and Google's OAuth reviewers) wou
 - The build stage runs on `mcr.microsoft.com/playwright:<version>-noble` (Node + Chromium). Its tag must match `@playwright/test` in `frontend/package.json`: bump both together.
 - Locally: `pnpm build && pnpm prerender` in `frontend/` (needs `pnpm exec playwright install chromium` once). `vite preview` does not know the prerender mapping; check the real thing with the Docker commands above.
 - React replaces the prerendered DOM on mount (`createRoot`), so the snapshot is for crawlers and the first paint; a section that is only partly inside the first viewport can blink once.
+
+## 9. Search engines
+
+Only the six public pages are meant for search: the landing, the privacy policy and the terms, each at the root in English and under `/es` in Spanish. Every page behind the login and the sign-in screens (`/login`, `/register`, `/verify`, `/forgot-password`, `/reset-password`, `/oauth/callback`) send `<meta name="robots" content="noindex">`.
+
+- The prerender writes `dist/sitemap.xml` (one `<url>` per public page with its `hreflang` alternates and `x-default`, the same URLs as the pages' canonical tags) and `dist/robots.txt` (everything allowed but `/api/`, plus the sitemap), both from `SITE_URL`.
+- The landing carries a `WebApplication` JSON-LD block (free, web, sports category, page language); the legal pages carry their own Open Graph tags.
+- Google Search Console: the domain property `cub1z.es` is verified with the TXT record in Cloudflare (the same verification the OAuth brand review relies on). Under *Sitemaps*, submit `https://velio.cub1z.es/sitemap.xml`; *URL inspection* shows the prerendered HTML Google indexes.

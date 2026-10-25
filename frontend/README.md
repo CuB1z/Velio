@@ -259,7 +259,7 @@ first run needs `pnpm exec playwright install chromium`.
 
 ## Deploy
 
-One container: the `Dockerfile` builds the SPA, prerenders the landing, the privacy policy and the terms per language (`pnpm prerender`, Playwright) and serves it from nginx
+One container: the `Dockerfile` builds the SPA, prerenders the landing, the privacy policy and the terms per language and writes `sitemap.xml` and `robots.txt` (`pnpm prerender`, Playwright) and serves it from nginx
 (`nginx/velio.conf.template`), which proxies `/api` to the backend on the same
 origin. It ships with the backend in `docker/docker-compose.yaml`, deployed on Dokploy from `main`; DNS, environment, Google console and the smoke test are in [docs/02_deploy.md](../docs/02_deploy.md).
 
