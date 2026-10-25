@@ -5,6 +5,7 @@ Privacy stance: request the minimum scopes that identify the rider
 health is asked for.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from urllib.parse import urlencode
 
@@ -58,7 +59,7 @@ def _google() -> ProviderConfig:
     )
 
 
-_FACTORIES = {AuthProvider.GOOGLE: _google}
+_FACTORIES: dict[str, Callable[[], ProviderConfig]] = {AuthProvider.GOOGLE: _google}
 
 
 def get_provider(name: str) -> ProviderConfig:

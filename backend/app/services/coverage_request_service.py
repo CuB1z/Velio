@@ -28,25 +28,25 @@ class CoverageRequestService:
         """
         if data.country in self._coverage.isos:
             raise CountryAlreadyCoveredError(data.country)
-        if user is None and data.email is None:
-            raise ValidationError(
-                "An email is required to ask without signing in",
-                details={"field": "email"},
-            )
-        owner = (
-            {"user_id": user.id}
-            if user is not None
-            else {"email": data.email.lower()}
-        )
+        user_id = user.id if user is not None else None
+        email = None
+        if user is None:
+            if data.email is None:
+                raise ValidationError(
+                    "An email is required to ask without signing in",
+                    details={"field": "email"},
+                )
+            email = data.email.lower()
         stored = await self._requests.add(
             country=data.country,
+            user_id=user_id,
+            email=email,
             note=(data.note or "").strip() or None,
             notify=data.notify,
             language=language,
-            **owner,
         )
         if not stored and data.notify:
             await self._requests.enable_notify(
-                country=data.country, language=language, **owner
+                country=data.country, language=language, user_id=user_id, email=email
             )
         return stored
