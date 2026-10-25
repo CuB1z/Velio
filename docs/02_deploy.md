@@ -159,4 +159,7 @@ Only the six public pages are meant for search: the landing, the privacy policy 
 
 - The prerender writes `dist/sitemap.xml` (one `<url>` per public page with its `hreflang` alternates and `x-default`, the same URLs as the pages' canonical tags) and `dist/robots.txt` (everything allowed but `/api/`, plus the sitemap), both from `SITE_URL`.
 - The landing carries a `WebApplication` JSON-LD block (free, web, sports category, page language); the legal pages carry their own Open Graph tags.
+- `index.html` carries default Open Graph and Twitter tags (the English landing card), so a link to any page that is not prerendered still shares as a card; prerendered pages replace them with their own.
+- `frontend/public/llms.txt` describes Velio for language models (what it does, coverage, the public pages, the author); keep it in step with the landing when features change.
+- The prerender also writes `/.well-known/security.txt` (RFC 9116) with the contact address from `src/lib/site.ts` and an `Expires` one year after the build, so every release renews it.
 - Google Search Console: the domain property `cub1z.es` is verified with the TXT record in Cloudflare (the same verification the OAuth brand review relies on). Under *Sitemaps*, submit `https://velio.cub1z.es/sitemap.xml`; *URL inspection* shows the prerendered HTML Google indexes.
