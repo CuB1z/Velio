@@ -406,7 +406,7 @@ curl -s localhost:8000/api/health
 ```
 
 ```json
-{"status": "ok", "version": "0.34.1"}
+{"status": "ok", "version": "0.35.0"}
 ```
 
 ---
