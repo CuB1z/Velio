@@ -19,7 +19,6 @@
     "contract:check": "node -e \"import('./scripts/checkContract.mjs').then(m=>{const p=[...m.compare(),...m.comparePaths()];if(p.length){console.error(p.join('\\n'));process.exit(1)}console.log('contract aligned')})\""
   },
   "dependencies": {
-    "@fontsource-variable/geist": "5.3.0",
     "@heroui/react": "3.2.4",
     "@heroui/styles": "3.2.4",
     "@mapbox/polyline": "^1.2.1",

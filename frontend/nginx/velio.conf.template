@@ -44,6 +44,11 @@ server {
         try_files $uri =404;
     }
 
+    location /fonts/ {
+        expires 30d;
+        try_files $uri =404;
+    }
+
     location /prerender/ {
         internal;
     }
