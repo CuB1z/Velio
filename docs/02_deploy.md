@@ -10,7 +10,7 @@ browser ── https ──> Traefik (Dokploy, TLS) ──> frontend (nginx :80)
                                                   └── /api/*       → backend:8000 ──> valhalla:8002, db, redis
 ```
 
-The language is part of the path: English at the root, Spanish under `/es/...`. The landing URLs (`/`, `/es`) are served prerendered (section 8); every other path gets the SPA shell and the app resolves the language from the URL before its first render.
+The language is part of the path: English at the root, Spanish under `/es/...`. The public pages (the landing at `/` and `/es`, the privacy policy at `/privacy` and the terms at `/terms`, each also under `/es`) are served prerendered (section 8); every other path gets the SPA shell and the app resolves the language from the URL before its first render.
 
 ## 1. DNS
 
@@ -26,7 +26,7 @@ The workflows in `.github/workflows` build `backend/` and `frontend/` and push t
 | `cd-release.yaml` | a GitHub release is published | the release tag and `latest`, then asks Dokploy to redeploy, waits for the new version and runs the smoke test |
 | `cd-manual.yaml` | run by hand | `<branch>-<date>-<sha>` |
 
-A release is the deploy: fast-forward `dev` into `main`, push, and publish a release from `main` whose tag is the backend version (`app_version` in `backend/app/core/config.py`), e.g. `gh release create v0.34.1 --target main --generate-notes`. The deploy job runs only when the repo has the `DOKPLOY_URL`, `DOKPLOY_AUTH_TOKEN` and `DOKPLOY_COMPOSE_ID` secrets: it asks Dokploy to redeploy, waits up to 15 minutes until `/api/health` reports the tag's version, and runs the smoke test (section 7). Without the secrets, redeploy from Dokploy and run the smoke test by hand.
+A release is the deploy: fast-forward `dev` into `main`, push, and publish a release from `main` whose tag is the backend version (`app_version` in `backend/app/core/config.py`), e.g. `gh release create v0.35.0 --target main --generate-notes`. The deploy job runs only when the repo has the `DOKPLOY_URL`, `DOKPLOY_AUTH_TOKEN` and `DOKPLOY_COMPOSE_ID` secrets: it asks Dokploy to redeploy, waits up to 15 minutes until `/api/health` reports the tag's version, and runs the smoke test (section 7). Without the secrets, redeploy from Dokploy and run the smoke test by hand.
 
 ## 3. Dokploy compose
 
@@ -113,10 +113,16 @@ To move to another server, deploy the same compose there with the same environme
 
 ## 6. Google Cloud console
 
-In the OAuth client used by `OAUTH_GOOGLE_CLIENT_ID`:
+Production has its own Google Cloud project (`Velio`); the older project keeps the `localhost` client for development and stays in *Testing*, with the developer as a test user. In the production project, **Google Auth Platform** (`https://console.cloud.google.com/auth/overview`):
 
-- Authorised redirect URI: `https://velio.cub1z.es/api/v1/auth/google/callback` (`AUTH_REDIRECT_BASE` + `/api/v1/auth/google/callback`).
-- Authorised JavaScript origin: `https://velio.cub1z.es`.
+| Section | Value |
+|---|---|
+| Branding | App name `Velio`, support email, home page `https://velio.cub1z.es`, privacy policy `https://velio.cub1z.es/privacy`, terms `https://velio.cub1z.es/terms`, authorised domain `cub1z.es`, logo 120 × 120 PNG |
+| Data access | `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` (all non-sensitive, the scopes the backend requests) |
+| Audience | External, **In production** (Google refuses to publish without the privacy policy URL) |
+| Clients | Web application, origin `https://velio.cub1z.es`, redirect URI `https://velio.cub1z.es/api/v1/auth/google/callback` (`AUTH_REDIRECT_BASE` + `/api/v1/auth/google/callback`); its ID and secret go to `OAUTH_GOOGLE_CLIENT_ID` and `OAUTH_GOOGLE_CLIENT_SECRET` |
+
+Sign-in works as soon as the app is published. Showing the logo needs brand verification: the authorised domain verified in Google Search Console (domain property `cub1z.es`, a TXT record in Cloudflare), the home page linking the privacy policy (the footer does), then *Verification Center → Submit*. The review takes a few working days.
 
 ## 7. Smoke test
 
@@ -126,7 +132,7 @@ The release workflow runs it after every deploy; run it by hand after a manual r
 frontend/scripts/smoke.sh https://velio.cub1z.es
 ```
 
-It checks the landing in both languages (status and prerendered content: `<html lang>`, `<h1>`), that `/es/login` still gets the SPA shell, two deep links (`/saved`, `/loops`), `/api/health` through the proxy and that `/api/v1/auth/me` answers `401` without a token.
+It checks the landing in both languages (status and prerendered content: `<html lang>`, `<h1>`), the prerendered privacy policy and terms, that `/es/login` still gets the SPA shell, two deep links (`/saved`, `/loops`), `/api/health` through the proxy and that `/api/v1/auth/me` answers `401` without a token.
 
 The frontend image can be checked locally against a backend on the host:
 
@@ -137,9 +143,9 @@ docker run --rm -p 8088:80 --add-host=host.docker.internal:host-gateway \
 frontend/scripts/smoke.sh http://localhost:8088
 ```
 
-## 8. Prerendered landing
+## 8. Prerendered pages
 
-The landing is a client-rendered SPA, so crawlers would otherwise get an empty `#root`. The frontend image build runs `pnpm prerender` after `vite build`: `frontend/scripts/prerender.mjs` starts `vite preview`, opens `/` and `/<lang>` for every non-default language in headless Chromium, scrolls so every section reveals, and writes the rendered document to `dist/prerender/index.html` and `dist/prerender/<lang>.html` with `<html lang>`, canonical, `hreflang` alternates, the localised description and the Open Graph tags already in the HTML. `dist/index.html` stays the clean shell for every other route.
+The app is a client-rendered SPA, so crawlers (and Google's OAuth reviewers) would otherwise get an empty `#root`, and a fresh tab would paint the empty shell first. The frontend image build runs `pnpm prerender` after `vite build`: `frontend/scripts/prerender.mjs` starts `vite preview`, opens `/`, `/privacy` and `/terms` in every language in headless Chromium, scrolls so every section reveals, and writes the rendered document to `dist/prerender/` at the path nginx looks for (`index.html`, `es.html`, `privacy.html`, `es/privacy.html`, …) with `<html lang>`, `<title>`, canonical, `hreflang` alternates and the localised description already in the HTML; the landing also carries its Open Graph tags. `dist/index.html` stays the clean shell for every other route.
 
 - nginx: `location = /` serves `prerender/index.html`; `location /` tries `$uri`, then `/prerender$uri.html`, then the shell. `/prerender/` is `internal`, so the files are not reachable as their own URLs.
 - Absolute URLs come from the `SITE_URL` build arg; the runtime keeps using the page origin.
