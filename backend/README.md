@@ -174,7 +174,7 @@ curl -s -X POST localhost:8000/api/v1/routes -H "Authorization: Bearer $TOKEN" \
   -d '{"waypoints":[{"lat":40.4168,"lon":-3.7038},{"lat":40.7850,"lon":-3.9600}],"alternatives":2}' | jq
 
 # Health and docs
-curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.34.0"}
+curl -s localhost:8000/api/health | jq   # {"status":"ok","version":"0.34.1"}
 
 # Prometheus metrics (closed unless METRICS_ENABLED=true; see docs/05_api.md)
 curl -s localhost:8000/metrics -H "Authorization: Bearer $METRICS_TOKEN" | head
