@@ -491,15 +491,28 @@ curl -s -X POST localhost:8000/api/v1/coverage/requests \
 ```
 
 - `country` is an ISO 3166-1 alpha-2 code, any case; `note` is optional, up to 280 characters.
+- `notify` (default `false`) asks for one email when the country ships; the request also keeps the language negotiated from `Accept-Language` (`es` or `en`). Asking again with `"notify": true` switches it on for the stored request (still `"recorded": false`).
 - One request per person and country: asking again answers `202` with `"recorded": false`, never an error.
 - A covered country (today `ES`, `PT`, `AD`) answers `409 ALREADY_COVERED`; an unknown code or a long note `422 VALIDATION_ERROR`; an anonymous request without `email` `400 VALIDATION_ERROR` with `details.field = "email"`.
-- Privacy: the email is stored only to count people and, later and with an explicit opt-in, to say when the country ships. Deleting an account removes its requests, including anonymous ones made with the account's email.
+- Privacy: the email is stored to count people and, only with `notify`, to write once when the country ships. Velio does not send that email itself: the operator exports the list and writes from the contact mailbox. Deleting an account removes its requests, including anonymous ones made with the account's email.
 
 The operator reads the ranking, distinct people per country, with `python -m tools.coverage_requests` (also inside the API container):
 
 ```text
 FR 42 · IT 17 · DE 9
 FR     42  latest 2026-10-23
+```
+
+Once a country ships, `recipients` exports who asked to hear about it, one line per person (the account email when there is one, the language of their latest request), skipping anyone already notified. `--mark-notified` marks exactly the exported people in the same run, so the next export only holds newcomers:
+
+```bash
+python -m tools.coverage_requests recipients FR > fr.csv                    # read only
+python -m tools.coverage_requests recipients FR --mark-notified > fr.csv    # export and mark
+```
+
+```text
+email,language,requested_at
+rider@example.com,es,2026-10-25T09:12:44+00:00
 ```
 
 ---

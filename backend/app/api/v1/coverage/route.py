@@ -6,8 +6,10 @@ from app.api.dependencies import (
     allow_public_caching,
     get_coverage,
     get_coverage_request_service,
+    get_language,
     get_optional_user,
 )
+from app.core.i18n import Language
 from app.engine.coverage import Coverage
 from app.mappers.coverage import CoverageMapper
 from app.models import User
@@ -34,6 +36,7 @@ async def request_coverage(
     data: CoverageRequestCreateRequest,
     service: CoverageRequestService = Depends(get_coverage_request_service),
     user: User | None = Depends(get_optional_user),
+    language: Language = Depends(get_language),
 ) -> CoverageRequestResponse:
-    recorded = await service.record(data, user)
+    recorded = await service.record(data, user, language)
     return CoverageMapper.request_out(data.country, recorded)

@@ -30,6 +30,7 @@ class CoverageRequestCreateRequest(BaseModel):
     country: str = Field(min_length=2, max_length=2)
     email: EmailStr | None = None
     note: str | None = Field(default=None, max_length=280)
+    notify: bool = False
 
     @field_validator("country")
     @classmethod

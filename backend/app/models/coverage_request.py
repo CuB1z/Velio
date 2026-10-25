@@ -4,12 +4,14 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
     String,
     Uuid,
+    false,
     func,
     text,
 )
@@ -52,6 +54,11 @@ class CoverageRequest(Base):
     )
     email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     note: Mapped[str | None] = mapped_column(String(280), nullable=True)
+    notify: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    language: Mapped[str] = mapped_column(String(2), default="en", server_default="en")
+    notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),

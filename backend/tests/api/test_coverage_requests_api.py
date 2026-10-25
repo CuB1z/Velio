@@ -57,6 +57,29 @@ def test_a_signed_in_request_ignores_the_email(
     assert rows(email=body["email"]) == 0
 
 
+def test_asking_again_with_notify_keeps_one_row_and_its_language(
+    api_client: TestClient,
+):
+    email = unique_email()
+    first = api_client.post(URL, json={"country": "NO", "email": email})
+    again = api_client.post(
+        URL,
+        json={"country": "NO", "email": email, "notify": True},
+        headers={"Accept-Language": "es-ES,es;q=0.9"},
+    )
+
+    assert first.json() == {"country": "NO", "recorded": True}
+    assert again.json() == {"country": "NO", "recorded": False}
+    assert rows(email=email) == 1
+    assert rows(email=email, notify=True, language="es") == 1
+
+
+def test_without_the_tick_nobody_is_listed_to_notify(api_client: TestClient):
+    email = unique_email()
+    api_client.post(URL, json={"country": "IS", "email": email})
+    assert rows(email=email, notify=False) == 1
+
+
 def test_a_covered_country_answers_409(api_client: TestClient):
     for country in ("ES", "pt", "AD"):
         resp = api_client.post(URL, json={"country": country, "email": unique_email()})
