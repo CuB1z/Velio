@@ -20,7 +20,7 @@ import { cn } from '@/lib/cn'
 import { swapLang, useLangPath } from '@/lib/paths'
 import { formatDateTime } from '@/lib/format'
 import { parseUserAgent } from '@/lib/userAgent'
-import type { AccountStatus, DeviceSession } from '@/types/api'
+import type { AccountStatus, AuthProvider, DeviceSession } from '@/types/api'
 
 const STATUS_TONE: Record<AccountStatus, string> = {
   active: 'text-accent-text',
@@ -32,6 +32,11 @@ const STATUS_KEY: Record<AccountStatus, string> = {
   active: 'account.verified',
   pending: 'account.pending',
   suspended: 'account.suspended',
+}
+
+const PROVIDER_KEY: Record<AuthProvider, string> = {
+  local: 'account.providerLocal',
+  google: 'account.providerGoogle',
 }
 
 const SECTIONS = [
@@ -119,6 +124,9 @@ export function AccountPage() {
     .map((part) => part[0]?.toUpperCase())
     .join('')
   const language = (i18n.language.slice(0, 2) as Language) ?? 'es'
+  const providers = user?.providers ?? []
+  const hasPassword = providers.includes('local')
+  const providerNames = providers.map((provider) => t(PROVIDER_KEY[provider]))
 
   return (
     <div className="mx-auto flex max-w-[1120px] flex-col gap-10 p-4 sm:p-6 lg:p-10">
@@ -208,48 +216,63 @@ export function AccountPage() {
 
           <section id="seguridad" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">
             <SectionTitle eyebrow={t('account.navSecurity')} title={t('account.securityTitle')} />
-            <SettingRow
-              label={t('account.passwordRow')}
-              description={t('account.passwordRowHint')}
-              align="start"
-              className="border-b border-border"
-            >
-              <form
-                className="flex w-full flex-col gap-3 lg:max-w-sm"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  setPasswordError(null)
-                  changePassword.mutate()
-                }}
+            <div>
+              <SettingRow
+                label={t('account.signInRow')}
+                description={
+                  hasPassword
+                    ? t('account.signInHint')
+                    : t('account.signInNoPassword', { providers: providerNames.join(', ') })
+                }
+                className={hasPassword ? undefined : 'border-b border-border'}
               >
-                <PasswordInput
-                  label={t('account.currentPassword')}
-                  value={current}
-                  onChange={setCurrent}
-                  autoComplete="current-password"
-                />
-                <PasswordInput
-                  label={t('account.newPassword')}
-                  value={next}
-                  onChange={setNext}
-                  autoComplete="new-password"
-                  errorMessage={passwordError ?? undefined}
-                />
-                {passwordNotice ? (
-                  <p className="eyebrow text-accent-text" role="status">
-                    {passwordNotice}
-                  </p>
-                ) : null}
-                <Button
-                  type="submit"
-                  variant="secondary"
-                  className="min-h-11 self-end"
-                  isDisabled={!current || !next || changePassword.isPending}
+                <span className="text-sm">{providerNames.join(' · ')}</span>
+              </SettingRow>
+              {hasPassword ? (
+                <SettingRow
+                  label={t('account.passwordRow')}
+                  description={t('account.passwordRowHint')}
+                  align="start"
+                  className="border-b border-border"
                 >
-                  {t('account.changePassword')}
-                </Button>
-              </form>
-            </SettingRow>
+                  <form
+                    className="flex w-full flex-col gap-3 lg:max-w-sm"
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      setPasswordError(null)
+                      changePassword.mutate()
+                    }}
+                  >
+                    <PasswordInput
+                      label={t('account.currentPassword')}
+                      value={current}
+                      onChange={setCurrent}
+                      autoComplete="current-password"
+                    />
+                    <PasswordInput
+                      label={t('account.newPassword')}
+                      value={next}
+                      onChange={setNext}
+                      autoComplete="new-password"
+                      errorMessage={passwordError ?? undefined}
+                    />
+                    {passwordNotice ? (
+                      <p className="eyebrow text-accent-text" role="status">
+                        {passwordNotice}
+                      </p>
+                    ) : null}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="min-h-11 self-end"
+                      isDisabled={!current || !next || changePassword.isPending}
+                    >
+                      {t('account.changePassword')}
+                    </Button>
+                  </form>
+                </SettingRow>
+              ) : null}
+            </div>
           </section>
 
           <section id="sesiones" className="flex flex-col gap-6 scroll-mt-16 lg:scroll-mt-10">

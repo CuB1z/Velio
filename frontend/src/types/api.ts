@@ -58,11 +58,14 @@ export type AccountStatus = 'pending' | 'active' | 'suspended'
 
 export type ProfileUpdate = { full_name: string }
 
+export type AuthProvider = 'local' | 'google'
+
 export type User = {
   id: string
   email: string
   full_name: string
   status: AccountStatus
+  providers: AuthProvider[]
 }
 
 export type Tokens = {

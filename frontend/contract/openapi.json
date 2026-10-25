@@ -1538,6 +1538,14 @@
         ],
         "title": "AnalysisResponse"
       },
+      "AuthProvider": {
+        "type": "string",
+        "enum": [
+          "local",
+          "google"
+        ],
+        "title": "AuthProvider"
+      },
       "AuthSession": {
         "properties": {
           "user": {
@@ -2759,6 +2767,13 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/AuthProvider"
+            },
+            "type": "array",
+            "title": "Providers"
           }
         },
         "type": "object",
@@ -2766,7 +2781,8 @@
           "id",
           "email",
           "full_name",
-          "status"
+          "status",
+          "providers"
         ],
         "title": "UserResponse"
       },

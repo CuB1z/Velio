@@ -1,7 +1,7 @@
 import type { Page, Route } from '@playwright/test'
 
 export const SESSION = {
-  user: { id: 'u1', email: 'marta@velio.cc', full_name: 'Marta Ríos', status: 'active' },
+  user: { id: 'u1', email: 'marta@velio.cc', full_name: 'Marta Ríos', status: 'active', providers: ['local'] },
   tokens: { access_token: 'access', refresh_token: 'refresh-2', token_type: 'bearer' },
 }
 

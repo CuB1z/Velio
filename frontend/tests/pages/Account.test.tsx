@@ -14,8 +14,8 @@ const SAFARI_IPHONE =
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
 
-function serve() {
-  const user = { id: 'u1', email: 'marta@velio.cc', full_name: 'Marta Ríos', status: 'active' }
+function serve(providers: string[] = ['local']) {
+  const user = { id: 'u1', email: 'marta@velio.cc', full_name: 'Marta Ríos', status: 'active', providers }
   const tokens = { access_token: 'access', refresh_token: 'refresh-2', token_type: 'bearer' }
   const sessions = [
     { id: 1, created_at: '2026-10-18T08:02:00Z', user_agent: CHROME_LINUX, current: true },
@@ -74,6 +74,34 @@ it('renames the account and lists sessions by device', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
   await waitFor(() => expect(calls).toContain('DELETE /api/v1/auth/sessions/2'))
   await waitFor(() => expect(screen.queryByText('Safari en iPhone')).not.toBeInTheDocument())
+})
+
+it('offers the password form to accounts that have one', async () => {
+  serve(['local'])
+  render(<App />)
+
+  expect(await screen.findByText('Correo y contraseña')).toBeInTheDocument()
+  expect(screen.getByText('Cómo accedes a esta cuenta.')).toBeInTheDocument()
+  expect(screen.getByLabelText('Contraseña actual')).toBeInTheDocument()
+})
+
+it('tells a Google account it has no password to change', async () => {
+  serve(['google'])
+  render(<App />)
+
+  expect(
+    await screen.findByText('Entras con Google, así que esta cuenta no tiene contraseña que cambiar.'),
+  ).toBeInTheDocument()
+  expect(screen.queryByLabelText('Contraseña actual')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Cambiar la contraseña' })).not.toBeInTheDocument()
+})
+
+it('lists both ways in for an account linked to Google', async () => {
+  serve(['google', 'local'])
+  render(<App />)
+
+  expect(await screen.findByText('Google · Correo y contraseña')).toBeInTheDocument()
+  expect(screen.getByLabelText('Contraseña actual')).toBeInTheDocument()
 })
 
 it('switches theme and language from the preferences', async () => {
