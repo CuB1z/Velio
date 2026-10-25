@@ -43,15 +43,14 @@ def test_saved_route_repository_roundtrip_and_ownership():
             assert await repo.get_for_user(stranger.id, created.id) is None
             assert await repo.delete_for_user(stranger.id, created.id) is False
 
-            # Rename touches the name and moves updated_at forward. SQLite
-            # round-trips lose the timezone, so compare on a naive stamp;
-            # the rename mutates the same identity-mapped instance, so the
-            # pre-rename stamp must be captured first.
-            before = created.updated_at.replace(tzinfo=None)
+            # Rename touches the name and moves updated_at forward; it mutates
+            # the same identity-mapped instance, so the pre-rename stamp must
+            # be captured first.
+            before = created.updated_at
             await asyncio.sleep(0.01)
             first = await repo.update_for_user(owner.id, created.id, name="Toro 60")
             assert first is not None and first.name == "Toro 60"
-            updated = first.updated_at.replace(tzinfo=None)
+            updated = first.updated_at
             assert updated >= first.created_at
             assert updated > before
             assert (
@@ -62,7 +61,7 @@ def test_saved_route_repository_roundtrip_and_ownership():
             # A no-op update returns the route without touching the stamp.
             unchanged = await repo.update_for_user(owner.id, created.id)
             assert unchanged is not None and unchanged.name == "Toro 60"
-            assert unchanged.updated_at.replace(tzinfo=None) == updated
+            assert unchanged.updated_at == updated
 
             # Listing is newest-first and honours the limit, page + total in one call.
             for i in range(3):

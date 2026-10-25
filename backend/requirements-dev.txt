@@ -1,6 +1,6 @@
 -r requirements.txt
 pytest>=8.0
-aiosqlite==0.22.1
+testcontainers==4.15.0
 fakeredis==2.26.2
 mypy>=1.15
 osmium>=4.0

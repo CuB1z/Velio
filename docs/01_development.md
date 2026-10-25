@@ -46,7 +46,7 @@ The routing graph and the elevation tiles are not in git; build them once with `
 # Backend: API on :8000, Valhalla on :8002, Postgres and Redis (from the repo root)
 docker compose -f docker/docker-compose.test.yaml up -d --build api
 
-# Backend tests (from backend/)
+# Backend tests (from backend/; Docker runs a throwaway Postgres for them)
 python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m pytest tests/ -q
 

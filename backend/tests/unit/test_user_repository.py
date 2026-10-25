@@ -2,8 +2,7 @@
 
 The existence pre-checks can always be fooled by a concurrent writer;
 the IntegrityError fallback must answer the same business conflicts.
-Both phases share ONE event loop: pooled aiosqlite connections do not
-survive loop changes.
+Both phases share ONE event loop, like a real request would.
 """
 
 import asyncio

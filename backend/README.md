@@ -87,7 +87,9 @@ curl -X POST localhost:8002/route -H 'Content-Type: application/json' \
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 
-# Tests (unit + end-to-end, E2E skip automatically when service is down)
+# Tests (unit + end-to-end, E2E skip automatically when service is down).
+# Docker is required: each run starts a throwaway Postgres 16 with
+# Testcontainers and applies the Alembic migrations to it.
 .venv/bin/python -m pytest tests/ -q
 
 # Profile + validation for a route (Madrid -> Navacerrada Port)

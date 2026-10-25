@@ -1,11 +1,15 @@
 """Shared test configuration: hermetic env pinned before any app import,
-schema built once per session by the real Alembic migrations."""
+one Postgres container per session, schema built by the real Alembic
+migrations."""
 
 import asyncio
+import atexit
 import gzip
 import os
 import struct
 import tempfile
+
+from testcontainers.community.postgres import PostgresContainer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,18 +23,42 @@ def _synthetic_elevation_dir() -> str:
     return root
 
 
+def _postgres_address() -> tuple[str, str]:
+    """One container per test process, even though pytest and the test
+    modules import this file twice (as a plugin and as tests.conftest)."""
+    if "VELIO_TEST_PG_PORT" not in os.environ:
+        container = PostgresContainer(
+            "postgres:16-alpine",
+            username="velio",
+            password="velio",
+            dbname="velio_test",
+        )
+        try:
+            container.start()
+        except Exception as exc:
+            raise SystemExit(
+                f"The backend tests need Docker to start Postgres: {exc}"
+            ) from exc
+        atexit.register(container.stop)
+        os.environ["VELIO_TEST_PG_HOST"] = container.get_container_host_ip()
+        os.environ["VELIO_TEST_PG_PORT"] = str(container.get_exposed_port(5432))
+    return os.environ["VELIO_TEST_PG_HOST"], os.environ["VELIO_TEST_PG_PORT"]
+
+
+PG_HOST, PG_PORT = _postgres_address()
+
 # --- Hermetic environment ----------------------------------------------------
 # Pinned before the app import so pydantic-settings never falls back to the
 # developer's .env (real credentials or databases).
 HERMETIC_ENV = {
     "ENV": "dev",
     "OTP_TEST_MODE": "false",
-    "DB_DRIVER": "sqlite+aiosqlite",
-    "DB_NAME": os.path.join(ROOT, "test.db"),
-    "DB_HOST": "localhost",
-    "DB_PORT": "5432",
-    "DB_USER": "test",
-    "DB_PASSWORD": "test",
+    "DB_DRIVER": "postgresql+asyncpg",
+    "DB_NAME": "velio_test",
+    "DB_HOST": PG_HOST,
+    "DB_PORT": PG_PORT,
+    "DB_USER": "velio",
+    "DB_PASSWORD": "velio",
     "JWT_SECRET_KEY": "test-secret-key-for-testing-only",
     "VALHALLA_URL": "http://localhost:8002",
     "VALHALLA_ELEVATION_DIR": _synthetic_elevation_dir(),
@@ -40,6 +68,24 @@ HERMETIC_ENV = {
     "RATE_LIMIT_ENABLED": "false",
 }
 os.environ.update(HERMETIC_ENV)
+
+
+def _unpooled_engine() -> None:
+    """Fresh connection per session: the suite runs several event loops
+    (TestClient's and asyncio.run's) and asyncpg ties each connection to
+    the loop that opened it."""
+    from sqlalchemy.ext.asyncio import create_async_engine
+    from sqlalchemy.pool import NullPool
+
+    from app.core import database
+
+    database.engine = create_async_engine(
+        database.settings.database_url, poolclass=NullPool
+    )
+    database.SessionLocal.configure(bind=database.engine)
+
+
+_unpooled_engine()
 
 import logging
 
@@ -115,7 +161,8 @@ def _require_hermetic_settings() -> None:
 
     assert not settings.brevo_api_key, "a real Brevo API key leaked into tests"
     assert not settings.brevo_list_id, "a real Brevo list id leaked into tests"
-    assert settings.database_url.startswith("sqlite"), "the test database leaked"
+    assert settings.db_host == HERMETIC_ENV["DB_HOST"], "the test database leaked"
+    assert settings.db_port == int(HERMETIC_ENV["DB_PORT"]), "the test database leaked"
     assert settings.jwt_secret_key == HERMETIC_ENV["JWT_SECRET_KEY"]
     # JSON callback is the baseline (see _pin_hermetic_settings).
     assert not settings.oauth_success_redirect, "a real SPA redirect leaked into tests"
