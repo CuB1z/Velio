@@ -43,7 +43,8 @@ it('tells the API which language the rider is using', async () => {
   await request('/auth/forgot-password', { method: 'POST', body: { email: 'marta@velio.cc' } })
   await i18n.changeLanguage('en')
   await request('/auth/forgot-password', { method: 'POST', body: { email: 'marta@velio.cc' } })
-  const language = (call: number) => (fetchMock.mock.calls[call][1]?.headers as Record<string, string>)['Accept-Language']
+  const language = (call: number) =>
+    (fetchMock.mock.calls[call][1]?.headers as Record<string, string> | undefined)?.['Accept-Language']
   expect(language(0)).toBe('es')
   expect(language(1)).toBe('en')
 })
