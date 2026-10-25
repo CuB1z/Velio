@@ -1,3 +1,5 @@
+import i18n from '@/i18n'
+
 import { ApiError, errorFromResponse } from './errors'
 import { parseSse, type SseEvent } from './sse'
 
@@ -58,7 +60,7 @@ function buildUrl(path: string, query?: RequestOptions['query']): string {
 
 async function send(path: string, options: RequestOptions): Promise<Response> {
   const { method = 'GET', body, query, auth = false, signal } = options
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = { 'Accept-Language': i18n.language }
 
   if (body !== undefined) headers['Content-Type'] = 'application/json'
   if (auth) {

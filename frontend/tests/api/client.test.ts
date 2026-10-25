@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 import { request, setAuthHandlers } from '@/api/client'
+import i18n from '@/i18n'
 import { ApiError } from '@/api/errors'
 
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
@@ -34,6 +35,17 @@ it('attaches the access token to authenticated requests only', async () => {
   await request('/public')
   expect(authHeader(0)).toBe('Bearer old')
   expect(authHeader(1)).toBeUndefined()
+})
+
+it('tells the API which language the rider is using', async () => {
+  fetchMock.mockImplementation(async () => json(202, {}))
+  await i18n.changeLanguage('es')
+  await request('/auth/forgot-password', { method: 'POST', body: { email: 'marta@velio.cc' } })
+  await i18n.changeLanguage('en')
+  await request('/auth/forgot-password', { method: 'POST', body: { email: 'marta@velio.cc' } })
+  const language = (call: number) => (fetchMock.mock.calls[call][1]?.headers as Record<string, string>)['Accept-Language']
+  expect(language(0)).toBe('es')
+  expect(language(1)).toBe('en')
 })
 
 it('refreshes on a 401 and retries with the new token', async () => {
