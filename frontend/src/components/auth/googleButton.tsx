@@ -1,17 +1,16 @@
 import { Button } from '@heroui/react'
-import { Trans, useTranslation } from 'react-i18next'
+import { useTranslation } from 'react-i18next'
 
 import { useAuth } from '@/auth/useAuth'
-import { useLegalLinks } from './legalLinks'
+import { LegalConsent } from './LegalConsent'
 
 /** The backend answers with a 307 to Google, so navigate instead of fetching. */
 export function GoogleButton() {
   const { t } = useTranslation()
   const { oauthAuthorizeUrl } = useAuth()
-  const legalLinks = useLegalLinks()
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       <Button
         variant="outline"
         fullWidth
@@ -29,7 +28,7 @@ export function GoogleButton() {
         {t('auth.google')}
       </Button>
       <p className="text-center text-xs text-muted text-pretty">
-        <Trans i18nKey="auth.googleTerms" components={legalLinks} />
+        <LegalConsent i18nKey="auth.googleTerms" />
       </p>
     </div>
   )
