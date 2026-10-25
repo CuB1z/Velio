@@ -11,14 +11,7 @@ export function isLanguage(value: string | null | undefined): value is Language 
   return LANGUAGES.includes(value as Language)
 }
 
-export function resolveLanguage(
-  pathname: string,
-  stored: string | null,
-  navigatorLanguage: string | undefined,
-): Language {
+export function resolveLanguage(pathname: string): Language {
   const prefix = pathname.split('/')[1]
-  if (isLanguage(prefix)) return prefix
-  if (isLanguage(stored)) return stored
-  const primary = navigatorLanguage?.toLowerCase().split('-')[0]
-  return isLanguage(primary) ? primary : DEFAULT_LANGUAGE
+  return isLanguage(prefix) ? prefix : DEFAULT_LANGUAGE
 }

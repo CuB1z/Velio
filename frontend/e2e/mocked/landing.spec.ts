@@ -43,10 +43,11 @@ test('the theme choice survives a reload', async ({ page }) => {
   await expect(page.locator('html')).toHaveClass(/dark/)
 })
 
-test('the bare root follows the browser language to its prefix', async ({ page }) => {
+test('a path without a prefix stays in English whatever the browser language', async ({ page }) => {
   await page.goto('/')
-  await expect(page).toHaveURL(/\/es$/)
-  await expect(page.locator('html')).toHaveAttribute('lang', 'es')
+  await expect(page).toHaveURL(/^https?:\/\/[^/]+\/$/)
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Loops cut to your distance')
 })
 
 test('the default language lives at the root and /en redirects there', async ({ page }) => {

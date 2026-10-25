@@ -6,16 +6,17 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/auth/useAuth'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { AuthLayout } from '@/components/layout/authLayout'
-import { useLangPath } from '@/lib/paths'
+import { storedLanguage } from '@/i18n'
+import { withLang } from '@/lib/paths'
 
 /**
  * OAuth callback: reads the result from the URL fragment, which keeps tokens out of server logs, proxies and Referer.
  * Requires the backend's `OAUTH_SUCCESS_REDIRECT` to point at this route.
  */
 export function OAuthCallbackPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const to = useLangPath()
+  const home = storedLanguage() ?? i18n.language
   const { adoptTokens } = useAuth()
   const describe = useApiErrorMessage()
   const [error, setError] = useState<string | null>(null)
@@ -51,12 +52,12 @@ export function OAuthCallbackPage() {
           refresh_token: refreshToken,
           token_type: 'bearer',
         })
-        void navigate(to('/loops'), { replace: true })
+        void navigate(withLang('/loops', home), { replace: true })
       } catch (cause) {
         setError(describe(cause))
       }
     })()
-  }, [adoptTokens, navigate, describe, t, to])
+  }, [adoptTokens, navigate, describe, t, home])
 
   return (
     <AuthLayout eyebrow={t('auth.loginEyebrow')} title={error ? t('error.title') : t('auth.oauthTitle')}>
@@ -65,7 +66,7 @@ export function OAuthCallbackPage() {
           <p className="text-sm text-danger" role="alert">
             {error}
           </p>
-          <Button variant="primary" className="min-h-12" onPress={() => void navigate(to('/login'))}>
+          <Button variant="primary" className="min-h-12" onPress={() => void navigate(withLang('/login', home))}>
             {t('auth.backToLogin')}
           </Button>
         </div>

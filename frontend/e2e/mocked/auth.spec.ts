@@ -54,3 +54,10 @@ test('a rate limited login counts the Retry-After down before allowing another t
   await expect(page.getByRole('button', { name: 'Espera 1 s' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Entrar' })).toBeEnabled({ timeout: 4000 })
 })
+
+test('the Google return lands in the language the rider last picked', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('velio.lang', 'es'))
+  await mockApi(page, { '**/api/v1/auth/me': (route) => route.fulfill(json(SESSION.user)) })
+  await page.goto('/oauth/callback#access_token=access&refresh_token=refresh-2&token_type=bearer')
+  await expect(page).toHaveURL(/\/es\/loops$/)
+})

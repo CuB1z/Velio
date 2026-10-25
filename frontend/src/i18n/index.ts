@@ -3,21 +3,22 @@ import { initReactI18next } from 'react-i18next'
 
 import en from './en'
 import es from './es'
-import { DEFAULT_LANGUAGE, resolveLanguage } from './languages'
+import { DEFAULT_LANGUAGE, isLanguage, resolveLanguage, type Language } from './languages'
 
 export * from './languages'
 
 const STORAGE_KEY = 'velio.lang'
 
-function readStored(): string | null {
+export function storedLanguage(): Language | null {
   try {
-    return localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return isLanguage(stored) ? stored : null
   } catch {
     return null
   }
 }
 
-const initial = resolveLanguage(location.pathname, readStored(), navigator.language)
+const initial = resolveLanguage(location.pathname)
 
 void i18n.use(initReactI18next).init({
   resources: {

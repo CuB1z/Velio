@@ -3,24 +3,20 @@ import { describe, expect, it } from 'vitest'
 import { resolveLanguage } from '@/i18n/languages'
 
 describe('resolveLanguage', () => {
-  it('takes the URL prefix over everything else', () => {
-    expect(resolveLanguage('/en/loops', 'es', 'es-ES')).toBe('en')
-    expect(resolveLanguage('/es', 'en', 'en-US')).toBe('es')
+  it('takes the language from the URL prefix', () => {
+    expect(resolveLanguage('/en/loops')).toBe('en')
+    expect(resolveLanguage('/es')).toBe('es')
+    expect(resolveLanguage('/es/privacy')).toBe('es')
   })
 
-  it('falls back to the stored preference without a prefix', () => {
-    expect(resolveLanguage('/loops', 'en', 'es-ES')).toBe('en')
-    expect(resolveLanguage('/', 'es', 'en-US')).toBe('es')
-  })
-
-  it('falls back to the browser language, defaulting to English', () => {
-    expect(resolveLanguage('/', null, 'es-ES')).toBe('es')
-    expect(resolveLanguage('/', null, 'fr-FR')).toBe('en')
-    expect(resolveLanguage('/', null, undefined)).toBe('en')
+  it('serves English on every path without a prefix', () => {
+    expect(resolveLanguage('/')).toBe('en')
+    expect(resolveLanguage('/loops')).toBe('en')
+    expect(resolveLanguage('/privacy')).toBe('en')
   })
 
   it('ignores segments that merely start with a language code', () => {
-    expect(resolveLanguage('/estate', null, 'fr-FR')).toBe('en')
-    expect(resolveLanguage('/english', 'es', 'fr-FR')).toBe('es')
+    expect(resolveLanguage('/estate')).toBe('en')
+    expect(resolveLanguage('/english')).toBe('en')
   })
 })
