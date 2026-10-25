@@ -331,6 +331,10 @@ export default {
     recorded: 'Contamos tu petición para {{country}}. Gracias.',
     alreadyTitle: 'Ya lo habías pedido',
     already: 'Ya nos habías pedido {{country}}: seguimos contando contigo.',
+    notify: 'Avísame cuando llegue',
+    notifyHint: 'Un único correo, cuando Velio pueda planificar rutas allí.',
+    recordedNotify: 'Contamos tu petición para {{country}}. Te escribiremos una sola vez cuando llegue.',
+    alreadyNotify: 'Ya nos habías pedido {{country}}: te escribiremos una sola vez cuando llegue.',
     close: 'Cerrar',
   },
 

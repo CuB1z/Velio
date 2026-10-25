@@ -180,6 +180,7 @@ export type CoverageRequestBody = {
   country: string
   email?: string
   note?: string
+  notify?: boolean
 }
 
 export type CoverageRequestResult = {

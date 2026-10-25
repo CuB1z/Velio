@@ -888,15 +888,38 @@
         ],
         "summary": "Request Coverage",
         "operationId": "request_coverage_api_v1_coverage_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "accept-language",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Accept-Language"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CoverageRequestCreateRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "202": {
@@ -919,12 +942,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/loops": {
@@ -1738,6 +1756,11 @@
               }
             ],
             "title": "Note"
+          },
+          "notify": {
+            "type": "boolean",
+            "title": "Notify",
+            "default": false
           }
         },
         "type": "object",

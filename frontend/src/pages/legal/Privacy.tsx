@@ -56,9 +56,11 @@ function PrivacyEn() {
           not stored unless you save the route.
         </li>
         <li>
-          <strong>Country requests.</strong> If you ask for your country, we store the country, the note you add and, if
-          you give it, the email address to tell you when it is covered. That email is kept on your consent, which you
-          can withdraw at any time.
+          <strong>Country requests.</strong> If you ask for your country, we store the country, the note you add and who
+          asked: your account when you are signed in, or the email address you give when you are not, so that each
+          person counts once. If you also tick “Email me when it arrives”, we keep your language and write to you once,
+          from Velio's contact address, when Velio can plan routes there. That email rests on your consent, which you can
+          withdraw at any time by writing to <Mail />; without the tick we never write to you.
         </li>
         <li>
           <strong>Contact list.</strong> When your account is activated, your email address joins Velio's contact list at
@@ -99,7 +101,8 @@ function PrivacyEn() {
           <strong>Cloudflare, Inc.</strong> provides DNS and network protection for velio.cub1z.es.
         </li>
         <li>
-          <strong>Google</strong> takes part only if you choose to sign in with Google, under{' '}
+          <strong>Google</strong> takes part if you choose to sign in with Google, and as the provider of Velio's contact
+          mailbox, from which we answer your messages and send the single email you asked for about a country, under{' '}
           <External href="https://policies.google.com/privacy">its own privacy policy</External>.
         </li>
       </ul>
@@ -182,9 +185,11 @@ function PrivacyEs() {
           para calcularla y no se guardan salvo que guardes la ruta.
         </li>
         <li>
-          <strong>Peticiones de país.</strong> Si pides tu país, guardamos el país, la nota que añadas y, si nos lo das,
-          el correo para avisarte cuando esté disponible. Ese correo se guarda con tu consentimiento, que puedes retirar
-          cuando quieras.
+          <strong>Peticiones de país.</strong> Si pides tu país, guardamos el país, la nota que añadas y quién lo pide: tu
+          cuenta si has iniciado sesión, o el correo que nos des si no, para contar a cada persona una vez. Si además
+          marcas «Avísame cuando llegue», guardamos tu idioma y te escribimos una sola vez, desde la dirección de
+          contacto de Velio, cuando Velio pueda planificar rutas allí. Ese correo se basa en tu consentimiento, que
+          puedes retirar cuando quieras escribiendo a <Mail />; sin esa casilla, nunca te escribimos.
         </li>
         <li>
           <strong>Lista de contactos.</strong> Cuando activas tu cuenta, tu correo entra en la lista de contactos de
@@ -227,7 +232,8 @@ function PrivacyEs() {
           <strong>Cloudflare, Inc.</strong> presta el DNS y la protección de red de velio.cub1z.es.
         </li>
         <li>
-          <strong>Google</strong> solo interviene si eliges entrar con Google, según{' '}
+          <strong>Google</strong> interviene si eliges entrar con Google y como proveedor del buzón de contacto de Velio,
+          desde el que respondemos a tus mensajes y enviamos el único correo que pediste sobre un país, según{' '}
           <External href="https://policies.google.com/privacy?hl=es">su propia política de privacidad</External>.
         </li>
       </ul>

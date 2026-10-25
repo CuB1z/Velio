@@ -1,4 +1,4 @@
-import { Button, ComboBox, Description, Input, Label, ListBox, Modal, useOverlayState } from '@heroui/react'
+import { Button, Checkbox, ComboBox, Description, Input, Label, ListBox, Modal, useOverlayState } from '@heroui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { ListLayout, Virtualizer } from 'react-aria-components'
@@ -16,6 +16,10 @@ import { DEFAULT_LANGUAGE, isLanguage, LANGUAGE_INFO } from '@/i18n/languages'
 import { cn } from '@/lib/cn'
 
 const NOTE_MAX = 280
+const RESULT_KEY = {
+  recorded: { quiet: 'coverage.recorded', notify: 'coverage.recordedNotify' },
+  already: { quiet: 'coverage.already', notify: 'coverage.alreadyNotify' },
+} as const
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 type Props = { state: ReturnType<typeof useOverlayState> }
@@ -51,6 +55,7 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
   const [picked, setPicked] = useState<string | null>(null)
   const [email, setEmail] = useState('')
   const [note, setNote] = useState('')
+  const [notify, setNotify] = useState(false)
   const [touched, setTouched] = useState(false)
   const suggested = coverage ? preferredCountry(navigator.languages ?? [], isos) : null
   const country = picked ?? suggested ?? ''
@@ -58,7 +63,12 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
   const mutation = useMutation({
     mutationFn: () =>
       requestCoverage(
-        { country, email: signedIn ? undefined : email.trim(), note: note.trim() || undefined },
+        {
+          country,
+          email: signedIn ? undefined : email.trim(),
+          note: note.trim() || undefined,
+          notify: notify || undefined,
+        },
         signedIn,
       ),
   })
@@ -78,7 +88,7 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
         </Modal.Header>
         <Modal.Body>
           <p className="text-sm text-muted" role="status">
-            {t(recorded ? 'coverage.recorded' : 'coverage.already', { country: countryName })}
+            {t(RESULT_KEY[recorded ? 'recorded' : 'already'][notify ? 'notify' : 'quiet'], { country: countryName })}
           </p>
         </Modal.Body>
         <Modal.Footer className="flex justify-end">
@@ -152,6 +162,18 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
           onChange={setNote}
           errorMessage={noteError}
         />
+
+        <Checkbox isSelected={notify} onChange={setNotify}>
+          <Checkbox.Content className="flex flex-row items-start gap-3 text-sm">
+            <Checkbox.Control className="mt-0.5 [--field-border:color-mix(in_oklch,var(--muted)_70%,transparent)]">
+              <Checkbox.Indicator />
+            </Checkbox.Control>
+            <span className="flex flex-col gap-0.5">
+              <span>{t('coverage.notify')}</span>
+              <span className="text-xs text-muted">{t('coverage.notifyHint')}</span>
+            </span>
+          </Checkbox.Content>
+        </Checkbox>
 
         {mutation.error && !(isApiError(mutation.error) && mutation.error.code === 'RATE_LIMITED') ? (
           <ErrorState error={mutation.error} />

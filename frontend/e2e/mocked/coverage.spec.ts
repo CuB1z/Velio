@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-import { json, signedIn } from '../support/mockApi'
+import { json, mockApi, signedIn } from '../support/mockApi'
 import { visible } from '../support/locators'
 
 const box = [
@@ -42,4 +42,32 @@ test('a click outside the coverage leads to asking for that country', async ({ p
 
   await expect(dialog.getByText('Contamos tu petición para Francia. Gracias.')).toBeVisible()
   expect(asked).toEqual({ country: 'FR' })
+})
+
+test('ticking the email asks for one when the country arrives', async ({ page }) => {
+  let asked: unknown = null
+  await mockApi(page, {
+    '**/api/v1/coverage': (route) => route.fulfill(json(COVERAGE)),
+    '**/api/v1/coverage/requests': async (route) => {
+      asked = route.request().postDataJSON()
+      await route.fulfill(json({ country: 'FR', recorded: true }, 202))
+    },
+  })
+  await page.goto('/es')
+  const closing = page.locator('section', { has: page.getByRole('heading', { name: 'Tu próxima vuelta sale de tu puerta' }) })
+  await closing.getByRole('button', { name: 'Pide tu país' }).click()
+
+  const dialog = page.getByRole('dialog')
+  const country = dialog.getByRole('combobox', { name: /País/ })
+  await country.fill('francia')
+  await expect(page.getByRole('option', { name: 'Francia' })).toBeVisible()
+  await country.press('ArrowDown')
+  await country.press('Enter')
+  await expect(country).toHaveValue('Francia')
+  await dialog.getByRole('textbox', { name: /Email/ }).fill('rider@example.com')
+  await dialog.getByRole('checkbox', { name: /Avísame cuando llegue/ }).check({ force: true })
+  await dialog.getByRole('button', { name: 'Enviar petición' }).click()
+
+  await expect(dialog.getByText('Contamos tu petición para Francia. Te escribiremos una sola vez cuando llegue.')).toBeVisible()
+  expect(asked).toEqual({ country: 'FR', email: 'rider@example.com', notify: true })
 })

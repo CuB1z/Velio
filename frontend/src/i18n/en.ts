@@ -330,6 +330,10 @@ export default {
     recorded: 'Your request for {{country}} is counted. Thank you.',
     alreadyTitle: 'Already asked',
     already: 'You had already asked for {{country}}: we keep counting you in.',
+    notify: 'Email me when it arrives',
+    notifyHint: 'One email only, when Velio can plan routes there.',
+    recordedNotify: 'Your request for {{country}} is counted. We will write to you once when it arrives.',
+    alreadyNotify: 'You had already asked for {{country}}: we will write to you once when it arrives.',
     close: 'Close',
   },
 

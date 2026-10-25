@@ -92,6 +92,22 @@ it('signed in, it asks no email and says when it was already asked', async () =>
   expect(requests[0].body).toEqual({ country: 'IT', note: 'Dolomitas' })
 })
 
+it('the email when it arrives is off until the rider ticks it', async () => {
+  serve(() => json({ country: 'IT', recorded: true }))
+  const dialog = renderDialog('authenticated')
+
+  const optIn = within(dialog).getByRole('checkbox', { name: /Avísame cuando llegue/ })
+  expect(optIn).not.toBeChecked()
+  await pickCountry(dialog, 'ital', 'Italia')
+  await userEvent.click(optIn)
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Enviar petición' }))
+
+  expect(
+    await within(dialog).findByText('Contamos tu petición para Italia. Te escribiremos una sola vez cuando llegue.'),
+  ).toBeInTheDocument()
+  expect(requests[0].body).toEqual({ country: 'IT', notify: true })
+})
+
 it('a rate limited request counts down on the submit button', async () => {
   serve(() => json({ error: 'RATE_LIMITED', message: 'Too many requests' }, 429, { 'retry-after': '5' }))
   const dialog = renderDialog('authenticated')
