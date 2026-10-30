@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from app.core.config import settings
+from app.api.dependencies import provide, reset
+from app.engine.dem import DemSource
 
 BASE_URL = os.environ.get("VALHALLA_URL", "http://localhost:8002")
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -26,8 +27,9 @@ def base_url():
 
 
 @pytest.fixture
-def elevation_dir(monkeypatch):
+def elevation_dir():
     if not ELEVATION_DIR.exists():
         pytest.skip(f"elevation tiles not present at {ELEVATION_DIR}")
-    monkeypatch.setattr(settings, "elevation_dir", ELEVATION_DIR)
-    return ELEVATION_DIR
+    provide(dem=DemSource(ELEVATION_DIR))
+    yield ELEVATION_DIR
+    reset()

@@ -1,11 +1,14 @@
 """Areas closed to riders (military land, aerodromes, prisons), from GeoJSON."""
 
 import json
+import logging
 import math
 from collections.abc import Iterable
 from pathlib import Path
 
 from .geo import haversine_m
+
+logger = logging.getLogger(__name__)
 
 CELL_DEG = 0.05
 
@@ -92,3 +95,13 @@ class RestrictedAreas:
             if self.contains((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0):
                 total += haversine_m(a, b)
         return total
+
+
+def load_restricted_areas(path: Path | None) -> RestrictedAreas:
+    if path is None or not path.is_file():
+        logger.warning(
+            "restricted areas not loaded; loops will not avoid them",
+            extra={"extra_data": {"path": str(path)}},
+        )
+        return RestrictedAreas()
+    return RestrictedAreas.from_geojson(path)

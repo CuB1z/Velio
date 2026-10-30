@@ -5,6 +5,7 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.dependencies import get_dem_source, get_valhalla_client
 from app.engine.polyline import encode
 from app.main import app
 
@@ -32,6 +33,19 @@ def access_events() -> ListHandler:
     yield handler
     logger.removeHandler(handler)
     logger.setLevel(old_level)
+
+
+@pytest.fixture
+def analysis_backends():
+    """Swap the Valhalla client and DEM source the analyze endpoint gets."""
+
+    def install(valhalla, dem) -> None:
+        app.dependency_overrides[get_valhalla_client] = lambda: valhalla
+        app.dependency_overrides[get_dem_source] = lambda: dem
+
+    yield install
+    app.dependency_overrides.pop(get_valhalla_client, None)
+    app.dependency_overrides.pop(get_dem_source, None)
 
 
 def _last(access_events: ListHandler) -> logging.LogRecord:
@@ -74,7 +88,7 @@ def test_forwarded_for_wins_over_remote_address(access_events):
     assert _last(access_events).extra_data["client_ip"] == "203.0.113.7"
 
 
-def test_regular_endpoints_log_at_info(access_events, auth_headers):
+def test_regular_endpoints_log_at_info(access_events, auth_headers, analysis_backends):
     class DownValhalla:
         async def trace_attributes(self, polyline, costing_options=None):
             from app.core.exceptions import ValhallaError
@@ -88,8 +102,7 @@ def test_regular_endpoints_log_at_info(access_events, auth_headers):
         def elevation(self, lat, lon):
             return 0.0
 
-    app.state.valhalla = DownValhalla()
-    app.state.dem = AnyDem()
+    analysis_backends(DownValhalla(), AnyDem())
 
     valid_polyline = encode([(40.0, -3.0), (40.01, -3.01)])
     # Unavailable Valhalla answers 503; the access line must exist either way.
@@ -103,7 +116,9 @@ def test_regular_endpoints_log_at_info(access_events, auth_headers):
     assert _last(access_events).extra_data["status"] == 503
 
 
-def test_access_line_survives_unhandled_errors(access_events, auth_headers):
+def test_access_line_survives_unhandled_errors(
+    access_events, auth_headers, analysis_backends
+):
     class ExplodingValhalla:
         async def trace_attributes(self, polyline, costing_options=None):
             # Not a ValhallaError: nothing in the app converts this, so it
@@ -117,8 +132,7 @@ def test_access_line_survives_unhandled_errors(access_events, auth_headers):
         def elevation(self, lat, lon):
             return 100.0
 
-    app.state.valhalla = ExplodingValhalla()
-    app.state.dem = AnyDem()
+    analysis_backends(ExplodingValhalla(), AnyDem())
     polyline = encode([(40.0, -3.0), (40.01, -3.01)])
 
     with pytest.raises(RuntimeError):

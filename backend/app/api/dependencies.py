@@ -1,6 +1,8 @@
 """FastAPI dependency providers."""
 
 import uuid
+from collections.abc import Callable
+from typing import Any
 
 import jwt
 from fastapi import Depends, Header, Request, Response
@@ -21,9 +23,9 @@ from app.core.exceptions import (
 from app.core.i18n import Language, negotiate_language
 from app.core.ratelimit import RULES, client_ip, enforce, match_rule
 from app.core.security import ACCESS_TYPE, decode_token
-from app.engine.coverage import Coverage
+from app.engine.coverage import Coverage, load_coverage
 from app.engine.dem import DemSource
-from app.engine.restricted import RestrictedAreas
+from app.engine.restricted import RestrictedAreas, load_restricted_areas
 from app.models import User
 from app.repositories.coverage_request_repository import CoverageRequestRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
@@ -44,25 +46,55 @@ _bearer = HTTPBearer(auto_error=False)
 
 # Shared singletons ----------------------------------------------------------
 
-
-def get_valhalla_client(request: Request) -> ValhallaClient:
-    """Shared Valhalla client created at startup."""
-    return request.app.state.valhalla
+_shared: dict[str, Any] = {}
 
 
-def get_dem_source(request: Request) -> DemSource:
-    """Shared DEM source created at startup."""
-    return request.app.state.dem
+def provide(**resources: Any) -> None:
+    """Install shared resources ahead of their getters (tests, tooling)."""
+    _shared.update(resources)
 
 
-def get_restricted_areas(request: Request) -> RestrictedAreas:
-    """Restricted areas loaded at startup."""
-    return request.app.state.restricted
+def reset() -> None:
+    """Drop every shared resource; the next getter call builds it again."""
+    _shared.clear()
 
 
-def get_coverage(request: Request) -> Coverage:
-    """Covered regions loaded at startup."""
-    return request.app.state.coverage
+def _shared_resource[T](name: str, build: Callable[[], T]) -> T:
+    if name not in _shared:
+        _shared[name] = build()
+    return _shared[name]
+
+
+def get_valhalla_client() -> ValhallaClient:
+    """Shared Valhalla client, built on first use."""
+    return _shared_resource(
+        "valhalla",
+        lambda: ValhallaClient(
+            base_url=settings.valhalla_url, timeout_s=settings.valhalla_timeout_s
+        ),
+    )
+
+
+def get_dem_source() -> DemSource:
+    """Shared DEM source, built on first use."""
+    return _shared_resource("dem", lambda: DemSource(settings.elevation_dir))
+
+
+def get_restricted_areas() -> RestrictedAreas:
+    """Restricted areas, loaded on first use."""
+    return _shared_resource(
+        "restricted", lambda: load_restricted_areas(settings.restricted_areas_path)
+    )
+
+
+def get_coverage() -> Coverage:
+    """Covered regions, loaded on first use."""
+    return _shared_resource("coverage", lambda: load_coverage(settings.coverage_path))
+
+
+def get_mail_sender() -> MailSender:
+    """Shared mail adapter, built on first use."""
+    return _shared_resource("mail", build_mail_sender)
 
 
 # Repositories ---------------------------------------------------------------
@@ -104,13 +136,6 @@ def get_saved_route_repository(
 ) -> SavedRouteRepository:
     """Provide a SavedRouteRepository bound to the request session."""
     return SavedRouteRepository(db)
-
-
-def get_mail_sender(request: Request) -> MailSender:
-    """Shared mail adapter; built lazily when lifespan has not run."""
-    if not hasattr(request.app.state, "mail"):
-        request.app.state.mail = build_mail_sender()
-    return request.app.state.mail
 
 
 # Services -------------------------------------------------------------------
