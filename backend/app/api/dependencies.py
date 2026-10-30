@@ -231,7 +231,6 @@ def get_saved_route_service(
 
 
 async def get_current_user(
-    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> User:
     """Resolve the user behind a valid Bearer access token.
@@ -248,9 +247,6 @@ async def get_current_user(
         subject = uuid.UUID(payload["sub"])
     except (jwt.PyJWTError, KeyError, ValueError, TypeError) as exc:
         raise UnauthorizedError("Invalid or expired token") from exc
-
-    # Session-management endpoints read this instead of re-decoding.
-    request.state.session_sid = payload.get("sid")
 
     async with lookup_session() as db:
         user = await UserRepository(db).get_by_id(subject)
@@ -301,11 +297,17 @@ def get_language(accept_language: str | None = Header(default=None)) -> Language
     return negotiate_language(accept_language)
 
 
-def get_session_sid(request: Request) -> str | None:
-    """`sid` claim of the caller's access token, stashed by
-    get_current_user (declare it after in the signature); None for
-    anonymous callers or tokens predating the claim."""
-    return getattr(request.state, "session_sid", None)
+def get_session_sid(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> str | None:
+    """`sid` claim of the caller's access token; None for anonymous
+    callers, invalid tokens or tokens predating the claim."""
+    if credentials is None:
+        return None
+    try:
+        return decode_token(credentials.credentials, ACCESS_TYPE).get("sid")
+    except jwt.PyJWTError:
+        return None
 
 
 async def rate_limit_guard(
