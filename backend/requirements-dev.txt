@@ -2,6 +2,6 @@
 pytest>=9.2,<9.3
 testcontainers==4.15.0
 fakeredis==2.26.2
-mypy>=1.15
-osmium>=4.0
+mypy==2.4.1
+osmium==4.3.2
 ruff==0.16.2
