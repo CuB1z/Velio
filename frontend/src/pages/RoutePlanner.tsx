@@ -8,7 +8,6 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { AskCountryButton, RequestCountryDialog } from '@/components/coverage/RequestCountryDialog'
 import { PlannerLayout } from '@/components/layout/PlannerLayout'
 import { LazyMap } from '@/components/map/LazyMap'
-import type { MapMarker, RouteLayer } from '@/components/map/MapView'
 import { BikePicker } from '@/components/planner/BikePicker'
 import { SliderField } from '@/components/planner/SliderField'
 import { WaypointEditor } from '@/components/planner/WaypointEditor'
@@ -29,6 +28,7 @@ import type {
   LatLon,
   RouteRequest,
 } from '@/types/api'
+import type { MapMarker, RouteLayer } from '@/types/map'
 
 const DEFAULT_WAYPOINTS: LatLon[] = [
   { lat: 40.4168, lon: -3.7038 },

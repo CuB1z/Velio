@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 
 import * as authApi from '@/api/auth'
 import { useAuth } from '@/auth/useAuth'
-import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { TextInput } from '@/components/common/Field'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 
 /** Display name editor; the backend tidies whitespace, the session reloads after saving. */
 export function ProfileForm({ name }: { name: string }) {

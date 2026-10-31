@@ -1,6 +1,6 @@
 import { haversineKm } from '@/lib/geo'
 import type { LngLat } from '@/lib/polyline'
-import type { MapMarker } from '@/components/map/MapView'
+import type { MapMarker } from '@/types/map'
 
 const CLOSED_LOOP_KM = 0.1
 

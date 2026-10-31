@@ -3,14 +3,14 @@ import { useTranslation } from 'react-i18next'
 
 import { formatDistance, formatRatio } from '@/lib/format'
 import { minimumLoopKm } from '@/lib/geo'
+import { CoordinateField } from './CoordinateField'
+import { ChevronIcon } from '@/components/common/Icons'
+import { InsetGroup, InsetRow } from '@/components/common/InsetGroup'
 import {
   DISTANCE_TOLERANCE,
   GAIN_TOLERANCE,
   type LoopFormValue,
 } from '@/lib/loopFormValue'
-import { CoordinateField } from './CoordinateField'
-import { ChevronIcon } from '@/components/common/Icons'
-import { InsetGroup, InsetRow } from '@/components/common/InsetGroup'
 import { BikeSegments, HillsSegments } from './BikePicker'
 import { SliderField } from './SliderField'
 

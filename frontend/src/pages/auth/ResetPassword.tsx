@@ -6,9 +6,9 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import * as authApi from '@/api/auth'
 import { PasswordRules } from '@/components/auth/PasswordRules'
-import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { PasswordInput, TextInput } from '@/components/common/Field'
 import { AuthLayout } from '@/components/layout/AuthLayout'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { isPasswordValid } from '@/lib/passwordPolicy'
 import { useLangPath } from '@/lib/paths'
 

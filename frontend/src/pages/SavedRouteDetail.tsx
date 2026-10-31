@@ -7,7 +7,6 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as savedRoutesApi from '@/api/savedRoutes'
 import { ErrorState } from '@/components/common/ErrorState'
 import { LazyMap } from '@/components/map/LazyMap'
-import type { MapMarker, RouteLayer } from '@/components/map/MapView'
 import { ElevationProfile } from '@/components/route/ElevationProfile'
 import { MetricTiles } from '@/components/route/MetricTiles'
 import { ScoreCard } from '@/components/route/ScoreCard'
@@ -24,6 +23,7 @@ import type { MapStyleId } from '@/lib/mapStyles'
 import { useLangPath } from '@/lib/paths'
 import { decodePolyline } from '@/lib/polyline'
 import { readSavedResult } from '@/lib/savedRoute'
+import type { MapMarker, RouteLayer } from '@/types/map'
 
 const PHONE_ACTIONS: SavedRouteAction[] = ['rename', 'recompute', 'gpx', 'geojson', 'delete']
 const DESKTOP_ACTIONS: SavedRouteAction[] = ['rename', 'recompute', 'delete']

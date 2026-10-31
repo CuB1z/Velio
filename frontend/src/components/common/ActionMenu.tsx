@@ -11,7 +11,6 @@ import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 export type MenuAction = { id: string; label: string; icon?: ReactNode; danger?: boolean; selected?: boolean }
 
 type Props = {
-  /** Accessible name of the "⋯" trigger. */
   label: string
   title: string
   subtitle?: string
@@ -21,7 +20,6 @@ type Props = {
   className?: string
 }
 
-/** A "⋯" menu: an action sheet on phones, a dropdown from md up. */
 export function ActionMenu({ label, title, subtitle, actions, onAction, state, className }: Props) {
   const { t } = useTranslation()
   const phone = useMediaQuery('(width < 48rem)')

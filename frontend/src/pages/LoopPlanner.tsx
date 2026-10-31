@@ -8,14 +8,8 @@ import { ErrorState } from '@/components/common/ErrorState'
 import { AskCountryButton, RequestCountryDialog } from '@/components/coverage/RequestCountryDialog'
 import { PlannerLayout } from '@/components/layout/PlannerLayout'
 import { LazyMap } from '@/components/map/LazyMap'
-import type { MapMarker, RouteLayer } from '@/components/map/MapView'
 import { LoopForm } from '@/components/planner/LoopForm'
 import { LoopProgress } from '@/components/planner/LoopProgress'
-import {
-  DEFAULT_LOOP_FORM,
-  toLoopRequest,
-  type LoopFormValue,
-} from '@/lib/loopFormValue'
 import { RouteResultPanel } from '@/components/route/RouteResultPanel'
 import { formatDistance, formatRegions } from '@/lib/format'
 import { minimumLoopKm } from '@/lib/geo'
@@ -23,10 +17,16 @@ import { useCoverage } from '@/hooks/useCoverage'
 import { positionFailure, useInitialPosition, type PositionFailure } from '@/hooks/useInitialPosition'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { useProfileFocus } from '@/hooks/useProfileFocus'
+import {
+  DEFAULT_LOOP_FORM,
+  toLoopRequest,
+  type LoopFormValue,
+} from '@/lib/loopFormValue'
 import { MADRID_CENTER, mapFitPadding, type MapStyleId } from '@/lib/mapStyles'
 import { decodePolyline } from '@/lib/polyline'
 import { allVariants } from '@/lib/routeMetrics'
 import type { AnyRouteResult, LatLon, LoopProgress as Progress, LoopResult } from '@/types/api'
+import type { MapMarker, RouteLayer } from '@/types/map'
 
 export function LoopPlannerPage() {
   const { t } = useTranslation()

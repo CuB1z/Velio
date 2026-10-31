@@ -29,7 +29,6 @@ type Props = {
   className?: string
 }
 
-/** The "⋯" menu of one saved route, with the rename and delete dialogs it opens. */
 export function SavedRouteMenu({ route, actions, state, onSelect, onRecompute, onDeleted, className }: Props) {
   const { t } = useTranslation()
   const describe = useApiErrorMessage()

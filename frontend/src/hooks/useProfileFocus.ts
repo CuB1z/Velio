@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 
-import type { MapFocusPoint } from '@/components/map/MapView'
 import { formatDistance, formatElevation, formatPercent } from '@/lib/format'
 import type { ElevationPoint } from '@/types/api'
+import type { MapFocusPoint } from '@/types/map'
 
 export function profilePointLabel(point: ElevationPoint): string {
   const parts = [formatDistance(point.distance_m / 1000), formatElevation(point.elevation_m)]

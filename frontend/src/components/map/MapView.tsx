@@ -25,9 +25,10 @@ import {
   type MapStyleId,
 } from '@/lib/mapStyles'
 import { MapControls } from './MapControls'
-import { ARROW_LAYOUT, routeArrowImage } from '@/lib/routeArrow'
 import type { LngLat } from '@/lib/polyline'
 import { boundsOf } from '@/lib/polyline'
+import { ARROW_LAYOUT, routeArrowImage } from '@/lib/routeArrow'
+import type { MapFocusPoint, MapMarker, RouteLayer } from '@/types/map'
 
 setWorkerUrl(workerUrl)
 
@@ -39,23 +40,6 @@ const LAYER_SELECTED_LINE = 'velio-routes-selected-line'
 const LAYER_SELECTED_ARROWS = 'velio-routes-selected-arrows'
 const ATTRIBUTION_VISIBLE_MS = 5000
 const COMPACT_MAP_MAX_WIDTH = 640
-
-export type RouteLayer = {
-  id: string
-  coordinates: LngLat[]
-  /** Fixed categorical palette slot: the color belongs to the variant, not its order. */
-  colorIndex: number
-  selected: boolean
-}
-
-export type MapMarker = {
-  id: string
-  coordinate: LngLat
-  kind: 'start' | 'end' | 'via'
-  label?: string
-}
-
-export type MapFocusPoint = { coordinate: LngLat; label?: string }
 
 export type MapViewProps = {
   /**
@@ -445,7 +429,6 @@ export function MapView({
     const canvas = map.current?.getCanvas()
     if (canvas) canvas.style.cursor = isPicking ? 'crosshair' : ''
   }, [isPicking])
-
 
   /** maplibre fails if the padding eats the viewport; clamp it to 42 %. */
   const paddingFor = useCallback(

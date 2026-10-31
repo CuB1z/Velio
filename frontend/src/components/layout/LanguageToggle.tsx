@@ -2,8 +2,8 @@ import { Dropdown } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 import { isLanguage, LANGUAGE_INFO, LANGUAGES } from '@/i18n/languages'
+import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 import { swapLang } from '@/lib/paths'
 
 export function LanguageToggle() {

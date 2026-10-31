@@ -3,11 +3,6 @@ import { useRef, type MouseEvent, type PointerEvent } from 'react'
 const HOLD_MS = 500
 const SLOP_PX = 10
 
-/**
- * Touch long-press and right-click (or Android's long-press contextmenu) both
- * call `onLongPress`; the click that ends a long-press is swallowed so a card
- * link under the finger does not navigate.
- */
 export function useLongPress(onLongPress: () => void, enabled = true) {
   const timer = useRef<number | undefined>(undefined)
   const origin = useRef<{ x: number; y: number } | null>(null)

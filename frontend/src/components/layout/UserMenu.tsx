@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
-import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'
 import { cn } from '@/lib/cn'
+import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 import { useLangPath } from '@/lib/paths'
 
 const THEMES: ThemePreference[] = ['light', 'dark', 'system']

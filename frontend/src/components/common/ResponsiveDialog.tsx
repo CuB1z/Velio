@@ -5,7 +5,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/cn'
 
 type Props = { state: ReturnType<typeof useOverlayState>; children: ReactNode }
-type PartProps = { className?: string; children: ReactNode }
+type PartProps = { children: ReactNode }
 
 const PhoneContext = createContext(false)
 
@@ -50,7 +50,7 @@ function Heading({ children }: PartProps) {
   return <Part>{children}</Part>
 }
 
-function Body({ className, children }: PartProps) {
+function Body({ className, children }: PartProps & { className?: string }) {
   const Part = use(PhoneContext) ? Drawer.Body : Modal.Body
   return <Part className={className}>{children}</Part>
 }
