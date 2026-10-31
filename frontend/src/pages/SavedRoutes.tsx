@@ -1,4 +1,4 @@
-import { Button, Modal, SearchField, useOverlayState } from '@heroui/react'
+import { Button, SearchField, useOverlayState } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import * as savedRoutesApi from '@/api/savedRoutes'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { ErrorState } from '@/components/common/ErrorState'
+import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
 import { Pager } from '@/components/common/Pager'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SegmentedControl } from '@/components/common/SegmentedControl'
@@ -221,37 +222,31 @@ export function SavedRoutesPage() {
         </div>
       ) : null}
 
-      <Modal state={confirm}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>{t('saved.deleteConfirmTitle')}</Modal.Heading>
-              </Modal.Header>
-              <Modal.Body>
-                <p className="text-sm text-muted">
-                  {selection.size === 1
-                    ? t('saved.deleteConfirmBody')
-                    : t('saved.deleteManyConfirmBody', { count: selection.size })}
-                </p>
-              </Modal.Body>
-              <Modal.Footer className="flex justify-end gap-2">
-                <Button variant="ghost" className="min-h-11" onPress={confirm.close}>
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="danger"
-                  className="min-h-11"
-                  isDisabled={remove.isPending}
-                  onPress={() => remove.mutate([...selection])}
-                >
-                  {t('common.delete')}
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <ResponsiveDialog state={confirm}>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Heading>{t('saved.deleteConfirmTitle')}</ResponsiveDialog.Heading>
+        </ResponsiveDialog.Header>
+        <ResponsiveDialog.Body>
+          <p className="text-sm text-muted">
+            {selection.size === 1
+              ? t('saved.deleteConfirmBody')
+              : t('saved.deleteManyConfirmBody', { count: selection.size })}
+          </p>
+        </ResponsiveDialog.Body>
+        <ResponsiveDialog.Footer>
+          <Button variant="ghost" className="min-h-11" onPress={confirm.close}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            className="min-h-11"
+            isDisabled={remove.isPending}
+            onPress={() => remove.mutate([...selection])}
+          >
+            {t('common.delete')}
+          </Button>
+        </ResponsiveDialog.Footer>
+      </ResponsiveDialog>
     </div>
   )
 }

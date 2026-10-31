@@ -1,10 +1,11 @@
-import { Button, Modal, useOverlayState } from '@heroui/react'
+import { Button, useOverlayState } from '@heroui/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import * as savedRoutes from '@/api/savedRoutes'
 import { TextInput } from '../common/Field'
+import { ResponsiveDialog } from '../common/ResponsiveDialog'
 import { useApiErrorMessage } from '../common/apiErrorMessage'
 
 type Props = {
@@ -58,41 +59,35 @@ export function SaveRouteDialog({ payload, defaultName, isDisabled, onSaved }: P
         {done ? t('result.saved') : t('result.save')}
       </Button>
 
-      <Modal state={state}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>{t('result.saveDialogTitle')}</Modal.Heading>
-              </Modal.Header>
-              <Modal.Body className="flex flex-col gap-3">
-                <TextInput
-                  label={t('result.saveDialogName')}
-                  value={name}
-                  onChange={setName}
-                  placeholder={t('result.saveDialogPlaceholder')}
-                  errorMessage={error ?? undefined}
-                  autoFocus
-                  isRequired
-                />
-              </Modal.Body>
-              <Modal.Footer className="flex justify-end gap-2">
-                <Button variant="ghost" onPress={state.close} className="min-h-11">
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="primary"
-                  onPress={() => void submit()}
-                  isDisabled={busy || !name.trim()}
-                  className="min-h-11"
-                >
-                  {t('common.save')}
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <ResponsiveDialog state={state}>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Heading>{t('result.saveDialogTitle')}</ResponsiveDialog.Heading>
+        </ResponsiveDialog.Header>
+        <ResponsiveDialog.Body className="flex flex-col gap-3">
+          <TextInput
+            label={t('result.saveDialogName')}
+            value={name}
+            onChange={setName}
+            placeholder={t('result.saveDialogPlaceholder')}
+            errorMessage={error ?? undefined}
+            autoFocus
+            isRequired
+          />
+        </ResponsiveDialog.Body>
+        <ResponsiveDialog.Footer>
+          <Button variant="ghost" onPress={state.close} className="min-h-11">
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            onPress={() => void submit()}
+            isDisabled={busy || !name.trim()}
+            className="min-h-11"
+          >
+            {t('common.save')}
+          </Button>
+        </ResponsiveDialog.Footer>
+      </ResponsiveDialog>
     </>
   )
 }

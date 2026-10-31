@@ -1,4 +1,4 @@
-import { Button, Dropdown, Modal, Spinner, useOverlayState } from '@heroui/react'
+import { Button, Dropdown, Spinner, useOverlayState } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import * as savedRoutesApi from '@/api/savedRoutes'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { ErrorState } from '@/components/common/ErrorState'
+import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
 import { TextInput } from '@/components/common/Field'
 import { endpointMarkers } from '@/components/map/endpointMarkers'
 import { LazyMap } from '@/components/map/LazyMap'
@@ -228,67 +229,55 @@ export function SavedRouteDetailPage() {
         </div>
       )}
 
-      <Modal state={renameDialog}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>{t('saved.renameTitle')}</Modal.Heading>
-              </Modal.Header>
-              <Modal.Body>
-                <TextInput
-                  label={t('result.saveDialogName')}
-                  value={name}
-                  onChange={setName}
-                  autoFocus
-                  isRequired
-                />
-              </Modal.Body>
-              <Modal.Footer className="flex justify-end gap-2">
-                <Button variant="ghost" className="min-h-11" onPress={renameDialog.close}>
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="primary"
-                  className="min-h-11"
-                  isDisabled={!name.trim() || rename.isPending}
-                  onPress={() => rename.mutate(name.trim())}
-                >
-                  {t('common.save')}
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <ResponsiveDialog state={renameDialog}>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Heading>{t('saved.renameTitle')}</ResponsiveDialog.Heading>
+        </ResponsiveDialog.Header>
+        <ResponsiveDialog.Body>
+          <TextInput
+            label={t('result.saveDialogName')}
+            value={name}
+            onChange={setName}
+            autoFocus
+            isRequired
+          />
+        </ResponsiveDialog.Body>
+        <ResponsiveDialog.Footer>
+          <Button variant="ghost" className="min-h-11" onPress={renameDialog.close}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            className="min-h-11"
+            isDisabled={!name.trim() || rename.isPending}
+            onPress={() => rename.mutate(name.trim())}
+          >
+            {t('common.save')}
+          </Button>
+        </ResponsiveDialog.Footer>
+      </ResponsiveDialog>
 
-      <Modal state={deleteDialog}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>{t('saved.deleteConfirmTitle')}</Modal.Heading>
-              </Modal.Header>
-              <Modal.Body>
-                <p className="text-sm text-muted">{t('saved.deleteConfirmBody')}</p>
-              </Modal.Body>
-              <Modal.Footer className="flex justify-end gap-2">
-                <Button variant="ghost" className="min-h-11" onPress={deleteDialog.close}>
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="danger"
-                  className="min-h-11"
-                  isDisabled={remove.isPending}
-                  onPress={() => remove.mutate()}
-                >
-                  {t('common.delete')}
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <ResponsiveDialog state={deleteDialog}>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Heading>{t('saved.deleteConfirmTitle')}</ResponsiveDialog.Heading>
+        </ResponsiveDialog.Header>
+        <ResponsiveDialog.Body>
+          <p className="text-sm text-muted">{t('saved.deleteConfirmBody')}</p>
+        </ResponsiveDialog.Body>
+        <ResponsiveDialog.Footer>
+          <Button variant="ghost" className="min-h-11" onPress={deleteDialog.close}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            className="min-h-11"
+            isDisabled={remove.isPending}
+            onPress={() => remove.mutate()}
+          >
+            {t('common.delete')}
+          </Button>
+        </ResponsiveDialog.Footer>
+      </ResponsiveDialog>
     </div>
   )
 }

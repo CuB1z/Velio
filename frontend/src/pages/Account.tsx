@@ -1,4 +1,4 @@
-import { Button, InputOTP, Modal, Spinner, useOverlayState } from '@heroui/react'
+import { Button, InputOTP, Spinner, useOverlayState } from '@heroui/react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import { ProfileForm } from '@/components/account/ProfileForm'
 import { SettingRow } from '@/components/account/SettingRow'
 import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
 import { ErrorState } from '@/components/common/ErrorState'
+import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
 import { PasswordInput } from '@/components/common/Field'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SegmentedControl } from '@/components/common/SegmentedControl'
@@ -349,55 +350,49 @@ export function AccountPage() {
         </div>
       </div>
 
-      <Modal state={deleteDialog}>
-        <Modal.Backdrop>
-          <Modal.Container>
-            <Modal.Dialog>
-              <Modal.Header>
-                <Modal.Heading>{t('account.dangerConfirmTitle')}</Modal.Heading>
-              </Modal.Header>
-              <Modal.Body className="flex flex-col gap-4">
-                <p className="text-sm text-muted">{t('account.dangerConfirmBody')}</p>
-                {deleteNotice ? <p className="text-sm">{deleteNotice}</p> : null}
-                <InputOTP
-                  value={deleteCode}
-                  onChange={setDeleteCode}
-                  maxLength={6}
-                  aria-label={t('auth.verifyCode')}
-                  className="w-fit"
-                >
-                  <InputOTP.Group>
-                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                      <InputOTP.Slot key={index} index={index} />
-                    ))}
-                  </InputOTP.Group>
-                </InputOTP>
-                {deleteError ? (
-                  <p className="text-sm text-danger" role="alert">
-                    {deleteError}
-                  </p>
-                ) : null}
-              </Modal.Body>
-              <Modal.Footer className="flex justify-end gap-2">
-                <Button variant="ghost" className="min-h-11" onPress={deleteDialog.close}>
-                  {t('common.cancel')}
-                </Button>
-                <Button
-                  variant="danger"
-                  className="min-h-11"
-                  isDisabled={deleteCode.length !== 6 || confirmDeletion.isPending}
-                  onPress={() => {
-                    setDeleteError(null)
-                    confirmDeletion.mutate()
-                  }}
-                >
-                  {t('common.confirm')}
-                </Button>
-              </Modal.Footer>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      <ResponsiveDialog state={deleteDialog}>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Heading>{t('account.dangerConfirmTitle')}</ResponsiveDialog.Heading>
+        </ResponsiveDialog.Header>
+        <ResponsiveDialog.Body className="flex flex-col gap-4">
+          <p className="text-sm text-muted">{t('account.dangerConfirmBody')}</p>
+          {deleteNotice ? <p className="text-sm">{deleteNotice}</p> : null}
+          <InputOTP
+            value={deleteCode}
+            onChange={setDeleteCode}
+            maxLength={6}
+            aria-label={t('auth.verifyCode')}
+            className="w-fit"
+          >
+            <InputOTP.Group>
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <InputOTP.Slot key={index} index={index} />
+              ))}
+            </InputOTP.Group>
+          </InputOTP>
+          {deleteError ? (
+            <p className="text-sm text-danger" role="alert">
+              {deleteError}
+            </p>
+          ) : null}
+        </ResponsiveDialog.Body>
+        <ResponsiveDialog.Footer>
+          <Button variant="ghost" className="min-h-11" onPress={deleteDialog.close}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            className="min-h-11"
+            isDisabled={deleteCode.length !== 6 || confirmDeletion.isPending}
+            onPress={() => {
+              setDeleteError(null)
+              confirmDeletion.mutate()
+            }}
+          >
+            {t('common.confirm')}
+          </Button>
+        </ResponsiveDialog.Footer>
+      </ResponsiveDialog>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { Button, Checkbox, ComboBox, Description, Input, Label, ListBox, Modal, useOverlayState } from '@heroui/react'
+import { Button, Checkbox, ComboBox, Description, Input, Label, ListBox, useOverlayState } from '@heroui/react'
 import { useMutation } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { ListLayout, Virtualizer } from 'react-aria-components'
@@ -9,6 +9,7 @@ import { isApiError } from '@/api/errors'
 import { useAuth } from '@/auth/useAuth'
 import { ErrorState } from '@/components/common/ErrorState'
 import { TextInput } from '@/components/common/Field'
+import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
 import { useCoverage } from '@/hooks/useCoverage'
 import { useRetryAfter } from '@/hooks/useRetryAfter'
 import { countryOptions, preferredCountry, type CountryOption } from '@/lib/countries'
@@ -35,13 +36,9 @@ export function AskCountryButton({ onPress, className }: { onPress: () => void; 
 
 export function RequestCountryDialog({ state }: Props) {
   return (
-    <Modal state={state}>
-      <Modal.Backdrop>
-        <Modal.Container>
-          <Modal.Dialog>{state.isOpen ? <RequestCountryForm onClose={state.close} /> : null}</Modal.Dialog>
-        </Modal.Container>
-      </Modal.Backdrop>
-    </Modal>
+    <ResponsiveDialog state={state}>
+      {state.isOpen ? <RequestCountryForm onClose={state.close} /> : null}
+    </ResponsiveDialog>
   )
 }
 
@@ -83,19 +80,19 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
     const recorded = mutation.data.recorded
     return (
       <>
-        <Modal.Header>
-          <Modal.Heading>{recorded ? t('coverage.recordedTitle') : t('coverage.alreadyTitle')}</Modal.Heading>
-        </Modal.Header>
-        <Modal.Body>
+        <ResponsiveDialog.Header>
+          <ResponsiveDialog.Heading>{recorded ? t('coverage.recordedTitle') : t('coverage.alreadyTitle')}</ResponsiveDialog.Heading>
+        </ResponsiveDialog.Header>
+        <ResponsiveDialog.Body>
           <p className="text-sm text-muted" role="status">
             {t(RESULT_KEY[recorded ? 'recorded' : 'already'][notify ? 'notify' : 'quiet'], { country: countryName })}
           </p>
-        </Modal.Body>
-        <Modal.Footer className="flex justify-end">
+        </ResponsiveDialog.Body>
+        <ResponsiveDialog.Footer>
           <Button variant="primary" className="min-h-11" onPress={onClose}>
             {t('coverage.close')}
           </Button>
-        </Modal.Footer>
+        </ResponsiveDialog.Footer>
       </>
     )
   }
@@ -103,16 +100,17 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
   return (
     <form
       noValidate
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={(event) => {
         event.preventDefault()
         setTouched(true)
         if (canSubmit) mutation.mutate()
       }}
     >
-      <Modal.Header>
-        <Modal.Heading>{t('coverage.title')}</Modal.Heading>
-      </Modal.Header>
-      <Modal.Body className="flex flex-col gap-4">
+      <ResponsiveDialog.Header>
+        <ResponsiveDialog.Heading>{t('coverage.title')}</ResponsiveDialog.Heading>
+      </ResponsiveDialog.Header>
+      <ResponsiveDialog.Body className="flex flex-col gap-4">
         <p className="text-sm text-muted">{t('coverage.body')}</p>
 
         <ComboBox
@@ -181,8 +179,8 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
         {touched && !country ? (
           <Description className="text-danger">{t('coverage.countryRequired')}</Description>
         ) : null}
-      </Modal.Body>
-      <Modal.Footer className="flex justify-end gap-2">
+      </ResponsiveDialog.Body>
+      <ResponsiveDialog.Footer>
         <Button variant="ghost" className="min-h-11" onPress={onClose}>
           {t('common.cancel')}
         </Button>
@@ -194,7 +192,7 @@ function RequestCountryForm({ onClose }: { onClose: () => void }) {
         >
           {retryIn > 0 ? t('common.retryIn', { seconds: retryIn }) : t('coverage.submit')}
         </Button>
-      </Modal.Footer>
+      </ResponsiveDialog.Footer>
     </form>
   )
 }
