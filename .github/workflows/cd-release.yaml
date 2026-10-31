@@ -20,7 +20,7 @@ jobs:
 
   deploy:
     needs: release-latest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Check secrets
         id: check
@@ -44,7 +44,7 @@ jobs:
           dokploy_url: ${{ secrets.DOKPLOY_URL }}
           service_type: compose
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.check.outputs.configured == 'true'
 
       - name: Wait for the release on velio.cub1z.es
