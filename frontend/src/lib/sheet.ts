@@ -1,6 +1,6 @@
 export type SheetStop = 'hidden' | 'peek' | 'full'
 
-export const SHEET_STOPS: SheetStop[] = ['hidden', 'peek', 'full']
+const SHEET_STOPS: SheetStop[] = ['hidden', 'peek', 'full']
 
 const DRAG_STEP = 40
 const FLICK_VELOCITY = 0.4

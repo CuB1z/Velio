@@ -37,7 +37,7 @@ export function AskCountryButton({ onPress, className }: { onPress: () => void; 
 export function RequestCountryDialog({ state }: Props) {
   return (
     <ResponsiveDialog state={state}>
-      {state.isOpen ? <RequestCountryForm onClose={state.close} /> : null}
+      <RequestCountryForm onClose={state.close} />
     </ResponsiveDialog>
   )
 }

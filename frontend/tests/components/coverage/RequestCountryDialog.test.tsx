@@ -125,3 +125,33 @@ it('suggests the browser region once the coverage is known', async () => {
 
   await waitFor(() => expect(within(dialog).getByRole('combobox', { name: /País/ })).toHaveValue('Francia'))
 })
+
+it('starts from an empty form every time it opens again', async () => {
+  serve(() => json({ recorded: true, country: 'FR' }))
+  function Reopen() {
+    const state = useOverlayState({ defaultOpen: true })
+    return (
+      <>
+        <button type="button" onClick={state.open}>
+          abrir
+        </button>
+        <RequestCountryDialog state={state} />
+      </>
+    )
+  }
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  render(
+    <QueryClientProvider client={client}>
+      <AuthContext.Provider value={{ status: 'authenticated', user: null } as AuthContextValue}>
+        <Reopen />
+      </AuthContext.Provider>
+    </QueryClientProvider>,
+  )
+
+  await userEvent.type(within(screen.getByRole('dialog')).getByRole('textbox', { name: /Nota/ }), 'Pirineo')
+  await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+  await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+
+  await userEvent.click(screen.getByRole('button', { name: 'abrir' }))
+  expect(within(await screen.findByRole('dialog')).getByRole('textbox', { name: /Nota/ })).toHaveValue('')
+})

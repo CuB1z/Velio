@@ -46,7 +46,7 @@ test('the loop planner puts the form in a sheet over a full-screen map', async (
 
   expect((await page.getByRole('button', { name: 'Plegar el panel' }).boundingBox())!.height).toBeGreaterThanOrEqual(44)
   await page.getByRole('button', { name: 'Plegar el panel' }).click()
-  await expect(submit).toBeHidden()
+  await expect(submit).not.toBeInViewport()
 
   const handle = page.getByRole('button', { name: 'Desplegar el panel' })
   await handle.hover()
@@ -57,7 +57,7 @@ test('the loop planner puts the form in a sheet over a full-screen map', async (
   await page.mouse.up()
   const hidden = page.getByRole('button', { name: 'Mostrar el panel' })
   await expect(hidden).toHaveAttribute('aria-expanded', 'false')
-  expect((await hidden.boundingBox())!.y).toBeGreaterThan(viewport.height * 0.8)
+  await expect.poll(async () => (await hidden.boundingBox())!.y).toBeGreaterThan(viewport.height * 0.8)
 
   await hidden.click()
   await page.getByRole('button', { name: 'Desplegar el panel' }).click()
@@ -140,4 +140,20 @@ test('a saved route is renamed from its card through bottom sheets', async ({ pa
   await rename.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('link', { name: 'Ruta del sábado' })).toBeVisible()
   expect(await overflow(page)).toBeLessThanOrEqual(0)
+})
+
+test('a sheet reopens on the first tap while the previous one is still closing', async ({ page }) => {
+  const rows = [{ id: 'r1', name: 'Ruta del domingo', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z', payload: LOOP }]
+  await signedIn(page, {
+    '**/api/v1/routes/saved?*': (route) =>
+      route.fulfill(json({ data: rows, meta: { page: 1, limit: 12, total: rows.length, total_pages: 1, is_last: true } })),
+  })
+  await page.goto('/es/saved')
+  const trigger = page.getByRole('button', { name: 'Acciones de Ruta del domingo' })
+  await trigger.click()
+  const box = (await trigger.boundingBox())!
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click()
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  await page.waitForTimeout(800)
+  await expect(page.getByRole('dialog', { name: 'Ruta del domingo' })).toBeVisible()
 })

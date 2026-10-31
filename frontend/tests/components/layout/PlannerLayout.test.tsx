@@ -75,7 +75,7 @@ describe('PlannerLayout on mobile', () => {
 
     rerender(<Sheet withResult />)
     expect(screen.getByRole('button', { name: 'Desplegar el panel' })).toBeInTheDocument()
-    expect(screen.getByText('formulario').parentElement).toHaveClass('max-lg:hidden')
+    expect(screen.getByText('formulario').parentElement).toHaveAttribute('inert')
   })
 
   it('taps between full and peek and hides with the arrow keys', async () => {
@@ -86,11 +86,13 @@ describe('PlannerLayout on mobile', () => {
     handle.focus()
     await userEvent.keyboard('{ArrowDown}')
     expect(screen.getByRole('button', { name: 'Mostrar el panel' })).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.getByText('formulario').closest('.panel-scroll')).toHaveClass('max-lg:hidden')
+    expect(screen.getByText('formulario').parentElement).toHaveAttribute('inert')
+    expect(screen.getByText('formulario').closest('.panel-scroll')).toHaveClass('overflow-hidden')
 
     await userEvent.click(screen.getByRole('button', { name: 'Mostrar el panel' }))
     await userEvent.keyboard('{ArrowUp}')
     expect(screen.getByRole('button', { name: 'Plegar el panel' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('formulario').parentElement).not.toHaveAttribute('inert')
   })
 })
 

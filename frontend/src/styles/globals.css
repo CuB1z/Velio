@@ -155,6 +155,21 @@
   --radius-2xl: 24px;
 }
 
+:root {
+  --sheet-duration: 450ms;
+  --sheet-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sheet-duration: 0ms;
+  }
+}
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --sheet-ease: linear(0, 0.045, 0.147, 0.268, 0.39, 0.501, 0.599, 0.682, 0.75, 0.805, 0.849, 0.884, 0.911, 0.932, 0.949, 0.961, 0.971, 0.978, 0.984, 0.988, 0.991, 0.993, 0.995, 0.996, 1);
+  }
+}
+
 /* Pill buttons. The components layer beats HeroUI's styles while
    utilities (rounded-none on map controls) still win. */
 @layer components {
@@ -179,6 +194,29 @@
   }
   .switch {
     flex-direction: row;
+  }
+  .drawer__dialog {
+    --drawer-enter-duration: var(--sheet-duration);
+    --drawer-enter-ease: var(--sheet-ease);
+  }
+  .drawer__backdrop,
+  .drawer__backdrop[data-entering='true'],
+  .drawer__backdrop[data-exiting='true'] {
+    opacity: 1;
+    transition: background-color var(--sheet-duration) var(--sheet-ease);
+  }
+  .drawer__backdrop[data-entering='true'],
+  .drawer__backdrop[data-exiting='true'] {
+    background-color: transparent;
+  }
+  .drawer__content[data-exiting='true'] .drawer__dialog {
+    transition: translate var(--sheet-duration) var(--sheet-ease) !important;
+  }
+  .drawer__backdrop[data-exiting='true'],
+  .drawer__backdrop[data-exiting='true'] .drawer__dialog,
+  .modal__backdrop[data-exiting='true'],
+  .modal__backdrop[data-exiting='true'] .modal__dialog {
+    pointer-events: none;
   }
   /* The knob is the thumb's ::after; HeroUI paints it accent-foreground, which inverts on dark. */
   .slider__thumb,
