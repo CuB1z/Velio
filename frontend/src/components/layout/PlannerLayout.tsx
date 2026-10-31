@@ -1,13 +1,16 @@
-import { useRef, useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { ChevronIcon } from '@/components/common/Icons'
 import { cn } from '@/lib/cn'
+import { neighbour, settle, stretch, type SheetStop } from '@/lib/sheet'
 
-type Sheet = 'hidden' | 'peek' | 'full'
+const SETTLE = 'height 300ms cubic-bezier(0.32,0.72,0,1)'
+const HANDLE_HEIGHT = 44
+const FULL_SHARE = 0.7
+const STALE_GESTURE_MS = 100
 
-const SHEETS: Sheet[] = ['hidden', 'peek', 'full']
-const DRAG_STEP = 40
+type Drag = { y: number; height: number; lastY: number; lastTime: number; velocity: number; moved: boolean }
 
 type Props = {
   form: ReactNode
@@ -38,18 +41,59 @@ export function PlannerLayout({
 }: Props) {
   const { t } = useTranslation()
   const hasResult = Boolean(result)
-  const [sheet, setSheet] = useState<Sheet>('full')
+  const [sheet, setSheet] = useState<SheetStop>('full')
   const [resultSeen, setResultSeen] = useState(hasResult)
   if (hasResult !== resultSeen) {
     setResultSeen(hasResult)
     if (hasResult) setSheet('peek')
   }
 
-  const [drag, setDrag] = useState<number | null>(null)
-  const dragStart = useRef<number | null>(null)
-  const dragged = useRef(false)
-  const step = (delta: number) =>
-    setSheet((current) => SHEETS[Math.min(SHEETS.length - 1, Math.max(0, SHEETS.indexOf(current) + delta))])
+  const sheetRef = useRef<HTMLElement>(null)
+  const drag = useRef<Drag | null>(null)
+  const swallowClick = useRef(false)
+  const settleFrom = useRef<number | null>(null)
+  const settling = useRef<AbortController | null>(null)
+  const [dragHeight, setDragHeight] = useState<number | null>(null)
+  const [moves, setMoves] = useState(0)
+
+  function moveTo(next: SheetStop) {
+    settleFrom.current = sheetRef.current?.offsetHeight ?? null
+    setSheet(next)
+    setMoves((count) => count + 1)
+  }
+
+  useLayoutEffect(() => {
+    const el = sheetRef.current
+    const from = settleFrom.current
+    settleFrom.current = null
+    settling.current?.abort()
+    if (!el || from === null) return
+    el.style.transition = ''
+    el.style.height = ''
+    el.style.maxHeight = ''
+    const to = el.offsetHeight
+    if (Math.abs(from - to) < 1 || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const controller = new AbortController()
+    settling.current = controller
+    el.style.maxHeight = 'none'
+    el.style.height = `${from}px`
+    void el.offsetHeight
+    el.style.transition = SETTLE
+    el.style.height = `${to}px`
+    el.addEventListener(
+      'transitionend',
+      (event) => {
+        if (event.target !== el) return
+        controller.abort()
+        el.style.transition = ''
+        el.style.height = ''
+        el.style.maxHeight = ''
+      },
+      { signal: controller.signal },
+    )
+  }, [moves])
+
   const notice = mapNotice ? (
     <p
       role="status"
@@ -63,13 +107,13 @@ export function PlannerLayout({
   return (
     <div className="relative h-full lg:flex lg:flex-row">
       <aside
+        ref={sheetRef}
         className={cn(
           'absolute inset-x-0 bottom-0 z-20 flex flex-col rounded-t-3xl bg-overlay/95 ring-1 ring-border backdrop-blur-xl',
           sheet === 'full' ? 'max-h-[70%]' : 'max-h-[40%]',
-          drag === null && 'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]',
           'lg:static lg:z-10 lg:h-full lg:max-h-none lg:w-[420px] lg:shrink-0 lg:overflow-hidden lg:rounded-none lg:rounded-e-3xl lg:bg-background lg:backdrop-blur-none',
         )}
-        style={drag ? { transform: `translateY(${Math.max(drag, -DRAG_STEP * 2)}px)` } : undefined}
+        style={dragHeight === null ? undefined : { height: dragHeight, maxHeight: 'none' }}
       >
         {notice ? (
           <div className="pointer-events-none absolute inset-x-4 bottom-full mb-3 flex justify-center lg:hidden">{notice}</div>
@@ -79,41 +123,64 @@ export function PlannerLayout({
           aria-expanded={sheet !== 'hidden'}
           aria-label={sheetLabel}
           onClick={() => {
-            if (dragged.current) {
-              dragged.current = false
+            if (swallowClick.current) {
+              swallowClick.current = false
               return
             }
-            setSheet(sheet === 'full' ? 'peek' : sheet === 'peek' ? 'full' : 'peek')
+            moveTo(sheet === 'peek' ? 'full' : 'peek')
           }}
           onKeyDown={(event) => {
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
               event.preventDefault()
-              step(event.key === 'ArrowDown' ? -1 : 1)
+              moveTo(neighbour(sheet, event.key === 'ArrowDown' ? -1 : 1))
             }
           }}
           onPointerDown={(event) => {
+            const el = sheetRef.current
+            if (!el) return
             event.currentTarget.setPointerCapture(event.pointerId)
-            dragStart.current = event.clientY
-            dragged.current = false
-            setDrag(0)
+            swallowClick.current = false
+            settling.current?.abort()
+            el.style.transition = ''
+            drag.current = {
+              y: event.clientY,
+              height: el.offsetHeight,
+              lastY: event.clientY,
+              lastTime: event.timeStamp,
+              velocity: 0,
+              moved: false,
+            }
           }}
           onPointerMove={(event) => {
-            if (dragStart.current === null) return
-            const dy = event.clientY - dragStart.current
-            if (Math.abs(dy) > 6) dragged.current = true
-            setDrag(dy)
+            const current = drag.current
+            const parent = sheetRef.current?.parentElement
+            if (!current || !parent) return
+            const dy = event.clientY - current.y
+            if (Math.abs(dy) > 6) current.moved = true
+            const elapsed = event.timeStamp - current.lastTime
+            if (elapsed > 0) {
+              current.velocity = (event.clientY - current.lastY) / elapsed
+              current.lastY = event.clientY
+              current.lastTime = event.timeStamp
+            }
+            if (current.moved) {
+              setDragHeight(stretch(current.height - dy, HANDLE_HEIGHT, parent.clientHeight * FULL_SHARE))
+            }
           }}
           onPointerUp={(event) => {
-            if (dragStart.current === null) return
-            const dy = event.clientY - dragStart.current
-            dragStart.current = null
-            setDrag(null)
-            if (dy > DRAG_STEP) step(-1)
-            else if (dy < -DRAG_STEP) step(1)
+            const current = drag.current
+            drag.current = null
+            if (!current?.moved) return
+            swallowClick.current = true
+            const velocity = event.timeStamp - current.lastTime > STALE_GESTURE_MS ? 0 : current.velocity
+            moveTo(settle(sheet, event.clientY - current.y, velocity))
+            setDragHeight(null)
           }}
           onPointerCancel={() => {
-            dragStart.current = null
-            setDrag(null)
+            const moved = drag.current?.moved
+            drag.current = null
+            if (moved) moveTo(sheet)
+            setDragHeight(null)
           }}
           className="flex min-h-11 w-full shrink-0 touch-none items-center justify-center focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent lg:hidden"
         >

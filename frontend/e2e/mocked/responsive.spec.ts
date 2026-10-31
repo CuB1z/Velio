@@ -49,6 +49,7 @@ test('the loop planner puts the form in a sheet over a full-screen map', async (
   await expect(submit).toBeHidden()
 
   const handle = page.getByRole('button', { name: 'Desplegar el panel' })
+  await handle.hover()
   const box = (await handle.boundingBox())!
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
   await page.mouse.down()
