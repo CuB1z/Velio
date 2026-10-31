@@ -1,30 +1,32 @@
 import { Button, Dropdown, Spinner, useOverlayState } from '@heroui/react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import * as savedRoutesApi from '@/api/savedRoutes'
-import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { ErrorState } from '@/components/common/ErrorState'
-import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
-import { TextInput } from '@/components/common/Field'
-import { endpointMarkers } from '@/lib/endpointMarkers'
 import { LazyMap } from '@/components/map/LazyMap'
 import type { MapMarker, RouteLayer } from '@/components/map/MapView'
 import { ElevationProfile } from '@/components/route/ElevationProfile'
 import { MetricTiles } from '@/components/route/MetricTiles'
 import { ScoreCard } from '@/components/route/ScoreCard'
 import { SurfaceBar } from '@/components/route/SurfaceBar'
-import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
+import { SavedRouteMenu, type SavedRouteAction } from '@/components/saved/SavedRouteMenu'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useProfileFocus } from '@/hooks/useProfileFocus'
 import { downloadBlob, slugify } from '@/lib/download'
+import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
+import { endpointMarkers } from '@/lib/endpointMarkers'
 import { toGeoJson, toGpx } from '@/lib/exportLocal'
 import { formatDate, formatPercent, formatRelative } from '@/lib/format'
 import type { MapStyleId } from '@/lib/mapStyles'
+import { useLangPath } from '@/lib/paths'
 import { decodePolyline } from '@/lib/polyline'
 import { readSavedResult } from '@/lib/savedRoute'
-import { useLangPath } from '@/lib/paths'
+
+const PHONE_ACTIONS: SavedRouteAction[] = ['rename', 'recompute', 'gpx', 'geojson', 'delete']
+const DESKTOP_ACTIONS: SavedRouteAction[] = ['rename', 'recompute', 'delete']
 
 export function SavedRouteDetailPage() {
   const { t } = useTranslation()
@@ -32,38 +34,15 @@ export function SavedRouteDetailPage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const to = useLangPath()
-  const client = useQueryClient()
-  const describe = useApiErrorMessage()
+  const phone = useMediaQuery('(width < 48rem)')
+  const menu = useOverlayState()
 
   const [styleId, setStyleId] = useState<MapStyleId>('map')
-  const [name, setName] = useState('')
-  const [actionError, setActionError] = useState<string | null>(null)
-  const renameDialog = useOverlayState()
-  const deleteDialog = useOverlayState()
 
   const query = useQuery({
     queryKey: ['savedRoute', id],
     queryFn: () => savedRoutesApi.get(id),
     enabled: id.length > 0,
-  })
-
-  const rename = useMutation({
-    mutationFn: (next: string) => savedRoutesApi.rename(id, next),
-    onSuccess: async () => {
-      renameDialog.close()
-      await client.invalidateQueries({ queryKey: ['savedRoute', id] })
-      await client.invalidateQueries({ queryKey: ['savedRoutes'] })
-    },
-    onError: (error) => setActionError(describe(error)),
-  })
-
-  const remove = useMutation({
-    mutationFn: () => savedRoutesApi.remove(id),
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ['savedRoutes'] })
-      void navigate(to('/saved'))
-    },
-    onError: (error) => setActionError(describe(error)),
   })
 
   const result = useMemo(() => (query.data ? readSavedResult(query.data) : null), [query.data])
@@ -101,33 +80,19 @@ export function SavedRouteDetailPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 flex-wrap items-center gap-3 px-4 py-3 lg:px-6">
+      <header className="flex shrink-0 items-center gap-2 px-2 py-2 sm:px-4 sm:py-3 lg:px-6">
         <Button
           variant="ghost"
           isIconOnly
-          className="size-11"
+          className="size-11 shrink-0"
           aria-label={t('common.back')}
           onPress={() => void navigate(to('/saved'))}
         >
           <BackIcon />
         </Button>
-        <div className="min-w-0 flex-[1_1_16rem]">
-          <div className="flex items-center gap-2">
-            <h1 className="truncate text-xl font-semibold tracking-tight">{route.name}</h1>
-            <Button
-              variant="ghost"
-              isIconOnly
-              className="size-11 shrink-0"
-              aria-label={t('common.rename')}
-              onPress={() => {
-                setName(route.name)
-                renameDialog.open()
-              }}
-            >
-              <PencilIcon />
-            </Button>
-          </div>
-          <p className="eyebrow">
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate text-xl font-semibold tracking-tight">{route.name}</h1>
+          <p className="eyebrow truncate">
             {t('saved.savedOn', { date: formatDate(route.created_at) })}
             {route.updated_at !== route.created_at
               ? ` · ${t('saved.editedOn', { date: formatRelative(route.updated_at) })}`
@@ -135,15 +100,10 @@ export function SavedRouteDetailPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" className="min-h-11" onPress={() => void navigate(to('/loops'))}>
-            {t('saved.recompute')}
-          </Button>
-          {result ? (
+        <div className="flex shrink-0 items-center gap-1">
+          {result && !phone ? (
             <Dropdown>
-              <Dropdown.Trigger
-                className={dropdownTriggerClass({ variant: 'primary' }, 'min-h-11')}
-              >
+              <Dropdown.Trigger className={dropdownTriggerClass({ variant: 'primary' }, 'min-h-11')}>
                 {t('result.export')}
               </Dropdown.Trigger>
               <Dropdown.Popover>
@@ -162,9 +122,13 @@ export function SavedRouteDetailPage() {
               </Dropdown.Popover>
             </Dropdown>
           ) : null}
-          <Button variant="danger-soft" className="min-h-11" onPress={deleteDialog.open}>
-            {t('common.delete')}
-          </Button>
+          <SavedRouteMenu
+            route={route}
+            actions={phone ? PHONE_ACTIONS : DESKTOP_ACTIONS}
+            state={menu}
+            onRecompute={() => void navigate(to('/loops'))}
+            onDeleted={() => void navigate(to('/saved'))}
+          />
         </div>
       </header>
 
@@ -177,7 +141,7 @@ export function SavedRouteDetailPage() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="h-[45svh] shrink-0 lg:h-auto lg:flex-1 lg:overflow-hidden lg:rounded-e-3xl lg:ring-1 lg:ring-border">
+          <div className="h-[calc(45svh+1.5rem)] shrink-0 max-lg:[&_.maplibregl-ctrl-bottom-left]:mb-6 max-lg:[&_.maplibregl-ctrl-bottom-right]:mb-6 lg:h-auto lg:flex-1 lg:overflow-hidden lg:rounded-e-3xl lg:ring-1 lg:ring-border">
             <LazyMap
               className="h-full w-full"
               styleId={styleId}
@@ -189,14 +153,8 @@ export function SavedRouteDetailPage() {
             />
           </div>
 
-          <aside className="flex shrink-0 flex-col lg:h-full lg:w-[420px] lg:overflow-hidden">
+          <aside className="relative z-10 -mt-6 flex shrink-0 flex-col rounded-t-3xl bg-background ring-1 ring-border lg:mt-0 lg:h-full lg:w-[420px] lg:overflow-hidden lg:rounded-none lg:ring-0">
             <div className="panel-scroll flex flex-col gap-6 p-5 lg:min-h-0 lg:overflow-y-auto lg:px-7 lg:pb-6 lg:pt-2">
-              {actionError ? (
-                <p className="text-sm text-danger" role="alert">
-                  {actionError}
-                </p>
-              ) : null}
-
               <MetricTiles result={result} className="sm:grid-cols-2" />
               <ScoreCard score={result.cycling_score} className="border-t border-border pt-6" />
               <SurfaceBar score={result.score} distanceKm={result.distance_km} className="border-t border-border pt-6" />
@@ -228,56 +186,6 @@ export function SavedRouteDetailPage() {
           </aside>
         </div>
       )}
-
-      <ResponsiveDialog state={renameDialog}>
-        <ResponsiveDialog.Header>
-          <ResponsiveDialog.Heading>{t('saved.renameTitle')}</ResponsiveDialog.Heading>
-        </ResponsiveDialog.Header>
-        <ResponsiveDialog.Body>
-          <TextInput
-            label={t('result.saveDialogName')}
-            value={name}
-            onChange={setName}
-            autoFocus
-            isRequired
-          />
-        </ResponsiveDialog.Body>
-        <ResponsiveDialog.Footer>
-          <Button variant="ghost" className="min-h-11" onPress={renameDialog.close}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            className="min-h-11"
-            isDisabled={!name.trim() || rename.isPending}
-            onPress={() => rename.mutate(name.trim())}
-          >
-            {t('common.save')}
-          </Button>
-        </ResponsiveDialog.Footer>
-      </ResponsiveDialog>
-
-      <ResponsiveDialog state={deleteDialog}>
-        <ResponsiveDialog.Header>
-          <ResponsiveDialog.Heading>{t('saved.deleteConfirmTitle')}</ResponsiveDialog.Heading>
-        </ResponsiveDialog.Header>
-        <ResponsiveDialog.Body>
-          <p className="text-sm text-muted">{t('saved.deleteConfirmBody')}</p>
-        </ResponsiveDialog.Body>
-        <ResponsiveDialog.Footer>
-          <Button variant="ghost" className="min-h-11" onPress={deleteDialog.close}>
-            {t('common.cancel')}
-          </Button>
-          <Button
-            variant="danger"
-            className="min-h-11"
-            isDisabled={remove.isPending}
-            onPress={() => remove.mutate()}
-          >
-            {t('common.delete')}
-          </Button>
-        </ResponsiveDialog.Footer>
-      </ResponsiveDialog>
     </div>
   )
 }
@@ -286,14 +194,6 @@ function BackIcon() {
   return (
     <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M9.5 3.5 5.5 8l4 4.5" />
-    </svg>
-  )
-}
-
-function PencilIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M11.2 2.6 13.4 4.8 5.6 12.6 2.6 13.4l.8-3 7.8-7.8Z" />
     </svg>
   )
 }

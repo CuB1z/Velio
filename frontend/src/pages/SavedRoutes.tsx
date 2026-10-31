@@ -5,14 +5,17 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import * as savedRoutesApi from '@/api/savedRoutes'
-import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
+import { ActionMenu, type MenuAction } from '@/components/common/ActionMenu'
 import { ErrorState } from '@/components/common/ErrorState'
+import { CloseIcon, PlusIcon, SelectIcon } from '@/components/common/Icons'
 import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
 import { Pager } from '@/components/common/Pager'
 import { PageHeader } from '@/components/common/PageHeader'
 import { SegmentedControl } from '@/components/common/SegmentedControl'
 import { SavedCard, SavedCardSkeleton } from '@/components/saved/SavedCard'
 import { SavedStats } from '@/components/saved/SavedStats'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { useLangPath } from '@/lib/paths'
 
 const PAGE_SIZES = ['12', '24', '48'] as const
@@ -32,6 +35,8 @@ export function SavedRoutesPage() {
   const [selection, setSelection] = useState<Set<string>>(new Set())
   const [actionError, setActionError] = useState<string | null>(null)
   const confirm = useOverlayState()
+  const pageMenu = useOverlayState()
+  const phone = useMediaQuery('(width < 48rem)')
 
   const query = useQuery({
     queryKey: ['savedRoutes', page, pageSize],
@@ -83,41 +88,113 @@ export function SavedRoutesPage() {
     setSelection(new Set())
   }
 
+  const selectedLabel =
+    selection.size === 0
+      ? t('saved.selectHint')
+      : selection.size === 1
+        ? t('saved.selectedOne')
+        : t('saved.selected', { count: selection.size })
+
+  const pageActions: MenuAction[] = [
+    ...(meta?.total ? [{ id: 'select', label: t('saved.select'), icon: <SelectIcon /> }] : []),
+    ...(meta && meta.total > Number(PAGE_SIZES[0])
+      ? PAGE_SIZES.map((size) => ({
+          id: size,
+          label: t('saved.perPageOption', { count: Number(size) }),
+          selected: size === pageSize,
+        }))
+      : []),
+  ]
+
+  function runPageAction(id: string) {
+    if (id === 'select') return setSelecting(true)
+    setPageSize(id as PageSize)
+    setPage(1)
+  }
+
+  const searchField = (className: string) => (
+    <SearchField value={search} onChange={setSearch} aria-label={t('saved.searchPlaceholder')} className={className}>
+      <SearchField.Group className="min-h-11 rounded-full ps-1.5">
+        <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-full text-muted">
+          <SearchField.SearchIcon className="m-0 text-current" />
+        </span>
+        <SearchField.Input placeholder={t('saved.searchPlaceholder')} />
+        <SearchField.ClearButton className="size-11" />
+      </SearchField.Group>
+    </SearchField>
+  )
+
   return (
     <div className="mx-auto flex max-w-[1400px] flex-col gap-6 p-4 sm:p-6">
-      <PageHeader
-        eyebrow={t('nav.saved')}
-        title={t('saved.title')}
-        actions={
-          <>
-            <SearchField
-              value={search}
-              onChange={setSearch}
-              aria-label={t('saved.searchPlaceholder')}
-              className="w-full sm:w-64"
+      {phone && selecting ? (
+        <div className="flex min-h-11 items-center gap-2">
+          <Button
+            variant="ghost"
+            isIconOnly
+            className="-ms-2.5 size-11"
+            aria-label={t('saved.exitSelection')}
+            onPress={stopSelecting}
+          >
+            <CloseIcon />
+          </Button>
+          <h1 className="tnum min-w-0 flex-1 text-xl font-semibold tracking-tight text-balance" aria-live="polite">
+            {selection.size === 0 ? t('saved.select') : selectedLabel}
+          </h1>
+          {selection.size < visible.length ? (
+            <Button
+              variant="ghost"
+              className="min-h-11"
+              onPress={() => setSelection(new Set(visible.map((route) => route.id)))}
             >
-              <SearchField.Group className="min-h-11 rounded-full ps-1.5">
-                <span
-                  aria-hidden="true"
-                  className="grid size-8 shrink-0 place-items-center rounded-full text-muted"
-                >
-                  <SearchField.SearchIcon className="m-0 text-current" />
-                </span>
-                <SearchField.Input placeholder={t('saved.searchPlaceholder')} />
-                <SearchField.ClearButton className="size-11" />
-              </SearchField.Group>
-            </SearchField>
-            {meta?.total && !selecting ? (
-              <Button variant="outline" className="min-h-11" onPress={() => setSelecting(true)}>
-                {t('saved.select')}
-              </Button>
-            ) : null}
-            <Button variant="primary" className="min-h-11" onPress={() => void navigate(to('/loops'))}>
-              {t('saved.newRoute')}
+              {t('saved.selectAllShort')}
             </Button>
-          </>
-        }
-      />
+          ) : null}
+        </div>
+      ) : phone ? (
+        <>
+          <PageHeader eyebrow={t('nav.saved')} title={t('saved.title')} />
+          <div className="flex items-center gap-2">
+            {searchField('min-w-0 flex-1')}
+            <Button
+              variant="primary"
+              isIconOnly
+              className="size-11"
+              aria-label={t('saved.newRoute')}
+              onPress={() => void navigate(to('/loops'))}
+            >
+              <PlusIcon />
+            </Button>
+            {pageActions.length ? (
+              <ActionMenu
+                label={t('saved.moreOptions')}
+                title={t('saved.moreOptions')}
+                actions={pageActions}
+                onAction={runPageAction}
+                state={pageMenu}
+                className="bg-surface-secondary"
+              />
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <PageHeader
+          eyebrow={t('nav.saved')}
+          title={t('saved.title')}
+          actions={
+            <>
+              {searchField('w-full sm:w-64')}
+              {meta?.total && !selecting ? (
+                <Button variant="outline" className="min-h-11" onPress={() => setSelecting(true)}>
+                  {t('saved.select')}
+                </Button>
+              ) : null}
+              <Button variant="primary" className="min-h-11" onPress={() => void navigate(to('/loops'))}>
+                {t('saved.newRoute')}
+              </Button>
+            </>
+          }
+        />
+      )}
 
       {meta?.total && query.data ? (
         <SavedStats routes={query.data.data} total={meta.total} pageOnly={meta.total_pages > 1} />
@@ -154,15 +231,22 @@ export function SavedRoutesPage() {
                   isSelected={selection.has(route.id)}
                   selecting={selecting}
                   onToggle={() => toggle(route.id)}
+                  onStartSelecting={() => {
+                    setSelecting(true)
+                    setSelection(new Set([route.id]))
+                  }}
+                  onDeleted={() => {
+                    if (page > 1 && visible.length === 1) setPage(page - 1)
+                  }}
                 />
               ))}
-          {query.isLoading || selecting ? null : (
+          {query.isLoading || selecting || phone ? null : (
             <li className="flex">
               <Link
                 to={to('/loops')}
                 className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-foreground/20 p-6 text-center text-muted transition-colors duration-150 hover:border-foreground/40 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
-                <PlusIcon />
+                <PlusIcon size={24} />
                 <span className="text-lg font-semibold tracking-tight text-foreground">{t('saved.newTile')}</span>
                 <span className="eyebrow">{t('saved.newTileHint')}</span>
               </Link>
@@ -178,31 +262,45 @@ export function SavedRoutesPage() {
       {query.data && query.data.meta.total > Number(PAGE_SIZES[0]) ? (
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <Pager page={page} totalPages={query.data.meta.total_pages} onChange={setPage} />
-          <div className="flex items-center gap-3 sm:ms-auto">
-            <span className="text-sm text-muted">{t('saved.perPage')}</span>
-            <div className="w-44">
-              <SegmentedControl
-                label={t('saved.perPage')}
-                options={PAGE_SIZES.map((size) => ({ id: size, label: size }))}
-                value={pageSize}
-                onChange={(size) => {
-                  setPageSize(size)
-                  setPage(1)
-                }}
-              />
+          {phone ? null : (
+            <div className="flex items-center gap-3 sm:ms-auto">
+              <span className="text-sm text-muted">{t('saved.perPage')}</span>
+              <div className="w-44">
+                <SegmentedControl
+                  label={t('saved.perPage')}
+                  options={PAGE_SIZES.map((size) => ({ id: size, label: size }))}
+                  value={pageSize}
+                  onChange={(size) => {
+                    setPageSize(size)
+                    setPage(1)
+                  }}
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : null}
 
-      {selecting ? (
+      {selecting && phone ? (
+        <div className="sticky bottom-4 z-20">
+          <Button
+            variant="danger"
+            fullWidth
+            className="min-h-12"
+            isDisabled={selection.size === 0}
+            onPress={confirm.open}
+          >
+            {selection.size === 0
+              ? t('common.delete')
+              : selection.size === 1
+                ? t('saved.deleteOne')
+                : t('saved.deleteMany', { count: selection.size })}
+          </Button>
+        </div>
+      ) : selecting ? (
         <div className="sticky bottom-4 z-20 mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-2 rounded-full bg-overlay/90 px-5 py-2.5 ring-1 ring-border backdrop-blur-xl">
           <span className="text-sm font-semibold" aria-live="polite">
-            {selection.size === 0
-              ? t('saved.selectHint')
-              : selection.size === 1
-                ? t('saved.selectedOne')
-                : t('saved.selected', { count: selection.size })}
+            {selectedLabel}
           </span>
           {selection.size < visible.length ? (
             <Button
@@ -266,13 +364,5 @@ function EmptyIllustration() {
         <circle cx="14" cy="40" r="4.5" fill="currentColor" />
       </svg>
     </div>
-  )
-}
-
-function PlusIcon() {
-  return (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" />
-    </svg>
   )
 }

@@ -1,8 +1,11 @@
+import { useOverlayState } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { LoopIcon, RouteIcon } from '@/components/common/Icons'
 import { RouteThumbnail } from '@/components/route/RouteThumbnail'
+import { SavedRouteMenu } from '@/components/saved/SavedRouteMenu'
+import { useLongPress } from '@/hooks/useLongPress'
 import { useTheme } from '@/hooks/useTheme'
 import { surfaceColor } from '@/lib/chartPalette'
 import { cn } from '@/lib/cn'
@@ -19,9 +22,11 @@ type Props = {
   isSelected: boolean
   selecting: boolean
   onToggle: () => void
+  onStartSelecting: () => void
+  onDeleted?: () => void
 }
 
-export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
+export function SavedCard({ route, isSelected, selecting, onToggle, onStartSelecting, onDeleted }: Props) {
   const { t } = useTranslation()
   const to = useLangPath()
   const { resolved } = useTheme()
@@ -29,11 +34,14 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
   const kind = savedRouteKind(route)
   const segments = result ? surfaceSegments(result.score, result.distance_km) : []
   const score = result?.cycling_score?.total
+  const menu = useOverlayState()
+  const press = useLongPress(menu.open, !selecting)
 
   return (
     <li
+      {...press}
       className={cn(
-        'group relative flex flex-col gap-5 rounded-3xl bg-surface p-5 ring-1',
+        'group relative flex flex-col gap-5 rounded-3xl bg-surface p-5 ring-1 select-none [-webkit-touch-callout:none]',
         'hover:-translate-y-0.5 active:translate-y-0',
         'has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-accent has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-accent',
         lift,
@@ -41,16 +49,28 @@ export function SavedCard({ route, isSelected, selecting, onToggle }: Props) {
       )}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="eyebrow inline-flex items-center gap-1.5">
+        <span className={cn('eyebrow inline-flex items-center gap-1.5', selecting && 'ps-9')}>
           {kind === 'loop' ? <LoopIcon size={12} /> : <RouteIcon size={12} />}
           {kind === 'loop' ? t('saved.kindLoop') : t('saved.kindRoute')}
         </span>
-        {score !== undefined ? (
-          <span className="tnum text-sm font-semibold text-accent-text">
-            {formatScore(score)}
-            <span className="font-normal text-muted"> /10</span>
-          </span>
-        ) : null}
+        <div className="-my-3 -me-3 flex items-center gap-1">
+          {score !== undefined ? (
+            <span className="tnum text-sm font-semibold text-accent-text">
+              {formatScore(score)}
+              <span className="font-normal text-muted"> /10</span>
+            </span>
+          ) : null}
+          {selecting ? null : (
+            <SavedRouteMenu
+              route={route}
+              actions={['rename', 'gpx', 'geojson', 'select', 'delete']}
+              state={menu}
+              onSelect={onStartSelecting}
+              onDeleted={onDeleted}
+              className="relative z-20"
+            />
+          )}
+        </div>
       </div>
 
       <div className="relative aspect-[2/1]">

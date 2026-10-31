@@ -116,3 +116,28 @@ test.describe('in English, where the action labels are short', () => {
     expect(await overflow(page)).toBeLessThanOrEqual(0)
   })
 })
+
+test('a saved route is renamed from its card through bottom sheets', async ({ page }) => {
+  const rows = [{ id: 'r1', name: 'Ruta del domingo', created_at: '2026-10-01T10:00:00Z', updated_at: '2026-10-01T10:00:00Z', payload: LOOP }]
+  await signedIn(page, {
+    '**/api/v1/routes/saved?*': (route) =>
+      route.fulfill(json({ data: rows, meta: { page: 1, limit: 12, total: rows.length, total_pages: 1, is_last: true } })),
+    '**/api/v1/routes/saved/r1': async (route) => {
+      rows[0].name = route.request().postDataJSON().name
+      await route.fulfill({ status: 204, body: '' })
+    },
+  })
+  await page.goto('/es/saved')
+
+  await page.getByRole('button', { name: 'Acciones de Ruta del domingo' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Ruta del domingo' })
+  await expect(sheet).toHaveAttribute('data-placement', 'bottom')
+  await sheet.getByRole('button', { name: 'Renombrar' }).click()
+
+  const rename = page.getByRole('dialog', { name: 'Renombrar la ruta' })
+  await expect(rename).toHaveAttribute('data-placement', 'bottom')
+  await rename.getByRole('textbox').fill('Ruta del sábado')
+  await rename.getByRole('button', { name: 'Guardar' }).click()
+  await expect(page.getByRole('link', { name: 'Ruta del sábado' })).toBeVisible()
+  expect(await overflow(page)).toBeLessThanOrEqual(0)
+})

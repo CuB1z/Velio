@@ -1,6 +1,6 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeAll, beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
 import App from '@/App'
 import i18n from '@/i18n'
@@ -51,6 +51,16 @@ function serve(rows: ReturnType<typeof route>[]) {
         meta: { page, limit, total: rows.length, total_pages: totalPages, is_last: page >= totalPages },
       })
     }
+    const single = url.pathname.match(/\/routes\/saved\/([^/]+)$/)
+    if (single && method === 'PATCH') {
+      const row = rows.find((candidate) => candidate.id === single[1])
+      if (row) row.name = JSON.parse(String(init?.body)).name
+      return new Response(null, { status: 204 })
+    }
+    if (single && method === 'DELETE') {
+      rows.splice(0, rows.length, ...rows.filter((row) => row.id !== single[1]))
+      return new Response(null, { status: 204 })
+    }
     if (url.pathname.endsWith('/routes/saved') && method === 'DELETE') {
       const ids = url.searchParams.get('ids')?.split(',') ?? []
       rows.splice(0, rows.length, ...rows.filter((row) => !ids.includes(row.id)))
@@ -66,6 +76,17 @@ const listCalls = (calls: string[]) => calls.filter((call) => call.startsWith('G
 beforeAll(async () => {
   await i18n.changeLanguage('es')
 })
+
+afterEach(() => vi.unstubAllGlobals())
+
+function onPhone() {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: query === '(width < 48rem)',
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }))
+}
 
 beforeEach(() => {
   queryClient.clear()
@@ -129,4 +150,61 @@ it('sums the routes up, says when a search matches nothing and selects in select
 
   await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
   expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+})
+
+it('renames a route from its card menu, and right-click opens the same menu', async () => {
+  const rows = [route('a', 'Sierra de domingo'), route('b', 'Girona clásica')]
+  const calls = serve(rows)
+  render(<App />)
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Acciones de Girona clásica' }))
+  const menu = await screen.findByRole('menu')
+  expect(within(menu).getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+    'Renombrar',
+    'Exportar GPX',
+    'Exportar GeoJSON',
+    'Seleccionar',
+    'Eliminar',
+  ])
+  await userEvent.click(within(menu).getByRole('menuitem', { name: 'Renombrar' }))
+
+  const dialog = await screen.findByRole('dialog', { name: 'Renombrar la ruta' })
+  const input = within(dialog).getByRole('textbox')
+  await userEvent.clear(input)
+  await userEvent.type(input, 'Girona en otoño')
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Guardar' }))
+  expect(await screen.findByRole('link', { name: 'Girona en otoño' })).toBeInTheDocument()
+  expect(calls).toContain('PATCH /api/v1/routes/saved/b')
+
+  fireEvent.contextMenu(screen.getByRole('link', { name: 'Sierra de domingo' }))
+  expect(await screen.findByRole('menu')).toBeInTheDocument()
+})
+
+it('on a phone, keeps one action in the header, deletes from the card sheet and selects from the page menu', async () => {
+  onPhone()
+  const rows = [route('a', 'Sierra de domingo'), route('b', 'Girona clásica'), route('c', 'Usera por carril bici')]
+  const calls = serve(rows)
+  render(<App />)
+
+  expect(await screen.findByRole('button', { name: 'Trazar una nueva' })).toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Seleccionar' })).not.toBeInTheDocument()
+  expect(screen.queryByText('Empezar una ruta nueva')).not.toBeInTheDocument()
+
+  await userEvent.click(await screen.findByRole('button', { name: 'Acciones de Usera por carril bici' }))
+  const sheet = await screen.findByRole('dialog', { name: 'Usera por carril bici' })
+  expect(within(sheet).queryByRole('button', { name: 'Abrir' })).not.toBeInTheDocument()
+  await userEvent.click(within(sheet).getByRole('button', { name: 'Eliminar' }))
+  const confirm = await screen.findByRole('dialog', { name: '¿Eliminar la ruta?' })
+  await userEvent.click(within(confirm).getByRole('button', { name: 'Eliminar' }))
+  await waitFor(() => expect(screen.queryByRole('link', { name: 'Usera por carril bici' })).not.toBeInTheDocument())
+  expect(calls).toContain('DELETE /api/v1/routes/saved/c')
+
+  await userEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+  await userEvent.click(within(await screen.findByRole('dialog', { name: 'Más opciones' })).getByRole('button', { name: 'Seleccionar' }))
+  expect(await screen.findByRole('button', { name: 'Salir de la selección' })).toBeInTheDocument()
+  await userEvent.click(screen.getByRole('checkbox', { name: 'Girona clásica' }))
+  expect(screen.getByRole('heading', { name: '1 seleccionada' })).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Eliminar la ruta' })).toBeEnabled()
+  await userEvent.click(screen.getByRole('button', { name: 'Todas' }))
+  expect(screen.getByRole('button', { name: 'Eliminar 2 rutas' })).toBeEnabled()
 })
