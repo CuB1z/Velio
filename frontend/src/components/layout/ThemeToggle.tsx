@@ -1,6 +1,6 @@
 import { Dropdown } from '@heroui/react'
 
-import { dropdownTriggerClass } from '@/components/common/dropdownTrigger'
+import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 import { useTranslation } from 'react-i18next'
 
 import { useTheme, type ThemePreference } from '@/hooks/useTheme'

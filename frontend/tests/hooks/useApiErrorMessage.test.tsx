@@ -2,7 +2,7 @@ import { renderHook } from '@testing-library/react'
 import { beforeAll, expect, it } from 'vitest'
 
 import { ApiError } from '@/api/errors'
-import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import i18n from '@/i18n'
 
 beforeAll(async () => {

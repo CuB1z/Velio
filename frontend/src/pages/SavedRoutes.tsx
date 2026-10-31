@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import * as savedRoutesApi from '@/api/savedRoutes'
-import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { ErrorState } from '@/components/common/ErrorState'
 import { ResponsiveDialog } from '@/components/common/ResponsiveDialog'
 import { Pager } from '@/components/common/Pager'

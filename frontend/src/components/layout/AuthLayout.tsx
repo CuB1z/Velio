@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { ProfileCell } from '@/components/landing/ProfileCell'
-import { LANDING_EXAMPLES } from '@/components/landing/landingExamples'
+import { LANDING_EXAMPLES } from '@/constants/landingExamples'
 import { Reveal } from '@/components/landing/Reveal'
 import { ScoreCard } from '@/components/route/ScoreCard'
 import { formatDistance, formatSigned } from '@/lib/format'

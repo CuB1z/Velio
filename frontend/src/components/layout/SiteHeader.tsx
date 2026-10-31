@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '@/auth/useAuth'
-import { fluid, focus } from '@/components/common/interaction'
+import { fluid, focus } from '@/lib/interaction'
 import { useLangPath } from '@/lib/paths'
 import { VelioLogo } from './Logo'
 

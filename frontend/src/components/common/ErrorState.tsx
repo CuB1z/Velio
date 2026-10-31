@@ -1,7 +1,7 @@
 import { Alert, Button } from '@heroui/react'
 import { useTranslation } from 'react-i18next'
 
-import { useApiErrorMessage } from './apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 
 type Props = {
   error: unknown

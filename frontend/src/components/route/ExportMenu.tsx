@@ -1,13 +1,13 @@
 import { Dropdown } from '@heroui/react'
 
-import { dropdownTriggerClass } from '@/components/common/dropdownTrigger'
+import { dropdownTriggerClass } from '@/lib/dropdownTrigger'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { exportRouting } from '@/api/routing'
 import { downloadBlob, slugify } from '@/lib/download'
 import type { LoopRequest, RouteRequest } from '@/types/api'
-import { useApiErrorMessage } from '../common/apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 
 type Props = {
   endpoint: 'loops' | 'routes'

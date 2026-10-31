@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import * as authApi from '@/api/auth'
-import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { useCooldown } from '@/hooks/useCooldown'
 import { useLangPath } from '@/lib/paths'

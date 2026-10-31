@@ -15,7 +15,7 @@ import {
   DEFAULT_LOOP_FORM,
   toLoopRequest,
   type LoopFormValue,
-} from '@/components/planner/loopFormValue'
+} from '@/lib/loopFormValue'
 import { RouteResultPanel } from '@/components/route/RouteResultPanel'
 import { formatDistance, formatRegions } from '@/lib/format'
 import { minimumLoopKm } from '@/lib/geo'

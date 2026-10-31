@@ -7,7 +7,7 @@ import {
   DISTANCE_TOLERANCE,
   GAIN_TOLERANCE,
   type LoopFormValue,
-} from './loopFormValue'
+} from '@/lib/loopFormValue'
 import { CoordinateField } from './CoordinateField'
 import { ChevronIcon } from '@/components/common/Icons'
 import { InsetGroup, InsetRow } from '@/components/common/InsetGroup'

@@ -1,5 +1,5 @@
 import { ElevationProfile } from '@/components/route/ElevationProfile'
-import { LANDING_EXAMPLES } from './landingExamples'
+import { LANDING_EXAMPLES } from '@/constants/landingExamples'
 
 const SIERRA = LANDING_EXAMPLES[1]
 

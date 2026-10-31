@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { endpointMarkers } from '@/components/map/endpointMarkers'
+import { endpointMarkers } from '@/lib/endpointMarkers'
 import type { LngLat } from '@/lib/polyline'
 
 const START: LngLat = [-3.7038, 40.4168]

@@ -2,7 +2,7 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
-import { focus } from '@/components/common/interaction'
+import { focus } from '@/lib/interaction'
 import { useLangPath } from '@/lib/paths'
 import { SITE } from '@/lib/site'
 import { LanguageToggle } from './LanguageToggle'

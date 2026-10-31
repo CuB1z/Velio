@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import * as savedRoutes from '@/api/savedRoutes'
 import { TextInput } from '../common/Field'
 import { ResponsiveDialog } from '../common/ResponsiveDialog'
-import { useApiErrorMessage } from '../common/apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 
 type Props = {
   /** Verbatim response of the compute endpoint: it is what the backend stores. */

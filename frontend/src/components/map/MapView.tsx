@@ -25,7 +25,7 @@ import {
   type MapStyleId,
 } from '@/lib/mapStyles'
 import { MapControls } from './MapControls'
-import { ARROW_LAYOUT, routeArrowImage } from './routeArrow'
+import { ARROW_LAYOUT, routeArrowImage } from '@/lib/routeArrow'
 import type { LngLat } from '@/lib/polyline'
 import { boundsOf } from '@/lib/polyline'
 

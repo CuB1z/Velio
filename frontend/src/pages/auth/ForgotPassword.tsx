@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useNavigate } from 'react-router-dom'
 
 import * as authApi from '@/api/auth'
-import { useApiErrorMessage } from '@/components/common/apiErrorMessage'
+import { useApiErrorMessage } from '@/hooks/useApiErrorMessage'
 import { TextInput } from '@/components/common/Field'
 import { AuthLayout } from '@/components/layout/AuthLayout'
 import { useLangPath } from '@/lib/paths'
