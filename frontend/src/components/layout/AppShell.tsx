@@ -86,7 +86,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main id="contenido" className="panel-scroll min-h-0 flex-1 overflow-auto scroll-smooth motion-reduce:scroll-auto">
+        <main id="contenido" className="panel-scroll min-h-0 flex-1 overflow-auto overscroll-y-contain scroll-smooth motion-reduce:scroll-auto">
           <Suspense
             fallback={
               <div className="flex h-full min-h-[60vh] items-center justify-center">
@@ -110,7 +110,7 @@ export function AppShell() {
               to={to(item.to)}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors',
+                  'flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2 text-xs font-medium transition-colors active:bg-surface-hover',
                   isActive ? 'text-foreground' : 'text-muted',
                 )
               }

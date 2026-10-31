@@ -3,6 +3,7 @@ import { useCallback, useSyncExternalStore } from 'react'
 export type ThemePreference = 'light' | 'dark' | 'system'
 
 const STORAGE_KEY = 'velio.theme'
+const GROUND = { light: '#f7f8fa', dark: '#000000' } as const
 const listeners = new Set<() => void>()
 
 function read(): ThemePreference {
@@ -32,6 +33,10 @@ function apply(): void {
   root.classList.toggle('dark', dark)
   root.classList.toggle('light', !dark)
   root.style.colorScheme = dark ? 'dark' : 'light'
+  for (const meta of document.querySelectorAll('meta[name="theme-color"]')) {
+    const scheme = meta.getAttribute('media')?.includes('dark') ? 'dark' : 'light'
+    meta.setAttribute('content', GROUND[preference === 'system' ? scheme : resolve(preference)])
+  }
 }
 
 if (typeof document !== 'undefined') apply()

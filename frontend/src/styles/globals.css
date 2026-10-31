@@ -166,8 +166,10 @@
     background-color: var(--accent);
     color: var(--accent-foreground);
   }
-  .button--primary:hover {
-    background-color: color-mix(in srgb, var(--accent) 86%, var(--accent-foreground));
+  @media (hover: hover) {
+    .button--primary:hover {
+      background-color: color-mix(in srgb, var(--accent) 86%, var(--accent-foreground));
+    }
   }
   .button--primary:disabled,
   .button--primary[aria-disabled='true'] {
@@ -252,6 +254,7 @@ body,
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;
+  -webkit-tap-highlight-color: transparent;
 }
 @media (prefers-reduced-motion: reduce) {
   html {

@@ -176,7 +176,7 @@ export function SavedRouteDetailPage() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <div className="h-[45vh] shrink-0 lg:h-auto lg:flex-1 lg:overflow-hidden lg:rounded-e-3xl lg:ring-1 lg:ring-border">
+          <div className="h-[45svh] shrink-0 lg:h-auto lg:flex-1 lg:overflow-hidden lg:rounded-e-3xl lg:ring-1 lg:ring-border">
             <LazyMap
               className="h-full w-full"
               styleId={styleId}

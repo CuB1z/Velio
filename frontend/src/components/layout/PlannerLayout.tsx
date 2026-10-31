@@ -122,7 +122,7 @@ export function PlannerLayout({
 
         <div
           className={cn(
-            'panel-scroll flex min-h-0 flex-1 flex-col overflow-y-auto px-4 lg:px-7 lg:pt-6',
+            'panel-scroll flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain px-4 lg:px-7 lg:pt-6',
             sheet === 'hidden' && 'max-lg:hidden',
           )}
         >
