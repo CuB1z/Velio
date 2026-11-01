@@ -32,6 +32,22 @@ test('the login keeps only the form, without the product panel', async ({ page }
   expect(await overflow(page)).toBeLessThanOrEqual(0)
 })
 
+test('nothing sits under the status bar when the app draws edge to edge', async ({ page }) => {
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: 32, bottom: 24 } })
+  const logoTop = async () => (await page.getByRole('banner').getByRole('link', { name: 'Velio' }).boundingBox())!.y
+
+  await mockApi(page)
+  await page.goto('/es')
+  expect(await logoTop()).toBeGreaterThanOrEqual(32)
+  await page.evaluate(() => window.scrollTo({ top: 2000, behavior: 'instant' }))
+  expect(await logoTop()).toBeGreaterThanOrEqual(32)
+
+  await signedIn(page)
+  await page.goto('/es/loops')
+  expect(await logoTop()).toBeGreaterThanOrEqual(32)
+})
+
 test('the loop planner puts the form in a sheet over a full-screen map', async ({ page }) => {
   await signedIn(page)
   await page.goto('/es/loops')

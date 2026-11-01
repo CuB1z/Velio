@@ -20,7 +20,7 @@ export function SiteHeader() {
   const authenticated = status === 'authenticated'
 
   return (
-    <header className="sticky top-0 z-30 px-4 pt-4 sm:pt-6">
+    <header className="sticky top-[env(safe-area-inset-top)] z-30 px-4 pt-4 sm:pt-6">
       <div className="mx-auto flex items-center gap-2 rounded-full bg-surface-secondary/75 p-2 ps-5 ring-1 ring-border backdrop-blur-xl md:w-max">
         <Link to={to('/')} onClick={() => window.scrollTo({ top: 0 })} aria-label="Velio" className={`flex min-h-11 items-center rounded-md ${focus}`}>
           <VelioLogo height={20} decorative />
